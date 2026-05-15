@@ -1,0 +1,807 @@
+// =============================================================================
+// NextLevel Academy — Prisma Schema
+// Source of truth: docs/NextLevel_Academy_PRD_v2.md §9 (Data Models)
+//
+// Conventions
+//   - Model names: PascalCase (Prisma idiomatic). Table names: snake_case via @@map.
+//   - Primary keys: String @id @default(cuid()) — except Better Auth-owned tables
+//     (User, Session, Account, Verification) where Better Auth assigns the id.
+//   - Money is stored as Int (IDR rupiah, no fractional unit).
+//   - Soft deletes use isActive / deletedAt where the PRD calls them out
+//     (User §6.11.4, Video §6.11.3 "deleted_at"). All other deletes are hard.
+//   - Indexes are added for fields that show up in PRD-level filters/queries.
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// -----------------------------------------------------------------------------
+// Enums
+// -----------------------------------------------------------------------------
+
+enum Role {
+  PESERTA_DIDIK
+  PESERTA_MAGANG
+  MENTOR
+  ADMINISTRATOR
+}
+
+enum CourseStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum StepType {
+  VIDEO
+  QUIZ
+}
+
+enum OrderStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  EXPIRED
+}
+
+enum VoucherAudience {
+  ALL
+}
+
+enum BadgeTrigger {
+  LEVEL_REACHED
+  COURSES_COMPLETED
+  COURSE_SPECIFIC
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+}
+
+enum SubmissionStatus {
+  NOT_SUBMITTED
+  SUBMITTED
+}
+
+enum ExpSource {
+  VIDEO_COMPLETE
+  QUIZ_PASS
+  COURSE_COMPLETE
+}
+
+enum NotificationType {
+  TASK_ASSIGNED
+  TASK_FEEDBACK
+  TASK_SUBMITTED
+}
+
+// -----------------------------------------------------------------------------
+// Better Auth — Core Identity Tables
+// IDs are managed by Better Auth (no Prisma default).
+// User holds extra domain fields per PRD §9.1.
+// -----------------------------------------------------------------------------
+
+model User {
+  id            String   @id
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  name          String
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // ---- Domain fields (PRD §9.1) -----------------------------------------
+  role     Role    @default(PESERTA_DIDIK)
+  username String? @unique
+  bio      String?
+  isActive Boolean @default(true)
+
+  // ---- Better Auth relations --------------------------------------------
+  sessions Session[]
+  accounts Account[]
+
+  // ---- Profile relations (one-of, depending on role) --------------------
+  internshipProfile InternshipProfile?
+  mentorProfile     MentorProfile?
+  gameProfile       UserGameProfile?
+
+  // ---- Domain relations -------------------------------------------------
+  enrollments             Enrollment[]
+  orders                  Order[]
+  certificates            Certificate[]
+  voucherUsages           VoucherUsage[]
+  badges                  UserBadge[]
+  expLogs                 ExpLog[]
+  attendances             Attendance[]      @relation("AttendanceStudent")
+  attendanceEdits         Attendance[]      @relation("AttendanceEditor")
+  tasksAuthored           Task[]            @relation("TaskMentor")
+  taskSubmissions         TaskSubmission[]
+  finalGradeAsStudent     FinalGrade?       @relation("FinalGradeStudent")
+  finalGradesGiven        FinalGrade[]      @relation("FinalGradeMentor")
+  finalGradeEdits         FinalGrade[]      @relation("FinalGradeEditor")
+  notifications           Notification[]
+  vouchersUsable          Voucher[]         @relation("VoucherAllowedUser")
+  platformSettingsUpdated PlatformSetting[] @relation("PlatformSettingEditor")
+  auditLogs               AuditLog[]
+
+  @@index([role])
+  @@index([isActive])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  userId                String
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+// -----------------------------------------------------------------------------
+// Internship — Org Structure (PRD §6.11.9 / §9.2–9.6)
+// Batch → Field → Class → InternshipProfile / MentorProfile
+// -----------------------------------------------------------------------------
+
+model Batch {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String
+  createdAt   DateTime @default(now())
+
+  fields Field[]
+  tasks  Task[]
+
+  @@map("batch")
+}
+
+model Field {
+  id        String   @id @default(cuid())
+  batchId   String
+  name      String   @unique
+  createdAt DateTime @default(now())
+
+  batch   Batch   @relation(fields: [batchId], references: [id])
+  classes Class[]
+  tasks   Task[]
+
+  @@index([batchId])
+  @@map("field")
+}
+
+model Class {
+  id          String   @id @default(cuid())
+  fieldId     String
+  name        String   @unique
+  maxStudents Int      @default(10)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  field              Field               @relation(fields: [fieldId], references: [id])
+  internshipProfiles InternshipProfile[]
+  mentorProfiles     MentorProfile[]
+  tasks              Task[]
+
+  @@index([fieldId])
+  @@map("class")
+}
+
+model InternshipProfile {
+  id          String  @id @default(cuid())
+  userId      String  @unique
+  classId     String
+  institution String?
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  class Class @relation(fields: [classId], references: [id])
+
+  @@index([classId])
+  @@map("internship_profile")
+}
+
+model MentorProfile {
+  id      String @id @default(cuid())
+  userId  String @unique
+  classId String
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  class Class @relation(fields: [classId], references: [id])
+
+  @@index([classId])
+  @@map("mentor_profile")
+}
+
+// -----------------------------------------------------------------------------
+// Course Catalog (PRD §6.3 / §9.7–9.9)
+// -----------------------------------------------------------------------------
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  courses  Course[]
+  vouchers Voucher[] @relation("VoucherAllowedCategory")
+
+  @@map("category")
+}
+
+model Course {
+  id                String       @id @default(cuid())
+  title             String
+  slug              String       @unique
+  description       String       @db.Text
+  categoryId        String
+  thumbnailUrl      String
+  price             Int
+  fakePrice         Int?
+  estimatedDuration Int? // minutes
+  instructor        String
+  instructorBio     String       @db.Text
+  instructorImg     String
+  status            CourseStatus @default(DRAFT)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  category Category @relation(fields: [categoryId], references: [id])
+
+  sprints      Sprint[]
+  benefits     CourseBenefit[]
+  faqs         CourseFaq[]
+  enrollments  Enrollment[]
+  orders       Order[]
+  certificates Certificate[]
+  badges       Badge[]         @relation("BadgeCourse")
+  vouchers     Voucher[]       @relation("VoucherAllowedCourse")
+
+  @@index([status])
+  @@index([categoryId])
+  @@index([createdAt])
+  @@map("course")
+}
+
+// Bullet points on the catalog detail page (PRD §6.3.2 "Yang Akan Dipelajari").
+model CourseBenefit {
+  id       String @id @default(cuid())
+  courseId String
+  text     String
+  order    Int
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([courseId, order])
+  @@map("course_benefit")
+}
+
+// FAQ entries on the catalog detail page (PRD §6.3.2 "FAQ").
+model CourseFaq {
+  id       String @id @default(cuid())
+  courseId String
+  question String
+  answer   String @db.Text
+  order    Int
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([courseId, order])
+  @@map("course_faq")
+}
+
+model Sprint {
+  id       String @id @default(cuid())
+  courseId String
+  title    String
+  order    Int
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  steps  Step[]
+
+  @@index([courseId, order])
+  @@map("sprint")
+}
+
+model Step {
+  id          String   @id @default(cuid())
+  sprintId    String
+  title       String
+  type        StepType
+  order       Int
+  description String   @db.Text // shown in the Overview/Notes tab (PRD §6.5.5)
+
+  sprint Sprint @relation(fields: [sprintId], references: [id], onDelete: Cascade)
+  video  Video?
+  quiz   Quiz?
+
+  progresses StepProgress[]
+  expLogs    ExpLog[]       @relation("ExpLogStep")
+
+  @@index([sprintId, order])
+  @@map("step")
+}
+
+// Active video for a step. Replaced files are kept in VideoArchive (see below)
+// for the 7-day rollback window described in PRD §6.11.3.
+model Video {
+  id           String @id @default(cuid())
+  stepId       String @unique
+  bunnyVideoId String
+  duration     Int // seconds
+
+  step     Step           @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  archives VideoArchive[]
+
+  @@map("video")
+}
+
+// Soft-deleted Bunny.net assets. A nightly job purges entries older than 7 days
+// (PRD §6.11.3 "Penggantian File Video").
+model VideoArchive {
+  id           String   @id @default(cuid())
+  videoId      String
+  bunnyVideoId String
+  deletedAt    DateTime @default(now())
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@index([deletedAt])
+  @@map("video_archive")
+}
+
+model Quiz {
+  id           String @id @default(cuid())
+  stepId       String @unique
+  passingScore Int    @default(80)
+
+  step      Step           @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  questions QuizQuestion[]
+
+  @@map("quiz")
+}
+
+model QuizQuestion {
+  id               String  @id @default(cuid())
+  quizId           String
+  question         String? @db.Text
+  questionImageUrl String?
+  options          Json // string[] — option labels or image URLs
+  answer           Int // index into options
+  order            Int
+
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@index([quizId, order])
+  @@map("quiz_question")
+}
+
+// -----------------------------------------------------------------------------
+// Enrollment & Progress (PRD §6.5 / §9.10)
+// -----------------------------------------------------------------------------
+
+model Enrollment {
+  id          String    @id @default(cuid())
+  userId      String
+  courseId    String
+  enrolledAt  DateTime  @default(now())
+  completedAt DateTime?
+  progressPct Float     @default(0)
+
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course      Course         @relation(fields: [courseId], references: [id])
+  progresses  StepProgress[]
+  certificate Certificate?
+
+  @@unique([userId, courseId])
+  @@index([courseId])
+  @@map("enrollment")
+}
+
+model StepProgress {
+  id            String    @id @default(cuid())
+  enrollmentId  String
+  stepId        String
+  isCompleted   Boolean   @default(false)
+  completedAt   DateTime?
+  quizScore     Float?
+  quizAttempts  Int       @default(0)
+  cooldownUntil DateTime?
+
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  step       Step       @relation(fields: [stepId], references: [id])
+
+  @@unique([enrollmentId, stepId])
+  @@index([stepId])
+  @@map("step_progress")
+}
+
+// -----------------------------------------------------------------------------
+// Orders & Payment (PRD §6.4 / §9.11)
+// -----------------------------------------------------------------------------
+
+model Order {
+  id               String      @id @default(cuid())
+  userId           String
+  courseId         String
+  voucherId        String?
+  originalPrice    Int
+  discountAmount   Int         @default(0)
+  finalPrice       Int
+  status           OrderStatus @default(PENDING)
+  paymentInvoiceId String?     @unique
+  paymentMethod    String?
+  expiresAt        DateTime
+  paidAt           DateTime?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  user          User                  @relation(fields: [userId], references: [id])
+  course        Course                @relation(fields: [courseId], references: [id])
+  voucher       Voucher?              @relation(fields: [voucherId], references: [id])
+  voucherUsages VoucherUsage[]
+  webhookEvents PaymentWebhookEvent[]
+
+  @@index([userId])
+  @@index([courseId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("order")
+}
+
+// Audit log of every webhook payload received from DOKU / Midtrans. Backs the
+// idempotency requirement in PRD §6.4.7 / §11.5.
+model PaymentWebhookEvent {
+  id            String    @id @default(cuid())
+  orderId       String?
+  provider      String // "DOKU" | "MIDTRANS"
+  externalId    String? // invoice id / order_id from provider
+  signature     String?
+  payload       Json
+  receivedAt    DateTime  @default(now())
+  processedAt   DateTime?
+  processingErr String?   @db.Text
+
+  order Order? @relation(fields: [orderId], references: [id])
+
+  @@index([provider, externalId])
+  @@index([orderId])
+  @@map("payment_webhook_event")
+}
+
+// -----------------------------------------------------------------------------
+// Certificates (PRD §6.6 / §9.12)
+// -----------------------------------------------------------------------------
+
+model Certificate {
+  id            String    @id @default(cuid())
+  userId        String
+  courseId      String
+  enrollmentId  String    @unique
+  certificateNo String    @unique // format: NLA-YYYYMMDD-XXXXXXXX
+  issuedAt      DateTime  @default(now())
+  expiresAt     DateTime?
+  pdfUrl        String?
+
+  user       User       @relation(fields: [userId], references: [id])
+  course     Course     @relation(fields: [courseId], references: [id])
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id])
+
+  @@index([userId])
+  @@index([courseId])
+  @@map("certificate")
+}
+
+// -----------------------------------------------------------------------------
+// Vouchers (PRD §6.7.4 / §6.8 / §9.13)
+// -----------------------------------------------------------------------------
+
+model Voucher {
+  id                String          @id @default(cuid())
+  code              String          @unique
+  description       String?
+  discountPct       Int
+  startDate         DateTime
+  endDate           DateTime
+  maxUsage          Int?
+  usageCount        Int             @default(0)
+  maxUsagePerUser   Int             @default(1)
+  allowedRole       VoucherAudience @default(ALL)
+  allowedCategoryId String?
+  allowedUserId     String?
+  allowedCourseId   String?
+  isActive          Boolean         @default(true)
+  isSystemGenerated Boolean         @default(false)
+  createdAt         DateTime        @default(now())
+
+  allowedCategory Category? @relation("VoucherAllowedCategory", fields: [allowedCategoryId], references: [id])
+  allowedUser     User?     @relation("VoucherAllowedUser", fields: [allowedUserId], references: [id])
+  allowedCourse   Course?   @relation("VoucherAllowedCourse", fields: [allowedCourseId], references: [id])
+
+  orders Order[]
+  usages VoucherUsage[]
+
+  @@index([isActive, startDate, endDate])
+  @@map("voucher")
+}
+
+model VoucherUsage {
+  id        String   @id @default(cuid())
+  voucherId String
+  userId    String
+  orderId   String
+  usedAt    DateTime @default(now())
+
+  voucher Voucher @relation(fields: [voucherId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+  order   Order   @relation(fields: [orderId], references: [id])
+
+  @@unique([voucherId, orderId])
+  @@index([voucherId, userId])
+  @@map("voucher_usage")
+}
+
+// -----------------------------------------------------------------------------
+// Gamification (PRD §6.7 / §9.14)
+// -----------------------------------------------------------------------------
+
+model Badge {
+  id          String       @id @default(cuid())
+  name        String
+  description String?
+  trigger     BadgeTrigger
+  threshold   Int // level number / course count / unused when COURSE_SPECIFIC
+  courseId    String? // only when trigger = COURSE_SPECIFIC
+  expMinimum  Int          @default(0)
+  logoUrl     String?
+  createdAt   DateTime     @default(now())
+
+  course   Course?     @relation("BadgeCourse", fields: [courseId], references: [id])
+  earnings UserBadge[]
+
+  @@index([trigger])
+  @@map("badge")
+}
+
+model UserBadge {
+  id            String   @id @default(cuid())
+  userId        String
+  badgeId       String?
+  badgeSnapshot String // preserved name in case the badge is later deleted
+  earnedAt      DateTime @default(now())
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge Badge? @relation(fields: [badgeId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, badgeId])
+  @@index([userId])
+  @@map("user_badge")
+}
+
+model UserGameProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  exp       Int      @default(0) // resets to 0 on level-up
+  level     Int      @default(1)
+  totalExp  Int      @default(0) // cumulative, never resets
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([level])
+  @@map("user_game_profile")
+}
+
+model ExpLog {
+  id        String    @id @default(cuid())
+  userId    String
+  amount    Int
+  source    ExpSource
+  refId     String // Step.id or Course.id depending on source
+  createdAt DateTime  @default(now())
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  step Step? @relation("ExpLogStep", fields: [refId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "exp_log_step_fk")
+
+  // Idempotency guard: each (user, source, refId) tuple may only award EXP once.
+  @@unique([userId, source, refId])
+  @@index([userId, createdAt])
+  @@map("exp_log")
+}
+
+// -----------------------------------------------------------------------------
+// Internship — Attendance (PRD §6.9.2 / §9.15)
+// -----------------------------------------------------------------------------
+
+model Attendance {
+  id          String           @id @default(cuid())
+  userId      String
+  date        DateTime         @db.Date
+  status      AttendanceStatus
+  checkedInAt DateTime?
+  editedById  String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  user     User  @relation("AttendanceStudent", fields: [userId], references: [id], onDelete: Cascade)
+  editedBy User? @relation("AttendanceEditor", fields: [editedById], references: [id])
+
+  @@unique([userId, date])
+  @@index([date])
+  @@map("attendance")
+}
+
+// -----------------------------------------------------------------------------
+// Internship — Tasks (PRD §6.9.3 / §9.16)
+// -----------------------------------------------------------------------------
+
+model Task {
+  id            String   @id @default(cuid())
+  mentorId      String
+  batchId       String
+  fieldId       String
+  classId       String
+  title         String
+  description   String   @db.Text
+  attachmentUrl String?
+  deadline      DateTime
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  mentor User  @relation("TaskMentor", fields: [mentorId], references: [id])
+  batch  Batch @relation(fields: [batchId], references: [id])
+  field  Field @relation(fields: [fieldId], references: [id])
+  class  Class @relation(fields: [classId], references: [id])
+
+  submissions TaskSubmission[]
+
+  @@index([classId, deadline])
+  @@index([mentorId])
+  @@map("task")
+}
+
+model TaskSubmission {
+  id            String           @id @default(cuid())
+  taskId        String
+  studentId     String
+  submissionUrl String?
+  notes         String?          @db.Text
+  status        SubmissionStatus @default(NOT_SUBMITTED)
+  feedbackText  String?          @db.Text
+  reviewedAt    DateTime?
+  submittedAt   DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  task    Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  student User @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, studentId])
+  @@index([studentId])
+  @@map("task_submission")
+}
+
+// -----------------------------------------------------------------------------
+// Internship — Final Grade (PRD §6.9.4 / §9.17)
+// -----------------------------------------------------------------------------
+
+model FinalGrade {
+  id             String    @id @default(cuid())
+  studentId      String    @unique
+  mentorId       String
+  grade          Int?
+  gradedAt       DateTime?
+  lastEditedById String?
+  updatedAt      DateTime  @updatedAt
+
+  student      User  @relation("FinalGradeStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  mentor       User  @relation("FinalGradeMentor", fields: [mentorId], references: [id])
+  lastEditedBy User? @relation("FinalGradeEditor", fields: [lastEditedById], references: [id])
+
+  @@index([mentorId])
+  @@map("final_grade")
+}
+
+// -----------------------------------------------------------------------------
+// Notifications (PRD §6.10.1 / §9.18)
+// -----------------------------------------------------------------------------
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  title     String
+  message   String           @db.Text
+  type      NotificationType
+  refId     String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt])
+  @@map("notification")
+}
+
+// -----------------------------------------------------------------------------
+// Platform Settings (PRD §6.11.10 / §9.20)
+// -----------------------------------------------------------------------------
+
+model PlatformSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+
+  editor User? @relation("PlatformSettingEditor", fields: [updatedBy], references: [id])
+
+  @@map("platform_setting")
+}
+
+// -----------------------------------------------------------------------------
+// Audit Log (PRD §11.8)
+// -----------------------------------------------------------------------------
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String // e.g. "USER_DELETE", "ATTENDANCE_EDIT", "ORDER_STATUS_OVERRIDE"
+  entityType String? // e.g. "User", "Order"
+  entityId   String?
+  metadata   Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id])
+
+  @@index([action, createdAt])
+  @@index([entityType, entityId])
+  @@map("audit_log")
+}
