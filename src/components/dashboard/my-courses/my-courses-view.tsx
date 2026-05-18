@@ -140,7 +140,7 @@ function Header() {
         </p>
       </div>
       <Link
-        href="/courses"
+        href="/catalog"
         className="inline-flex h-10 items-center gap-1.5 rounded-full bg-[color:var(--color-brand-500)] px-5 text-[12px] font-bold text-white shadow-[0_10px_24px_-12px_rgba(43,114,234,0.7)] transition hover:bg-[color:var(--color-brand-600)]"
       >
         <Compass className="size-3.5" strokeWidth={2.4} />
@@ -203,7 +203,7 @@ function NoEnrollmentsState() {
         </p>
       </div>
       <Link
-        href="/courses"
+        href="/catalog"
         className="inline-flex h-10 items-center gap-1.5 rounded-full bg-[color:var(--color-brand-500)] px-6 text-[12px] font-bold text-white shadow-[0_10px_24px_-12px_rgba(43,114,234,0.7)] transition hover:bg-[color:var(--color-brand-600)]"
       >
         <Compass className="size-3.5" strokeWidth={2.4} />

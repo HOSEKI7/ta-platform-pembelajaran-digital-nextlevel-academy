@@ -31,7 +31,7 @@ export function RecommendationsSection() {
           </p>
         </div>
         <Link
-          href="/courses"
+          href="/catalog"
           className="group inline-flex items-center gap-1 text-xs font-bold text-[color:var(--color-brand-700)] transition hover:text-[color:var(--color-brand-800)] dark:text-[color:var(--color-brand-300)] dark:hover:text-[color:var(--color-brand-100)]"
         >
           Jelajah katalog
