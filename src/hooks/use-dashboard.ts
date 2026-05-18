@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import type {
   DashboardStatsDTO,
+  MyCoursesFilters,
   RecommendedCourseDTO,
   StudentCourseCardDTO,
 } from "@/lib/student-data-loader";
@@ -45,6 +46,20 @@ export function useRecommendedCoursesQuery() {
       getJson<{ courses: RecommendedCourseDTO[] }>(
         "/api/student/dashboard/recommendations",
       ),
+    staleTime: 60 * 1000,
+  });
+}
+
+export function useMyCoursesQuery(filters: MyCoursesFilters) {
+  const params = new URLSearchParams();
+  if (filters.search.length > 0) params.set("search", filters.search);
+  if (filters.status !== "all") params.set("status", filters.status);
+  const qs = params.toString();
+  const path = qs ? `/api/student/my-courses?${qs}` : "/api/student/my-courses";
+
+  return useQuery({
+    queryKey: studentKeys.myCourses(filters),
+    queryFn: () => getJson<{ courses: StudentCourseCardDTO[] }>(path),
     staleTime: 60 * 1000,
   });
 }

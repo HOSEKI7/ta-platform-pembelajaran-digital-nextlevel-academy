@@ -58,3 +58,9 @@ auth-*.png
 /.skills/
 CLAUDE.md
 AGENTS.md
+
+# Requirement Files
+/docs/
+
+# Backup
+/.gits/

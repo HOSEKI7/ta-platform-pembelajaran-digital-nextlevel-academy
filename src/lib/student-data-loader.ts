@@ -99,6 +99,96 @@ export async function loadInProgressCourses(
   };
 }
 
+export type MyCoursesStatus = "all" | "in-progress" | "completed";
+
+export type MyCoursesFilters = {
+  search: string;
+  status: MyCoursesStatus;
+};
+
+/**
+ * Loads every enrollment owned by a student for the "Kursus Saya" page.
+ * Sort prefers `lastAccessedAt` (bumped on each /learn/:slug page-load via
+ * `touchEnrollment`) and falls back to `enrolledAt` for rows the student has
+ * not opened yet. PRD §6.5.1 + §6.5.8.
+ */
+export async function loadMyCourses(
+  userId: string,
+  filters: MyCoursesFilters,
+): Promise<{ courses: StudentCourseCardDTO[] }> {
+  const trimmedSearch = filters.search.trim();
+
+  const progressFilter =
+    filters.status === "in-progress"
+      ? { progressPct: { lt: 100 } }
+      : filters.status === "completed"
+        ? { progressPct: 100 }
+        : {};
+
+  const rows = await prisma.enrollment.findMany({
+    where: {
+      userId,
+      ...progressFilter,
+      ...(trimmedSearch.length > 0
+        ? {
+            course: {
+              title: { contains: trimmedSearch, mode: "insensitive" as const },
+            },
+          }
+        : {}),
+    },
+    include: {
+      course: {
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          thumbnailUrl: true,
+          instructor: true,
+          estimatedDuration: true,
+          category: { select: { name: true } },
+        },
+      },
+    },
+    orderBy: [
+      { lastAccessedAt: { sort: "desc", nulls: "last" } },
+      { enrolledAt: "desc" },
+    ],
+    take: 60,
+  });
+
+  return {
+    courses: rows.map((r) => ({
+      enrollmentId: r.id,
+      progressPct: r.progressPct,
+      course: {
+        id: r.course.id,
+        title: r.course.title,
+        slug: r.course.slug,
+        thumbnailUrl: r.course.thumbnailUrl,
+        instructor: r.course.instructor,
+        estimatedDuration: r.course.estimatedDuration,
+        category: { name: r.course.category.name },
+      },
+    })),
+  };
+}
+
+/**
+ * Bumps `Enrollment.lastAccessedAt` so the row floats to the top of "Kursus
+ * Saya". Call from `/learn/:slug` page-load (or first video play) — not from
+ * write hooks, since this is a per-view signal. Idempotent and cheap.
+ */
+export async function touchEnrollment(
+  userId: string,
+  courseId: string,
+): Promise<void> {
+  await prisma.enrollment.updateMany({
+    where: { userId, courseId },
+    data: { lastAccessedAt: new Date() },
+  });
+}
+
 export type RecommendedCourseDTO = {
   id: string;
   title: string;

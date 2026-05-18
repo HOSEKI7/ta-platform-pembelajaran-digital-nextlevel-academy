@@ -431,12 +431,13 @@ model QuizQuestion {
 // -----------------------------------------------------------------------------
 
 model Enrollment {
-  id          String    @id @default(cuid())
-  userId      String
-  courseId    String
-  enrolledAt  DateTime  @default(now())
-  completedAt DateTime?
-  progressPct Float     @default(0)
+  id             String    @id @default(cuid())
+  userId         String
+  courseId       String
+  enrolledAt     DateTime  @default(now())
+  lastAccessedAt DateTime?
+  completedAt    DateTime?
+  progressPct    Float     @default(0)
 
   user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   course      Course         @relation(fields: [courseId], references: [id])
@@ -445,6 +446,7 @@ model Enrollment {
 
   @@unique([userId, courseId])
   @@index([courseId])
+  @@index([userId, lastAccessedAt])
   @@map("enrollment")
 }
 

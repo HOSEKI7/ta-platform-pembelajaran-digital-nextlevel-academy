@@ -14,5 +14,7 @@ export const studentKeys = {
     recommendations: () =>
       [...studentKeys.dashboard.all(), "recommendations"] as const,
   },
+  myCourses: (filters: { search: string; status: string }) =>
+    [...studentKeys.all, "my-courses", filters] as const,
   notifications: () => [...studentKeys.all, "notifications"] as const,
 } as const;
