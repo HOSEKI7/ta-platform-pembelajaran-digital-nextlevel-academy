@@ -4,7 +4,24 @@
       "mcp__plugin_context7_context7__query-docs",
       "Bash(powershell *)",
       "Bash(npx tsc *)",
-      "Bash(npx eslint *)"
+      "Bash(npx eslint *)",
+      "Bash(node *)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(npm run *)",
+      "Bash(npx prisma *)",
+      "Bash(npx tsx *)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(taskkill //F //PID 31692)",
+      "Bash(tasklist)",
+      "Bash(curl -s http://localhost:3000/)",
+      "Bash(curl -s http://localhost:3000/courses/belajar-python-data-science)",
+      "Bash(del \"src\\\\components\\\\public\\\\landing\\\\latest-courses-section.tsx\")",
+      "Bash(npx playwright *)",
+      "Bash(curl -s -i http://localhost:3000/api/public/featured-courses)",
+      "Bash(taskkill /PID 9468 /F)",
+      "Bash(taskkill /F /IM node.exe)",
+      "PowerShell(Stop-Process *)",
+      "PowerShell(Get-NetTCPConnection *)"
     ]
   }
 }

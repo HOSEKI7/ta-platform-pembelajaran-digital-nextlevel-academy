@@ -148,9 +148,10 @@ There is currently **no test suite** wired up. `@playwright/test` is installed f
 
 ---
 
-## Additional Instructions
+## IMPORTANTS
 
 - **If my prompt is ambiguous, ask first before writing any code.**
+- **Always prioritize thorough checks for high-quality performance optimization and security.**
 - **Always use Context7** to fetch up-to-date library documentation before implementing (Better Auth, Prisma, TanStack Query, shadcn/ui, Resend, etc.).
 - **After completing any task, always provide follow-up instructions:** what and how to run, what and how to check in the browser, what and how to verify — specific to what was just built.
 - **Never implement anything outside the current task scope.**

@@ -281,6 +281,7 @@ model Course {
   title             String
   slug              String       @unique
   description       String       @db.Text
+  shortDescription  String?      @db.VarChar(280)
   categoryId        String
   thumbnailUrl      String
   price             Int
@@ -290,6 +291,7 @@ model Course {
   instructorBio     String       @db.Text
   instructorImg     String
   status            CourseStatus @default(DRAFT)
+  isFeatured        Boolean      @default(false)
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
 
@@ -307,6 +309,7 @@ model Course {
   @@index([status])
   @@index([categoryId])
   @@index([createdAt])
+  @@index([isFeatured])
   @@map("course")
 }
 
