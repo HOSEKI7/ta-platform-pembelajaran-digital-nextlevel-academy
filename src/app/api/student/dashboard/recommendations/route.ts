@@ -1,0 +1,23 @@
+import { NextResponse } from "next/server";
+
+import { Role } from "@/generated/prisma";
+import { requireRoleInRoute } from "@/lib/auth-server";
+import { loadRecommendedCourses } from "@/lib/student-data-loader";
+
+export const dynamic = "force-dynamic";
+
+export async function GET() {
+  const session = await requireRoleInRoute(Role.PESERTA_DIDIK);
+  if (session instanceof Response) return session;
+
+  try {
+    const data = await loadRecommendedCourses(session.user.id);
+    return NextResponse.json(
+      { data },
+      { headers: { "Cache-Control": "private, no-store" } },
+    );
+  } catch (err) {
+    console.error("[GET /api/student/dashboard/recommendations]", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}

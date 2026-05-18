@@ -46,10 +46,20 @@ export function HowItWorksSection() {
         </div>
 
         <div className="relative mt-16">
-          {/* Dashed connecting rail (md+) */}
+          {/* Dashed connecting rail (md+).
+              Icons sit at the LEFT edge of each grid cell, so the rail must
+              start at the first icon's center (28px from the wrapper's left)
+              and end at the LAST icon's center, which lives one column width
+              minus 28px from the right edge — i.e. calc(25% - 52px) given the
+              4-equal-column grid with 32px (gap-8) gutters:
+                col_w = (container - 3 * 32) / 4
+                right_offset = col_w - 28 = container/4 - 24 - 28
+                             = 25% - 52px
+              Previously we used `inset-x-12`, which stopped the rail near the
+              third icon and left the last step orphaned. */}
           <svg
             aria-hidden
-            className="pointer-events-none absolute inset-x-12 top-7 hidden text-[color:var(--color-brand-300)] md:block"
+            className="pointer-events-none absolute left-7 right-[calc(25%-3.25rem)] top-7 hidden text-[color:var(--color-brand-300)] md:block"
             height="2"
             preserveAspectRatio="none"
           >

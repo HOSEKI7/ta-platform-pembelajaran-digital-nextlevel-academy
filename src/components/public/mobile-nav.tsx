@@ -180,6 +180,8 @@ export function MobileNav({ user }: Props) {
               <>
                 <Link
                   href={dashboardHrefFor(user.role)}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   onClick={() => setOpen(false)}
                   className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-[color:var(--color-brand-500)] text-sm font-semibold text-white transition hover:bg-[color:var(--color-brand-600)]"
                 >

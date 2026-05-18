@@ -11,7 +11,7 @@ export function AuthBrandPanel() {
   return (
     <aside
       aria-hidden="true"
-      className="relative hidden overflow-hidden text-white lg:flex lg:flex-col lg:px-12 lg:py-14"
+      className="relative hidden overflow-hidden text-white lg:flex lg:flex-col lg:px-12 lg:py-14 min-[1920px]:px-20 min-[1920px]:py-20"
     >
       {/* Base background — light-sky blue with depth at corners.
           Yellow accent gradients are intentionally tiny and tucked into
@@ -41,9 +41,12 @@ export function AuthBrandPanel() {
       {/* Top spacer — wordmark lives in the form panel */}
       <div className="relative h-10 xl:h-12" />
 
-      {/* CENTER: 3D logo + orbiting floaters */}
+      {/* CENTER: 3D logo + orbiting floaters.
+          On ≥1920px viewports the whole composition (logo + halo + floaters)
+          scales up ~22% so it stays visually proportional to the wider form
+          column on the left — keeping the split-screen balanced at 2K. */}
       <div className="relative flex flex-1 items-center justify-center">
-        <div className="relative">
+        <div className="relative min-[1920px]:scale-[1.22]">
           {/* Soft glow halo behind the logo */}
           <div
             className="pointer-events-none absolute left-1/2 top-1/2 size-[460px] -translate-x-1/2 -translate-y-1/2 rounded-full"
@@ -131,18 +134,18 @@ export function AuthBrandPanel() {
       </div>
 
       {/* BOTTOM-LEFT: slogan block */}
-      <div className="relative max-w-md space-y-4 text-left">
-        <div className="inline-flex items-center gap-2 rounded-full bg-white/18 px-3 py-1.5 text-xs font-medium tracking-wide ring-1 ring-white/25 backdrop-blur">
+      <div className="relative max-w-md space-y-4 text-left min-[1920px]:max-w-xl min-[1920px]:space-y-5">
+        <div className="inline-flex items-center gap-2 rounded-full bg-white/18 px-3 py-1.5 text-xs font-medium tracking-wide ring-1 ring-white/25 backdrop-blur min-[1920px]:text-sm">
           <span className="size-1.5 rounded-full bg-[color:var(--color-brand-accent)] shadow-[0_0_10px_var(--color-brand-accent)]" />
           Belajar dengan pace kamu
         </div>
-        <h2 className="font-heading text-3xl font-bold leading-tight xl:text-4xl">
+        <h2 className="font-heading text-3xl font-bold leading-tight xl:text-4xl min-[1920px]:text-[44px]">
           Elevate Your Skills,{" "}
           <span className="text-[color:var(--color-brand-accent)]">
             Reach the Next Level.
           </span>
         </h2>
-        <p className="max-w-sm text-sm leading-relaxed text-white/90">
+        <p className="max-w-sm text-sm leading-relaxed text-white/90 min-[1920px]:max-w-md min-[1920px]:text-base">
           Kumpulkan EXP, naik level, dan raih sertifikat dari kursus paling
           relevan untuk karir digital di Indonesia.
         </p>

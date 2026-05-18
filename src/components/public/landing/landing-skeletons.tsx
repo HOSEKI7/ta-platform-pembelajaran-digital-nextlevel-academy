@@ -7,31 +7,7 @@
  * landing aesthetic.
  */
 
-import { cn } from "@/lib/utils";
-
-function Shimmer({ className }: { className?: string }) {
-  return (
-    <div
-      className={cn(
-        "relative overflow-hidden rounded-full bg-zinc-100",
-        "before:absolute before:inset-0 before:-translate-x-full before:bg-[linear-gradient(110deg,transparent_25%,rgba(71,142,244,0.18)_45%,rgba(244,214,0,0.12)_55%,transparent_75%)] before:[animation:landing-shimmer_1.6s_ease-in-out_infinite]",
-        className,
-      )}
-    />
-  );
-}
-
-function Block({ className }: { className?: string }) {
-  return (
-    <div
-      className={cn(
-        "relative overflow-hidden rounded-2xl bg-zinc-100/85 ring-1 ring-zinc-200/60",
-        "before:absolute before:inset-0 before:-translate-x-full before:bg-[linear-gradient(110deg,transparent_25%,rgba(71,142,244,0.16)_45%,rgba(244,214,0,0.1)_55%,transparent_75%)] before:[animation:landing-shimmer_1.6s_ease-in-out_infinite]",
-        className,
-      )}
-    />
-  );
-}
+import { Block, Shimmer } from "@/components/ui/shimmer";
 
 export function HeroStatsSkeleton() {
   return (

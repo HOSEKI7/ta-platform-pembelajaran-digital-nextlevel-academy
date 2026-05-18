@@ -39,7 +39,7 @@ export function PublicNavbar({ session }: Props) {
           )}
         />
 
-        <div className="mx-auto flex h-16 w-full max-w-7xl items-center gap-6 px-6 sm:h-[68px] sm:px-8 lg:px-10">
+        <div className="mx-auto flex h-16 w-full max-w-7xl items-center gap-6 px-6 sm:h-[68px] sm:px-8 lg:px-10 min-[1920px]:h-[72px] min-[1920px]:max-w-[1480px] min-[1920px]:px-14">
           {/* LEFT: Wordmark */}
           <Link
             href="/"
@@ -84,6 +84,9 @@ export function PublicNavbar({ session }: Props) {
             {user ? (
               <Link
                 href={dashboardHrefFor(user.role)}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Buka dashboard di tab baru"
                 className="hidden h-10 items-center gap-1.5 rounded-full bg-[color:var(--color-brand-500)] px-4 text-sm font-semibold text-white shadow-[0_10px_24px_-10px_rgba(43,114,234,0.7)] transition hover:bg-[color:var(--color-brand-600)] sm:inline-flex"
               >
                 Dashboard

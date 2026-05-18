@@ -52,9 +52,9 @@ auth-*.png
 /blob-report/
 /playwright/.cache/
 
-# Claude
-/.claude
-/.agents
-/.skills
-.CLAUDE.md
-.AGENTS.md
+# AI Things
+/.claude/
+/.agents/
+/.skills/
+CLAUDE.md
+AGENTS.md
