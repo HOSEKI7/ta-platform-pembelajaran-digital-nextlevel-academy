@@ -16,5 +16,13 @@ export const studentKeys = {
   },
   myCourses: (filters: { search: string; status: string }) =>
     [...studentKeys.all, "my-courses", filters] as const,
+  certificates: (filters?: {
+    sort: "asc" | "desc";
+    pageSize: number;
+    page: number;
+  }) =>
+    filters
+      ? ([...studentKeys.all, "certificates", filters] as const)
+      : ([...studentKeys.all, "certificates"] as const),
   notifications: () => [...studentKeys.all, "notifications"] as const,
 } as const;
