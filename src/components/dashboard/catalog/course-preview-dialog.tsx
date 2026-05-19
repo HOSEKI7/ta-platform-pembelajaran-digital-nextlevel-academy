@@ -3,7 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight, Clock, Play, ShoppingBag, Sparkles, XIcon } from "lucide-react";
-import { toast } from "sonner";
 
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { idr, courseDurationText } from "@/lib/format";
@@ -43,8 +42,8 @@ type Props = {
  * as a quick-glance card before the user commits to navigating to the
  * landing detail page or starting checkout.
  *
- * - Unowned variant: shows discount chip + "Checkout" primary CTA (currently
- *   a no-op toast — payment flow is not yet implemented).
+ * - Unowned variant: shows discount chip + "Checkout" primary CTA that
+ *   navigates to the fullscreen checkout page at `/checkout/[slug]`.
  * - Owned variant: shows "Dimiliki" diagonal ribbon + "Lanjut Belajar"
  *   primary CTA that routes to the learning view.
  *
@@ -58,12 +57,6 @@ export function CoursePreviewDialog({ course, open, onOpenChange }: Props) {
   const discountPct = hasDiscount
     ? Math.round(((fakePrice! - price) / fakePrice!) * 100)
     : 0;
-
-  const handleCheckoutClick = () => {
-    toast.info("Fitur checkout segera tersedia", {
-      description: "Pembayaran masih dalam pengembangan — pantau pengumuman ya.",
-    });
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -201,9 +194,8 @@ export function CoursePreviewDialog({ course, open, onOpenChange }: Props) {
                   Lanjut Belajar
                 </Link>
               ) : (
-                <button
-                  type="button"
-                  onClick={handleCheckoutClick}
+                <Link
+                  href={`/checkout/${course.slug}`}
                   className={cn(
                     "group inline-flex h-11 flex-1 items-center justify-center gap-1.5 rounded-full px-5 text-sm font-bold text-white transition",
                     "bg-[color:var(--color-brand-500)] shadow-[0_12px_26px_-12px_rgba(71,142,244,0.7)] hover:bg-[color:var(--color-brand-600)]",
@@ -212,7 +204,7 @@ export function CoursePreviewDialog({ course, open, onOpenChange }: Props) {
                 >
                   <ShoppingBag className="size-4 transition group-hover:-translate-y-0.5" strokeWidth={2.4} />
                   Checkout
-                </button>
+                </Link>
               )}
             </div>
           </div>
