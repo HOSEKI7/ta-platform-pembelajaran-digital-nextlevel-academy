@@ -1,16 +1,36 @@
 "use client";
 
 import Link from "next/link";
-import { Loader2, Lock, ShieldCheck } from "lucide-react";
+import { useMemo, useState } from "react";
+import {
+  ChevronDown,
+  Landmark,
+  Loader2,
+  Lock,
+  QrCode,
+  ShieldCheck,
+  Store,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   PAYMENT_GROUPS,
-  PAYMENT_METHODS,
+  paymentMethodById,
+  paymentMethodsInGroup,
   type PaymentMethod,
+  type PaymentMethodGroup,
 } from "@/lib/payment-methods";
 import { cn } from "@/lib/utils";
+
+const GROUP_ICONS: Record<PaymentMethodGroup, LucideIcon> = {
+  qris: QrCode,
+  ewallet: Wallet,
+  va: Landmark,
+  store: Store,
+};
 
 type Props = {
   selectedMethod: string | null;
@@ -31,7 +51,21 @@ export function PaymentMethodCard({
   isSubmitting,
   submitError,
 }: Props) {
+  // Auto-expand the group that currently holds the selected method on mount
+  // (handy when the user re-renders the page with a previous selection),
+  // otherwise start with everything collapsed so the card stays compact.
+  const [expandedGroup, setExpandedGroup] = useState<PaymentMethodGroup | null>(
+    () => {
+      const selected = selectedMethod ? paymentMethodById(selectedMethod) : null;
+      return selected && selected.group !== "qris" ? selected.group : null;
+    },
+  );
+
   const canSubmit = Boolean(selectedMethod) && agreedToTerms && !isSubmitting;
+  const selectedMethodObj = useMemo(
+    () => (selectedMethod ? paymentMethodById(selectedMethod) : null),
+    [selectedMethod],
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,25 +100,45 @@ export function PaymentMethodCard({
       <RadioGroup
         value={selectedMethod ?? undefined}
         onValueChange={(value: string) => onMethodChange(value)}
-        className="mt-6 grid gap-6"
+        className="mt-6 grid gap-2.5"
       >
         {PAYMENT_GROUPS.map((group) => {
-          const items = PAYMENT_METHODS.filter((m) => m.group === group.id);
+          const methods = paymentMethodsInGroup(group.id);
+          const Icon = GROUP_ICONS[group.id];
+
+          // QRIS is a single-option group — render as a direct radio panel
+          // so the student doesn't have to expand a dropdown for one item.
+          if (group.id === "qris" && methods.length === 1) {
+            return (
+              <SinglePaymentRow
+                key={group.id}
+                method={methods[0]!}
+                groupLabel={group.label}
+                Icon={Icon}
+                selected={selectedMethod === methods[0]!.id}
+              />
+            );
+          }
+
+          const selectedInGroup =
+            selectedMethodObj && selectedMethodObj.group === group.id
+              ? selectedMethodObj
+              : null;
+          const isExpanded = expandedGroup === group.id;
+
           return (
-            <fieldset key={group.id} className="grid gap-2">
-              <legend className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
-                {group.label}
-              </legend>
-              <div className="grid gap-2">
-                {items.map((m) => (
-                  <PaymentMethodRow
-                    key={m.id}
-                    method={m}
-                    selected={selectedMethod === m.id}
-                  />
-                ))}
-              </div>
-            </fieldset>
+            <PaymentGroupPanel
+              key={group.id}
+              group={group}
+              methods={methods}
+              Icon={Icon}
+              expanded={isExpanded}
+              selectedInGroup={selectedInGroup}
+              onToggle={() =>
+                setExpandedGroup((curr) => (curr === group.id ? null : group.id))
+              }
+              selectedMethodId={selectedMethod}
+            />
           );
         })}
       </RadioGroup>
@@ -157,7 +211,176 @@ export function PaymentMethodCard({
   );
 }
 
-function PaymentMethodRow({
+/* -------------------------------------------------------------------------- */
+/*  Single-option payment row (QRIS).                                          */
+/* -------------------------------------------------------------------------- */
+
+type SingleRowProps = {
+  method: PaymentMethod;
+  groupLabel: string;
+  Icon: LucideIcon;
+  selected: boolean;
+};
+
+function SinglePaymentRow({ method, groupLabel, Icon, selected }: SingleRowProps) {
+  return (
+    <label
+      htmlFor={`pm-${method.id}`}
+      className={cn(
+        "group/row flex cursor-pointer items-center gap-3 rounded-2xl border bg-white px-3.5 py-3.5 transition",
+        selected
+          ? "border-[color:var(--color-brand-500)] bg-[color:var(--color-brand-50)]/50 ring-2 ring-[color:var(--color-brand-200)]"
+          : "border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50",
+      )}
+    >
+      <span
+        className={cn(
+          "grid size-11 shrink-0 place-items-center rounded-xl ring-1 transition",
+          selected
+            ? "bg-white text-[color:var(--color-brand-700)] ring-[color:var(--color-brand-300)]"
+            : "bg-zinc-50 text-zinc-600 ring-zinc-200",
+        )}
+      >
+        <Icon className="size-5" strokeWidth={2} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm font-semibold text-zinc-900">
+          {groupLabel}
+        </span>
+        {method.hint ? (
+          <span className="block truncate text-[11px] text-zinc-500">
+            {method.hint}
+          </span>
+        ) : null}
+      </span>
+      <RadioGroupItem id={`pm-${method.id}`} value={method.id} />
+    </label>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Multi-option payment group panel — accordion header + nested rows.        */
+/* -------------------------------------------------------------------------- */
+
+type GroupPanelProps = {
+  group: { id: PaymentMethodGroup; label: string };
+  methods: PaymentMethod[];
+  Icon: LucideIcon;
+  expanded: boolean;
+  selectedInGroup: PaymentMethod | null;
+  selectedMethodId: string | null;
+  onToggle: () => void;
+};
+
+function PaymentGroupPanel({
+  group,
+  methods,
+  Icon,
+  expanded,
+  selectedInGroup,
+  selectedMethodId,
+  onToggle,
+}: GroupPanelProps) {
+  const headingId = `pm-group-${group.id}-trigger`;
+  const panelId = `pm-group-${group.id}-panel`;
+  const hasSelection = selectedInGroup != null;
+
+  return (
+    <div
+      data-state={expanded ? "open" : "closed"}
+      className={cn(
+        "overflow-hidden rounded-2xl border bg-white transition-[border-color,box-shadow,background-color] duration-200",
+        hasSelection
+          ? "border-[color:var(--color-brand-500)] bg-[color:var(--color-brand-50)]/40 ring-2 ring-[color:var(--color-brand-200)]"
+          : expanded
+            ? "border-[color:var(--color-brand-300)]"
+            : "border-zinc-200 hover:border-zinc-300",
+      )}
+    >
+      <button
+        type="button"
+        id={headingId}
+        aria-expanded={expanded}
+        aria-controls={panelId}
+        onClick={onToggle}
+        className={cn(
+          "flex w-full items-center gap-3 px-3.5 py-3.5 text-left transition",
+          !hasSelection && "hover:bg-zinc-50",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-brand-400)] focus-visible:ring-offset-2 focus-visible:ring-offset-white",
+        )}
+      >
+        <span
+          className={cn(
+            "grid size-11 shrink-0 place-items-center rounded-xl ring-1 transition",
+            hasSelection || expanded
+              ? "bg-white text-[color:var(--color-brand-700)] ring-[color:var(--color-brand-300)]"
+              : "bg-zinc-50 text-zinc-600 ring-zinc-200",
+          )}
+        >
+          <Icon className="size-5" strokeWidth={2} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="flex items-baseline gap-2">
+            <span className="truncate text-sm font-semibold text-zinc-900">
+              {group.label}
+            </span>
+            {hasSelection ? (
+              <span className="truncate text-[11px] font-semibold text-[color:var(--color-brand-700)]">
+                • {selectedInGroup!.label}
+              </span>
+            ) : null}
+          </span>
+          <span className="block truncate text-[11px] text-zinc-500">
+            {hasSelection
+              ? selectedInGroup!.hint ?? `${methods.length} metode tersedia`
+              : `${methods.length} metode tersedia`}
+          </span>
+        </span>
+        <ChevronDown
+          className={cn(
+            "size-4 shrink-0 text-zinc-400 transition-transform duration-300",
+            expanded && "rotate-180 text-[color:var(--color-brand-600)]",
+          )}
+          strokeWidth={2.4}
+          aria-hidden
+        />
+      </button>
+
+      {/* The grid-rows trick gives us a smooth height animation without
+          measuring content. The inner overflow-hidden clips during the
+          transition; `inert` removes the collapsed children from the tab
+          order and from assistive tech. */}
+      <div
+        id={panelId}
+        role="region"
+        aria-labelledby={headingId}
+        inert={!expanded}
+        className={cn(
+          "grid transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none",
+          expanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+        )}
+      >
+        <div className="overflow-hidden">
+          <div className="space-y-1.5 border-t border-zinc-200/80 bg-[color:var(--color-brand-50)]/20 p-2.5">
+            {methods.map((method) => (
+              <NestedPaymentRow
+                key={method.id}
+                method={method}
+                selected={selectedMethodId === method.id}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Nested payment row inside an expanded group panel.                         */
+/* -------------------------------------------------------------------------- */
+
+function NestedPaymentRow({
   method,
   selected,
 }: {
@@ -168,17 +391,17 @@ function PaymentMethodRow({
     <label
       htmlFor={`pm-${method.id}`}
       className={cn(
-        "group/row flex cursor-pointer items-center gap-3 rounded-2xl border bg-white px-3.5 py-3 transition",
+        "group/row flex cursor-pointer items-center gap-3 rounded-xl border bg-white px-3 py-2.5 transition",
         selected
-          ? "border-[color:var(--color-brand-500)] bg-[color:var(--color-brand-50)]/40 ring-2 ring-[color:var(--color-brand-200)]"
-          : "border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50",
+          ? "border-[color:var(--color-brand-500)] ring-1 ring-[color:var(--color-brand-300)]"
+          : "border-transparent hover:border-zinc-200 hover:bg-white",
       )}
     >
       <span
         className={cn(
-          "grid h-9 w-12 shrink-0 place-items-center rounded-lg text-[10px] font-extrabold tracking-tight ring-1 transition",
+          "grid h-8 w-11 shrink-0 place-items-center rounded-md text-[10px] font-extrabold tracking-tight ring-1 transition",
           selected
-            ? "bg-white text-[color:var(--color-brand-700)] ring-[color:var(--color-brand-300)]"
+            ? "bg-[color:var(--color-brand-50)] text-[color:var(--color-brand-700)] ring-[color:var(--color-brand-200)]"
             : "bg-zinc-50 text-zinc-600 ring-zinc-200",
         )}
       >
