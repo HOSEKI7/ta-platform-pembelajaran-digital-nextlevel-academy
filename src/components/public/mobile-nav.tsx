@@ -80,11 +80,11 @@ export function MobileNav({ user }: Props) {
             className="inline-flex items-center"
           >
             <Image
-              src="/NextLevel_LogoFit.webp"
+              src="/NextLevel_LogoXFit.webp"
               alt="NextLevel Academy"
-              width={170}
-              height={44}
-              className="h-8 w-auto"
+              width={1397}
+              height={351}
+              className="h-10 w-auto"
             />
           </Link>
           <button

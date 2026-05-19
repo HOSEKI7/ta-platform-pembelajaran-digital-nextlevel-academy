@@ -31,12 +31,12 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             className="-ml-3 -mt-2 inline-flex w-fit items-center sm:-ml-5 sm:-mt-3 lg:-ml-10 lg:-mt-2 xl:-mt-4 min-[1920px]:-ml-14 min-[1920px]:-mt-8"
           >
             <Image
-              src="/NextLevel_LogoFit.webp"
+              src="/NextLevel_LogoXFit.webp"
               alt="NextLevel Academy"
-              width={240}
-              height={64}
+              width={1397}
+              height={351}
               priority
-              className="h-10 w-auto sm:h-11 min-[1920px]:h-14"
+              className="h-11 w-auto sm:h-12 min-[1920px]:h-14"
             />
           </Link>
 

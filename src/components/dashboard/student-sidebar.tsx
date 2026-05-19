@@ -53,12 +53,12 @@ export function StudentSidebar({ collapsed, variant = "rail", onNavigate }: Prop
             />
           ) : (
             <Image
-              src="/NextLevel_LogoFit.webp"
+              src="/NextLevel_LogoXFit.webp"
               alt="NextLevel Academy"
-              width={520}
-              height={140}
+              width={1397}
+              height={351}
               priority
-              className="h-9 w-auto object-contain"
+              className="h-11 w-auto object-contain"
             />
           )}
         </Link>

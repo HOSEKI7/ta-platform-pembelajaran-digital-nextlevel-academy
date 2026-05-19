@@ -47,12 +47,12 @@ export function PublicNavbar({ session }: Props) {
             className="group inline-flex shrink-0 items-center"
           >
             <Image
-              src="/NextLevel_LogoFit.webp"
+              src="/NextLevel_LogoXFit.webp"
               alt="NextLevel Academy"
-              width={190}
-              height={48}
+              width={1397}
+              height={351}
               priority
-              className="h-8 w-auto sm:h-9"
+              className="h-10 w-auto sm:h-11 min-[1920px]:h-12"
             />
           </Link>
 

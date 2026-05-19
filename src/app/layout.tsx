@@ -36,10 +36,10 @@ export const metadata: Metadata = {
   formatDetection: { email: false, address: false, telephone: false },
   icons: {
     icon: [
-      { url: "/NextLevel_LogoFit.webp", type: "image/webp" },
+      { url: "/NextLevel_Mini_Logo.webp", type: "image/webp" },
     ],
-    shortcut: "/NextLevel_LogoFit.webp",
-    apple: "/NextLevel_LogoFit.webp",
+    shortcut: "/NextLevel_Mini_Logo.webp",
+    apple: "/NextLevel_Mini_Logo.webp",
   },
 };
 

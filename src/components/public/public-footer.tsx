@@ -89,11 +89,11 @@ export function PublicFooter() {
           <div className="lg:col-span-4">
             <Link href="/" aria-label="NextLevel Academy beranda" className="inline-flex items-center">
               <Image
-                src="/NextLevel_LogoFit.webp"
+                src="/NextLevel_LogoXFit.webp"
                 alt="NextLevel Academy"
-                width={200}
-                height={52}
-                className="h-9 w-auto"
+                width={1397}
+                height={351}
+                className="h-11 w-auto"
               />
             </Link>
             <p className="mt-5 max-w-sm text-sm leading-relaxed text-zinc-600">
