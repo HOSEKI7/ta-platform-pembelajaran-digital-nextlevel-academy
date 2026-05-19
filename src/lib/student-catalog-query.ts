@@ -24,6 +24,7 @@ export type StudentCatalogCourse = {
   title: string;
   slug: string;
   thumbnailUrl: string;
+  shortDescription: string | null;
   price: number;
   fakePrice: number | null;
   estimatedDuration: number | null;

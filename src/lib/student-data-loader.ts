@@ -194,6 +194,7 @@ export type RecommendedCourseDTO = {
   title: string;
   slug: string;
   thumbnailUrl: string;
+  shortDescription: string | null;
   price: number;
   fakePrice: number | null;
   estimatedDuration: number | null;
@@ -226,6 +227,7 @@ export async function loadRecommendedCourses(
       title: c.title,
       slug: c.slug,
       thumbnailUrl: c.thumbnailUrl,
+      shortDescription: c.shortDescription,
       price: c.price,
       fakePrice: c.fakePrice,
       estimatedDuration: c.estimatedDuration,

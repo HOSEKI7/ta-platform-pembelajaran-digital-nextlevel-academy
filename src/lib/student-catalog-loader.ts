@@ -74,6 +74,7 @@ export async function loadStudentCatalogPage(
       title: c.title,
       slug: c.slug,
       thumbnailUrl: c.thumbnailUrl,
+      shortDescription: c.shortDescription,
       price: c.price,
       fakePrice: c.fakePrice,
       estimatedDuration: c.estimatedDuration,

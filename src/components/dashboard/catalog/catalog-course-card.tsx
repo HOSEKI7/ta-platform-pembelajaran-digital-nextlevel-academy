@@ -1,26 +1,18 @@
+"use client";
+
 import Image from "next/image";
+import { useState } from "react";
 import { ArrowUpRight, Clock, Sparkles } from "lucide-react";
 
 import type { StudentCatalogCourse } from "@/lib/student-catalog-query";
+import { idr, courseDurationText } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 import {
   CatalogOwnedRibbon,
   CatalogOwnedSrLabel,
 } from "./catalog-owned-ribbon";
-
-const idr = new Intl.NumberFormat("id-ID", {
-  style: "currency",
-  currency: "IDR",
-  maximumFractionDigits: 0,
-});
-
-function durationText(min: number | null): string {
-  if (!min) return "Akses seumur hidup";
-  if (min < 60) return `${min} menit`;
-  const h = Math.round(min / 60);
-  return `${h} jam belajar`;
-}
+import { CoursePreviewDialog } from "./course-preview-dialog";
 
 type Props = {
   course: StudentCatalogCourse;
@@ -36,8 +28,11 @@ type Props = {
  *  2. The card is dark-mode aware — it lives inside the student shell which
  *     supports both themes.
  *
- * Click behavior is intentionally not wired up — the unowned-card target is
- * TBD per product decision. Cards render as a static <article>.
+ * Click behavior: the entire card surface is a button that opens a
+ * `CoursePreviewDialog` overlay (quick-preview of the course with CTAs for
+ * "Jelajahi Kursus" and "Checkout" / "Lanjut Belajar"). A transparent
+ * absolute button covers the card so the underlying `<article>` keeps its
+ * semantic value for assistive tech and the focus ring outlines the card.
  */
 export function CatalogCourseCard({ course, className }: Props) {
   const owned = course.isOwned;
@@ -47,16 +42,41 @@ export function CatalogCourseCard({ course, className }: Props) {
     ? Math.round(((course.fakePrice! - course.price) / course.fakePrice!) * 100)
     : 0;
 
+  // Lazy-mount the preview dialog: only mount after the first click. Avoids
+  // setting up N Dialog instances (Floating UI primitives, event listeners,
+  // ARIA wiring) for every card in the grid, which made opening visibly laggy
+  // — especially on the 9-card catalog page. Once mounted, base-ui keeps the
+  // dialog alive for subsequent open/close cycles.
+  const [open, setOpen] = useState(false);
+  const [hasOpened, setHasOpened] = useState(false);
+
+  const handleOpen = () => {
+    setHasOpened(true);
+    setOpen(true);
+  };
+
   return (
     <article
       aria-label={course.title}
       className={cn(
         "group relative flex h-full flex-col overflow-hidden rounded-3xl bg-white ring-1 ring-zinc-200/80 transition",
         "hover:-translate-y-1 hover:ring-[color:var(--color-brand-300)] hover:shadow-[0_30px_50px_-30px_rgba(35,65,137,0.4)]",
+        "focus-within:ring-2 focus-within:ring-[color:var(--color-brand-400)]",
         "dark:bg-[color:var(--color-surface-card)] dark:ring-[color:var(--color-surface-border)] dark:hover:ring-[color:var(--color-brand-400)]/60 dark:hover:shadow-[0_30px_50px_-28px_rgba(71,142,244,0.45)]",
         className,
       )}
     >
+      {/* Transparent click overlay — keeps <article> semantics intact while
+          giving the entire card a single keyboard-accessible trigger. Sits
+          above the ribbon (z-20) and category pill (z-10) so clicks anywhere
+          on the surface fire onOpen. */}
+      <button
+        type="button"
+        onClick={handleOpen}
+        aria-label={`Lihat ringkasan kursus ${course.title}`}
+        className="absolute inset-0 z-30 cursor-pointer rounded-3xl bg-transparent focus:outline-none"
+      />
+
       <div className="relative block aspect-[16/10] overflow-hidden">
         <Image
           src={course.thumbnailUrl}
@@ -105,7 +125,7 @@ export function CatalogCourseCard({ course, className }: Props) {
           <span className="size-1 rounded-full bg-zinc-300 dark:bg-zinc-600" />
           <span className="inline-flex items-center gap-1">
             <Clock className="size-3.5" />
-            {durationText(course.estimatedDuration)}
+            {courseDurationText(course.estimatedDuration)}
           </span>
         </div>
 
@@ -142,6 +162,14 @@ export function CatalogCourseCard({ course, className }: Props) {
           </span>
         </div>
       </div>
+
+      {hasOpened ? (
+        <CoursePreviewDialog
+          course={course}
+          open={open}
+          onOpenChange={setOpen}
+        />
+      ) : null}
     </article>
   );
 }
