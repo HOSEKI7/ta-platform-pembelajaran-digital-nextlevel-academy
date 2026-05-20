@@ -1,5 +1,9 @@
 import "server-only";
 
+import {
+  CERT_PUBLIC_ID_REGEX,
+  certificateNoFromPublicId,
+} from "@/lib/certificates/generate-certificate-no";
 import { prisma } from "@/lib/prisma";
 import type {
   CertificatesPageSize,
@@ -116,45 +120,90 @@ export async function loadCertificateRows(
 }
 
 export type PublicCertificateDTO = {
-  id: string;
   certificateNo: string;
-  recipientName: string;
-  courseTitle: string;
+  publicId: string;
   issuedAt: string;
   expiresAt: string | null;
   isExpired: boolean;
+  recipient: {
+    name: string;
+    username: string | null;
+    image: string | null;
+  };
+  course: {
+    title: string;
+    slug: string;
+    thumbnailUrl: string;
+    instructor: string;
+    instructorImg: string;
+    estimatedDuration: number | null;
+    categoryName: string;
+  };
 };
 
 /**
- * Public lookup for the `/verify/[certificateId]` page. Returns `null` when
- * the certificate doesn't exist — the page renders a friendly "not found"
- * card rather than a generic 404. Evaluates `isExpired` at fetch time so the
- * downstream render function stays pure (React Compiler flags clock reads
- * inside components).
+ * Public lookup for the `/cert/[certificateId]` page. The `certificateId`
+ * URL param is the bare 12-character public id (e.g. `X106SZYRGGN2`); we
+ * prepend the `NLA-` brand prefix here before hitting the DB.
+ *
+ * Returns `null` when the id is malformed or the certificate doesn't exist,
+ * so the page can render a clean 404. Evaluates `isExpired` at fetch time
+ * so the rendering component stays pure (React Compiler flags `Date.now()`
+ * reads inside components).
  */
 export async function loadPublicCertificate(
   certificateId: string,
 ): Promise<PublicCertificateDTO | null> {
+  if (!CERT_PUBLIC_ID_REGEX.test(certificateId)) return null;
+
   const cert = await prisma.certificate.findUnique({
-    where: { id: certificateId },
+    where: { certificateNo: certificateNoFromPublicId(certificateId) },
     select: {
-      id: true,
       certificateNo: true,
       issuedAt: true,
       expiresAt: true,
-      course: { select: { title: true } },
-      user: { select: { name: true } },
+      course: {
+        select: {
+          title: true,
+          slug: true,
+          thumbnailUrl: true,
+          instructor: true,
+          instructorImg: true,
+          estimatedDuration: true,
+          category: { select: { name: true } },
+        },
+      },
+      user: {
+        select: {
+          name: true,
+          username: true,
+          image: true,
+        },
+      },
     },
   });
   if (!cert) return null;
+
   const now = Date.now();
   return {
-    id: cert.id,
     certificateNo: cert.certificateNo,
-    recipientName: cert.user.name,
-    courseTitle: cert.course.title,
+    publicId: certificateId,
     issuedAt: cert.issuedAt.toISOString(),
     expiresAt: cert.expiresAt ? cert.expiresAt.toISOString() : null,
     isExpired: cert.expiresAt ? cert.expiresAt.getTime() <= now : false,
+    recipient: {
+      name: cert.user.name,
+      username: cert.user.username,
+      image: cert.user.image,
+    },
+    course: {
+      title: cert.course.title,
+      slug: cert.course.slug,
+      thumbnailUrl: cert.course.thumbnailUrl,
+      instructor: cert.course.instructor,
+      instructorImg: cert.course.instructorImg,
+      estimatedDuration: cert.course.estimatedDuration,
+      categoryName: cert.course.category.name,
+    },
   };
 }

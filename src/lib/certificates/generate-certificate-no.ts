@@ -1,33 +1,41 @@
+import "server-only";
+
 import { randomBytes } from "node:crypto";
 
-const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+import {
+  CERT_NO_PREFIX,
+  CERT_PUBLIC_ID_REGEX,
+  certificateNoFromPublicId,
+  publicIdFromCertificateNo,
+} from "@/lib/certificates/cert-id";
 
-function todayWibYYYYMMDD(now: Date): string {
-  const formatted = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Jakarta",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(now);
-  return formatted.replaceAll("-", "");
-}
+const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+const ID_LENGTH = 12;
 
-function randomSuffix(): string {
-  const bytes = randomBytes(8);
+function randomId(): string {
+  const bytes = randomBytes(ID_LENGTH);
   let out = "";
-  for (let i = 0; i < 8; i += 1) {
+  for (let i = 0; i < ID_LENGTH; i += 1) {
     out += ALPHABET[bytes[i] % ALPHABET.length];
   }
   return out;
 }
 
 /**
- * Produces one candidate certificate number — `NLA-YYYYMMDD-XXXXXXXX` —
- * using today's date in WIB (UTC+7) and 8 crypto-random characters from a
- * legibility-friendly alphabet (no 0/O/1/I). With 32^8 ≈ 1.1 trillion
- * combinations, a same-day collision is effectively impossible, but callers
- * still retry on `P2002` to be safe.
+ * Produces one candidate certificate number — `NLA-XXXXXXXXXXXX` — using
+ * 12 crypto-random characters from the full base-36 alphabet (A–Z + 0–9).
+ * Search space is 36^12 ≈ 4.7 × 10¹⁸; collisions are effectively impossible,
+ * but the claim handler still retries on `P2002` as a safety net.
  */
-export function generateCertificateNo(now: Date = new Date()): string {
-  return `NLA-${todayWibYYYYMMDD(now)}-${randomSuffix()}`;
+export function generateCertificateNo(): string {
+  return `${CERT_NO_PREFIX}${randomId()}`;
 }
+
+// Re-exports so existing callers can keep importing from this module without
+// chasing a new path. New code should prefer `@/lib/certificates/cert-id`.
+export {
+  CERT_NO_PREFIX,
+  CERT_PUBLIC_ID_REGEX,
+  certificateNoFromPublicId,
+  publicIdFromCertificateNo,
+};

@@ -52,6 +52,15 @@ export const auth = betterAuth({
         input: false,
       },
     },
+    // PRD §6.1.4: changing email triggers a verification flow before the
+    // new address takes effect. We intentionally OMIT
+    // `sendChangeEmailConfirmation` (current-email approval) so Better Auth
+    // falls through to its third branch and sends a verification link to the
+    // *new* email via `emailVerification.sendVerificationEmail` below. The
+    // user's email is only swapped once the new address is verified.
+    changeEmail: {
+      enabled: true,
+    },
   },
 
   // ---- Email + password ----------------------------------------------------
@@ -162,6 +171,30 @@ export const auth = betterAuth({
       if (typeof candidate !== "string") return;
       if (!PASSWORD_COMPLEXITY.test(candidate)) {
         throw new APIError("BAD_REQUEST", { message: PASSWORD_COMPLEXITY_MESSAGE });
+      }
+    }),
+    // PRD §6.1.4: send a notification email after a successful password
+    // change (the user knew the old password — distinct from /reset-password
+    // which is already covered by `onPasswordReset`). Failure to send the
+    // email must not break the change response — the request already
+    // succeeded by the time this hook runs.
+    after: createAuthMiddleware(async (ctx) => {
+      if (ctx.path !== "/change-password") return;
+      const session = ctx.context.session;
+      const userEmail = session?.user?.email;
+      const userName = session?.user?.name;
+      if (!userEmail) return;
+      try {
+        await sendEmail({
+          to: userEmail,
+          subject: "Password Anda Telah Diubah",
+          react: PasswordChangedEmail({
+            name: userName ?? userEmail,
+            changedAt: new Date().toISOString(),
+          }),
+        });
+      } catch (err) {
+        console.error("[auth] failed to send password-changed email", err);
       }
     }),
   },

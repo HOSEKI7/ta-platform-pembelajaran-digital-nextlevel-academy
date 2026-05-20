@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     const expiresAt = await computeCertExpiry(issuedAt);
 
     for (let attempt = 0; attempt < MAX_CERT_NO_RETRIES; attempt += 1) {
-      const certificateNo = generateCertificateNo(issuedAt);
+      const certificateNo = generateCertificateNo();
       try {
         const certificate = await prisma.certificate.create({
           data: {

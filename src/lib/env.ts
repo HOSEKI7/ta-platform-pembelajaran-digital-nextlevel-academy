@@ -34,4 +34,11 @@ export const env = {
     from: () =>
       readOptional("RESEND_FROM_EMAIL") ?? "NextLevel Academy <onboarding@resend.dev>",
   },
+
+  supabase: {
+    url: () => readRequired("NEXT_PUBLIC_SUPABASE_URL"),
+    serviceRoleKey: () => readRequired("SUPABASE_SERVICE_ROLE_KEY"),
+    /** Public bucket used for user avatars. */
+    avatarBucket: () => readOptional("SUPABASE_AVATAR_BUCKET") ?? "avatars",
+  },
 } as const;

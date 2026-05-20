@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { Role } from "@/generated/prisma";
 import { requireRoleInRoute } from "@/lib/auth-server";
+import { publicIdFromCertificateNo } from "@/lib/certificates/cert-id";
 import { renderCertificatePdf } from "@/lib/certificates/certificate-pdf";
 import { prisma } from "@/lib/prisma";
 
@@ -43,7 +44,7 @@ export async function GET(
     const baseUrl =
       process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ??
       "http://localhost:3000";
-    const verifyUrl = `${baseUrl}/verify/${cert.id}`;
+    const verifyUrl = `${baseUrl}/cert/${publicIdFromCertificateNo(cert.certificateNo)}`;
 
     const buffer = await renderCertificatePdf({
       recipientName: cert.user.name,

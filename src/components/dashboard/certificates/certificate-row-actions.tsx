@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { BadgeCheck, Download, Loader2, Sparkles } from "lucide-react";
 
 import { useClaimCertificateMutation } from "@/hooks/use-certificates";
+import { publicIdFromCertificateNo } from "@/lib/certificates/cert-id";
 import { cn } from "@/lib/utils";
 
 type ClaimButtonProps = {
@@ -126,7 +127,7 @@ export function ClaimedCertificateActions({
         )}
       </button>
       <Link
-        href={`/verify/${certificateId}`}
+        href={`/cert/${publicIdFromCertificateNo(certificateNo)}`}
         target="_blank"
         rel="noopener noreferrer"
         aria-label={`Buka halaman verifikasi untuk ${certificateNo}`}
