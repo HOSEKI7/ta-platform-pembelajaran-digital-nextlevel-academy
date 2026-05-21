@@ -6,8 +6,11 @@ import { prisma } from "@/lib/prisma";
 import type {
   CoursePlayerData,
   PlayerCourse,
+  PlayerQuiz,
+  PlayerQuizOption,
   PlayerSprint,
   PlayerStep,
+  QuizStepState,
 } from "./types";
 
 function initialsFrom(name: string): string {
@@ -20,14 +23,26 @@ function initialsFrom(name: string): string {
 }
 
 /**
+ * `QuizQuestion.options` is stored as Json — Prisma surfaces it as
+ * `Prisma.JsonValue`. We accept arrays of primitive strings; everything else
+ * is filtered out / coerced so a malformed row never crashes the loader.
+ */
+function coerceOptions(raw: unknown): PlayerQuizOption[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((v): v is string => typeof v === "string");
+}
+
+/**
  * Loads everything the Course Player needs in a single round-trip:
- * enrollment + course + sprints + steps + videos + completed progress rows.
+ * enrollment + course + sprints + steps + videos + quizzes + completed
+ * progress rows + quiz-step progress state.
+ *
  * Returns `null` when the user has no enrollment for this slug — the page
  * then triggers `notFound()` (and surfaces our custom cinematic 404).
  *
- * The function intentionally fetches the course THROUGH the enrollment so
- * that a non-enrolled user never sees a "course exists but you can't enter"
- * signal: from their perspective, the URL simply doesn't resolve.
+ * Security: `QuizQuestion.answer` (the correct option index) is NEVER mapped
+ * into the returned shape. Only server-side code (the /quiz/submit route)
+ * touches that field.
  */
 export async function loadCoursePlayer(
   userId: string,
@@ -44,15 +59,27 @@ export async function loadCoursePlayer(
             include: {
               steps: {
                 orderBy: { order: "asc" },
-                include: { video: true },
+                include: {
+                  video: true,
+                  quiz: {
+                    include: {
+                      questions: { orderBy: { order: "asc" } },
+                    },
+                  },
+                },
               },
             },
           },
         },
       },
       progresses: {
-        where: { isCompleted: true },
-        select: { stepId: true },
+        select: {
+          stepId: true,
+          isCompleted: true,
+          quizScore: true,
+          quizAttempts: true,
+          cooldownUntil: true,
+        },
       },
     },
   });
@@ -60,19 +87,37 @@ export async function loadCoursePlayer(
   if (!enrollment) return null;
 
   const c = enrollment.course;
+  const progressById = new Map(enrollment.progresses.map((p) => [p.stepId, p]));
 
   const sprints: PlayerSprint[] = c.sprints.map((sp) => ({
     id: sp.id,
     title: sp.title,
     order: sp.order,
-    steps: sp.steps.map<PlayerStep>((st) => ({
-      id: st.id,
-      title: st.title,
-      type: st.type,
-      durationSec: st.video?.duration ?? 0,
-      description: st.description,
-      resources: [],
-    })),
+    steps: sp.steps.map<PlayerStep>((st) => {
+      let quiz: PlayerQuiz | undefined;
+      if (st.type === "QUIZ" && st.quiz) {
+        quiz = {
+          passingScore: st.quiz.passingScore,
+          questions: st.quiz.questions.map((q) => ({
+            id: q.id,
+            question: q.question,
+            questionImageUrl: q.questionImageUrl,
+            options: coerceOptions(q.options),
+            order: q.order,
+            // NOTE: `q.answer` deliberately omitted — server-only.
+          })),
+        };
+      }
+      return {
+        id: st.id,
+        title: st.title,
+        type: st.type,
+        durationSec: st.video?.duration ?? 0,
+        description: st.description,
+        resources: [],
+        quiz,
+      };
+    }),
   }));
 
   const course: PlayerCourse = {
@@ -90,6 +135,9 @@ export async function loadCoursePlayer(
   };
 
   const embedUrls: Record<string, string> = {};
+  const quizStates: Record<string, QuizStepState> = {};
+  const nowMs = Date.now();
+
   for (const sp of c.sprints) {
     for (const st of sp.steps) {
       if (st.type === "VIDEO" && st.video?.bunnyVideoId) {
@@ -101,13 +149,37 @@ export async function loadCoursePlayer(
           console.warn(`[course-player loader] Failed to sign URL for step ${st.id}:`, err);
         }
       }
+      if (st.type === "QUIZ") {
+        const p = progressById.get(st.id);
+        // Only surface `cooldownUntil` while it's still in the future. The
+        // DB keeps the raw timestamp until the next submission clears or
+        // resets it; filtering here lets the client treat "non-null
+        // cooldownUntil" as "cooldown is active right now" without ever
+        // computing the clock during render.
+        const cd =
+          p?.cooldownUntil && p.cooldownUntil.getTime() > nowMs
+            ? p.cooldownUntil.toISOString()
+            : null;
+        quizStates[st.id] = {
+          stepId: st.id,
+          attempts: p?.quizAttempts ?? 0,
+          cooldownUntil: cd,
+          lastScore: p?.quizScore ?? null,
+          isPassed: Boolean(p?.isCompleted),
+        };
+      }
     }
   }
 
+  const completedStepIds = enrollment.progresses
+    .filter((p) => p.isCompleted)
+    .map((p) => p.stepId);
+
   return {
     course,
-    completedStepIds: enrollment.progresses.map((p) => p.stepId),
+    completedStepIds,
     embedUrls,
+    quizStates,
     courseId: c.id,
     enrollmentId: enrollment.id,
   };

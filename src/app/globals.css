@@ -494,3 +494,86 @@
   );
   animation: player-halo-drift 9s ease-in-out infinite;
 }
+
+/* ---------------------------------------------------------------------------
+   EXP & Level page — gamification motifs
+   --------------------------------------------------------------------------- */
+
+@keyframes exp-shimmer {
+  0% {
+    transform: translateX(-110%);
+  }
+  100% {
+    transform: translateX(220%);
+  }
+}
+
+@keyframes exp-particle-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0.45;
+  }
+  50% {
+    transform: translate3d(0, -12px, 0);
+    opacity: 1;
+  }
+}
+
+@keyframes exp-badge-glow {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes exp-ring-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.exp-progress-shimmer {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.55) 50%,
+    transparent 100%
+  );
+  animation: exp-shimmer 2.6s ease-in-out infinite;
+}
+
+.exp-particle {
+  animation: exp-particle-float 5.5s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+.exp-badge-aura {
+  animation: exp-badge-glow 3.6s ease-in-out infinite;
+}
+
+.exp-noise {
+  background-image: radial-gradient(
+    rgba(255, 255, 255, 0.22) 1px,
+    transparent 1px
+  );
+  background-size: 5px 5px;
+}
+
+/* Subtle diagonal sheen used for milestone connector progress. */
+.exp-line-progress {
+  background:
+    linear-gradient(
+      90deg,
+      var(--color-brand-500) 0%,
+      var(--color-brand-accent) 100%
+    );
+}

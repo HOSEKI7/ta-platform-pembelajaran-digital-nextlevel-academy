@@ -13,6 +13,7 @@ import { studentKeys } from "@/lib/student-query-keys";
 import { CurriculumSidebar } from "./curriculum-sidebar";
 import { MobileCurriculumSheet } from "./mobile-curriculum-sheet";
 import { PlayerTopbar } from "./player-topbar";
+import type { QuizSubmitResponse } from "./quiz-runner";
 import { StepTabs } from "./step-tabs";
 import { VideoStage } from "./video-stage";
 
@@ -28,7 +29,7 @@ type CompleteResponse = {
 };
 
 export function CoursePlayer({ data }: Props) {
-  const { course, completedStepIds, embedUrls } = data;
+  const { course, completedStepIds, embedUrls, quizStates } = data;
   const { state, select, complete, hydrate, goNext } = usePlayerState({
     course,
     completedStepIds,
@@ -99,10 +100,25 @@ export function CoursePlayer({ data }: Props) {
     completeMutation.mutate(activeStep.id);
   }, [activeStep, completeMutation]);
 
+  // Quiz submission completes inside <QuizRunner>; the parent only needs to
+  // reconcile `completedStepIds` (so the sidebar ✓-marks the step) and pull
+  // fresh `quizStates` from the server (attempts / cooldownUntil change on
+  // every attempt, pass or fail).
+  const handleQuizSubmitted = useCallback(
+    (resp: QuizSubmitResponse) => {
+      hydrate(new Set(resp.completedStepIds));
+      // Always refresh — failures change attempts + maybe trigger cooldown.
+      router.refresh();
+    },
+    [hydrate, router],
+  );
+
   if (!activeStep) return null;
 
   const isCompleted = state.completedStepIds.has(state.activeStepId);
   const embedUrl = embedUrls[activeStep.id];
+  const quizState =
+    activeStep.type === "QUIZ" ? quizStates[activeStep.id] : undefined;
 
   return (
     <>
@@ -125,9 +141,11 @@ export function CoursePlayer({ data }: Props) {
               isCompleted={isCompleted}
               isLast={isLastStep}
               embedUrl={embedUrl}
+              quizState={quizState}
               loading={completeMutation.isPending}
               onComplete={handleComplete}
               onNext={goNext}
+              onQuizSubmitted={handleQuizSubmitted}
             />
             <StepTabs step={activeStep} course={course} />
           </div>

@@ -8,16 +8,19 @@ export const dynamic = "force-dynamic";
 
 /** PRD §6.5.6 / §6.7.x — fixed EXP awards per source. */
 const EXP_VIDEO_COMPLETE = 15;
-const EXP_QUIZ_PASS = 90;
 const EXP_COURSE_COMPLETE = 600;
 
 /**
  * POST /api/learn/[stepId]/complete
  *
- * Marks a step as completed for the authenticated student's enrollment.
+ * Marks a VIDEO step as completed for the authenticated student's enrollment.
  * Triggered by EITHER:
  *   1. Manual click on the "Tandai Selesai" button in the player, or
  *   2. The video player firing `ended` / `timeupdate >= duration-1`.
+ *
+ * QUIZ steps must be completed via `/api/learn/[stepId]/quiz/submit` —
+ * passing the quiz is what marks a QUIZ step complete. Submitting QUIZ
+ * stepIds here returns 400.
  *
  * The endpoint is idempotent: repeated calls do NOT award EXP twice. The
  * `ExpLog` table's `@@unique([userId, source, refId])` constraint enforces
@@ -26,7 +29,7 @@ const EXP_COURSE_COMPLETE = 600;
  *
  * Side effects (atomic transaction):
  *   1. Upsert `StepProgress` -> isCompleted: true
- *   2. Award step-level EXP (+15 VIDEO / +90 QUIZ_PASS) — first time only
+ *   2. Award +15 VIDEO_COMPLETE EXP — first time only
  *   3. Increment `UserGameProfile.exp` + `totalExp`
  *   4. Recompute `Enrollment.progressPct`
  *   5. If 100% and not previously completed: set `Enrollment.completedAt`,
@@ -61,6 +64,15 @@ export async function POST(
       if (!step) {
         throw new HttpError(404, "Materi tidak ditemukan.");
       }
+      // QUIZ steps must go through /api/learn/[stepId]/quiz/submit — the
+      // score validation lives there. Refuse to mark a quiz "complete"
+      // without a real submission.
+      if (step.type === "QUIZ") {
+        throw new HttpError(
+          400,
+          "Step kuis harus diselesaikan via /quiz/submit.",
+        );
+      }
       const courseId = step.sprint.courseId;
 
       const enrollment = await tx.enrollment.findUnique({
@@ -87,22 +99,18 @@ export async function POST(
         },
       });
 
-      // 2. Award step EXP — idempotent via ExpLog unique([userId, source, refId])
-      const stepSource =
-        step.type === "QUIZ" ? ExpSource.QUIZ_PASS : ExpSource.VIDEO_COMPLETE;
-      const stepExp = step.type === "QUIZ" ? EXP_QUIZ_PASS : EXP_VIDEO_COMPLETE;
-
+      // 2. Award VIDEO_COMPLETE EXP — idempotent via ExpLog unique([userId, source, refId])
       let awardedStepExp = 0;
       try {
         await tx.expLog.create({
           data: {
             userId,
-            amount: stepExp,
-            source: stepSource,
+            amount: EXP_VIDEO_COMPLETE,
+            source: ExpSource.VIDEO_COMPLETE,
             refId: stepId,
           },
         });
-        awardedStepExp = stepExp;
+        awardedStepExp = EXP_VIDEO_COMPLETE;
       } catch (err) {
         if (
           err instanceof Prisma.PrismaClientKnownRequestError &&

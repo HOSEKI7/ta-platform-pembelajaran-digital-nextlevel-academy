@@ -3,8 +3,10 @@
 import { Brain, Play } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import type { PlayerStep } from "@/lib/course-player/types";
+import type { PlayerStep, QuizStepState } from "@/lib/course-player/types";
 import { CompleteButton } from "./complete-button";
+import type { QuizSubmitResponse } from "./quiz-runner";
+import { QuizRunner } from "./quiz-runner";
 import { VideoFrame } from "./video-frame";
 
 type Props = {
@@ -13,9 +15,11 @@ type Props = {
   isCompleted: boolean;
   isLast: boolean;
   embedUrl?: string;
+  quizState?: QuizStepState;
   loading?: boolean;
   onComplete: () => void;
   onNext: () => void;
+  onQuizSubmitted: (resp: QuizSubmitResponse) => void;
 };
 
 function formatDuration(sec: number): string {
@@ -30,11 +34,17 @@ export function VideoStage({
   isCompleted,
   isLast,
   embedUrl,
+  quizState,
   loading,
   onComplete,
   onNext,
+  onQuizSubmitted,
 }: Props) {
   const isQuiz = step.type === "QUIZ";
+  // For QUIZ steps the question slides + result screens replace the bottom
+  // "Tandai Selesai" CTA. Once the student has passed, we still render the
+  // shell button so they can advance to the next step from the meta strip.
+  const hideCompleteButton = isQuiz && !isCompleted;
 
   return (
     <section
@@ -50,13 +60,26 @@ export function VideoStage({
       {/* Frame */}
       <div
         className={cn(
-          "relative aspect-video w-full overflow-hidden rounded-2xl ring-1 ring-[color:var(--player-hairline-strong)]",
+          "relative w-full overflow-hidden rounded-2xl ring-1 ring-[color:var(--player-hairline-strong)]",
           "bg-gradient-to-br from-[#0e1018] via-[#0a0c12] to-[#0e1018]",
           "shadow-[0_40px_120px_-40px_rgba(71,142,244,0.28)]",
+          // Quizzes get a taller container (text-driven content can grow);
+          // videos keep the strict 16:9 aspect-video.
+          isQuiz ? "min-h-[520px]" : "aspect-video",
         )}
       >
         {isQuiz ? (
-          <QuizPlaceholder title={step.title} />
+          step.quiz && quizState ? (
+            <QuizRunner
+              step={step}
+              quizState={quizState}
+              isLast={isLast}
+              onSubmitted={onQuizSubmitted}
+              onNext={onNext}
+            />
+          ) : (
+            <QuizPlaceholder title={step.title} />
+          )
         ) : embedUrl ? (
           <VideoFrame
             embedUrl={embedUrl}
@@ -86,22 +109,36 @@ export function VideoStage({
             {step.title}
           </h1>
           <div className="mt-2 flex flex-wrap items-center gap-2 font-mono text-[11px] text-zinc-500">
-            <span>{formatDuration(step.durationSec)} menit</span>
-            <span className="text-zinc-300 dark:text-zinc-700">·</span>
-            <span>{isQuiz ? "Skor lulus 80/100" : "+15 XP saat selesai"}</span>
+            {isQuiz ? (
+              <>
+                <span>Skor lulus {step.quiz?.passingScore ?? 80}/100</span>
+                <span className="text-zinc-300 dark:text-zinc-700">·</span>
+                <span>+90 XP saat pertama lulus</span>
+              </>
+            ) : (
+              <>
+                <span>{formatDuration(step.durationSec)} menit</span>
+                <span className="text-zinc-300 dark:text-zinc-700">·</span>
+                <span>+15 XP saat selesai</span>
+              </>
+            )}
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-2">
-          <CompleteButton
-            isCompleted={isCompleted}
-            isLast={isLast}
-            loading={loading}
-            disabled={isQuiz}
-            onComplete={onComplete}
-            onNext={onNext}
-          />
-        </div>
+        {hideCompleteButton ? null : (
+          <div className="flex shrink-0 items-center gap-2">
+            <CompleteButton
+              isCompleted={isCompleted}
+              isLast={isLast}
+              loading={loading}
+              // QUIZ steps that are already completed reach this branch — the
+              // button just acts as the "Materi Selanjutnya" advance control.
+              disabled={false}
+              onComplete={onComplete}
+              onNext={onNext}
+            />
+          </div>
+        )}
       </div>
     </section>
   );
@@ -152,7 +189,6 @@ function VideoPlaceholder({ title, duration }: { title: string; duration: string
 function QuizPlaceholder({ title }: { title: string }) {
   return (
     <div className="relative flex h-full w-full flex-col items-center justify-center gap-5 px-6 text-center text-white">
-      {/* Decorative grid */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-30"
@@ -172,13 +208,9 @@ function QuizPlaceholder({ title }: { title: string }) {
         </span>
         <h3 className="text-xl font-semibold text-white">{title}</h3>
         <p className="max-w-md text-sm text-white/60">
-          Komponen kuis akan menyusul di iterasi berikutnya. Pada versi final
-          kamu akan menjawab soal pilihan ganda satu per satu — butuh skor ≥
-          80 untuk lulus.
+          Kuis ini belum dikonfigurasi. Mentor akan menambahkan soal pada
+          iterasi berikutnya.
         </p>
-        <span className="mt-2 font-mono text-[10px] uppercase tracking-[0.22em] text-[color:var(--player-accent-yellow)]/70">
-          Skor lulus 80 · 3 percobaan
-        </span>
       </div>
     </div>
   );

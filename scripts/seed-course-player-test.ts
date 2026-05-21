@@ -1,7 +1,13 @@
 /**
  * Seed a single test course for the Course Player backend integration.
- * Idempotent: re-run after editing the BUNNY_VIDEOS list — the script wipes
- * the course's existing sprints/steps and re-creates them.
+ *
+ * Fully idempotent and ADDITIVE — re-running does not wipe existing
+ * sprints/steps, and therefore does NOT touch `StepProgress` rows. Sprints
+ * are looked up by `(courseId, title)`, steps by `(sprintId, title)`. If a
+ * video step already exists, its `bunnyVideoId` + `duration` are refreshed
+ * in place (so editing a GUID in BUNNY_VIDEOS and re-running picks up the
+ * new video). The QUIZ step's questions are replaced inside a single
+ * transaction; the `Quiz` and `Step` rows themselves stay stable.
  *
  * Prerequisites:
  *   1. The target user (default: faridzahran174@gmail.com) is already
@@ -73,6 +79,65 @@ const BUNNY_VIDEOS = [
   },
 ];
 
+/**
+ * One QUIZ step appended to the last sprint, used to test the quiz UI
+ * iteration (PRD §6.5.7). Mix of text-only and image-based questions.
+ * The quiz step always lands as the FINAL step in its sprint via a high
+ * `stepOrder`, so the gating "quiz unlocks next sprint" rule can be
+ * verified end-to-end.
+ */
+const QUIZ_STEP = {
+  sprintTitle: "Routing & Handler",
+  stepTitle: "Kuis: Pemahaman Routing & REST",
+  stepOrder: 99,
+  passingScore: 80,
+  questions: [
+    {
+      question: "Method HTTP mana yang dianggap aman (safe) dan idempotent?",
+      questionImageUrl: null,
+      options: ["GET", "POST", "PATCH", "DELETE"],
+      answer: 0,
+    },
+    {
+      question: "Apa kepanjangan dari REST?",
+      questionImageUrl: null,
+      options: [
+        "Really Easy Server Transactions",
+        "Representational State Transfer",
+        "Remote Endpoint Service Tool",
+        "Resource Exchange Standard Type",
+      ],
+      answer: 1,
+    },
+    {
+      question:
+        "Diagram berikut menunjukkan alur request. Method apa yang sesuai untuk mengganti seluruh resource?",
+      questionImageUrl:
+        "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&auto=format&fit=crop",
+      options: ["GET", "POST", "PUT", "DELETE"],
+      answer: 2,
+    },
+    {
+      question: "Range status code mana yang berarti client error?",
+      questionImageUrl: null,
+      options: ["2xx", "3xx", "4xx", "5xx"],
+      answer: 2,
+    },
+    {
+      question:
+        "Header HTTP mana yang umum dipakai untuk mengirim token autentikasi?",
+      questionImageUrl: null,
+      options: [
+        "Content-Type",
+        "Authorization",
+        "X-Requested-With",
+        "Accept",
+      ],
+      answer: 1,
+    },
+  ],
+};
+
 // -----------------------------------------------------------------------------
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
@@ -133,13 +198,11 @@ async function main() {
   });
   console.log(`  course:    ${course.slug} (${course.id})`);
 
-  // 4. Wipe existing sprints (cascade deletes steps + videos) — keeps script idempotent
-  const wiped = await db.sprint.deleteMany({ where: { courseId: course.id } });
-  if (wiped.count > 0) {
-    console.log(`  cleared:   ${wiped.count} existing sprint(s)`);
-  }
-
-  // 5. Group videos by sprint title, then create sprint -> step -> video
+  // 4. Idempotent sprint + step + video sync. Sprint and Step have no
+  //    natural unique constraint other than (Video.stepId / Quiz.stepId), so
+  //    we look up by `(courseId, title)` / `(sprintId, title)`. This preserves
+  //    any existing StepProgress rows — wiping would FK-violate against
+  //    `step_progress_stepId_fkey`.
   const bySprint = new Map<string, typeof BUNNY_VIDEOS>();
   for (const v of BUNNY_VIDEOS) {
     const arr = bySprint.get(v.sprintTitle) ?? [];
@@ -147,31 +210,132 @@ async function main() {
     bySprint.set(v.sprintTitle, arr);
   }
 
+  const sprintIdByTitle = new Map<string, string>();
   for (const [sprintTitle, videos] of bySprint) {
-    const sprint = await db.sprint.create({
-      data: {
-        courseId: course.id,
-        title: sprintTitle,
-        order: videos[0].sprintOrder,
-      },
+    let sprint = await db.sprint.findFirst({
+      where: { courseId: course.id, title: sprintTitle },
       select: { id: true },
     });
-
-    for (const v of videos) {
-      await db.step.create({
+    let sprintAction: "created" | "kept" = "kept";
+    if (!sprint) {
+      sprint = await db.sprint.create({
         data: {
-          sprintId: sprint.id,
-          title: v.stepTitle,
-          type: "VIDEO",
-          order: v.stepOrder,
-          description: `Materi pembelajaran: ${v.stepTitle}. Tonton sampai habis untuk mendapatkan +15 XP, atau klik "Tandai Selesai" setelah memahami isinya.`,
-          video: {
-            create: { bunnyVideoId: v.guid, duration: v.durationSec },
+          courseId: course.id,
+          title: sprintTitle,
+          order: videos[0].sprintOrder,
+        },
+        select: { id: true },
+      });
+      sprintAction = "created";
+    }
+    sprintIdByTitle.set(sprintTitle, sprint.id);
+
+    let stepsCreated = 0;
+    let stepsUpdated = 0;
+    for (const v of videos) {
+      const existingStep = await db.step.findFirst({
+        where: { sprintId: sprint.id, title: v.stepTitle },
+        select: { id: true, type: true },
+      });
+      if (!existingStep) {
+        await db.step.create({
+          data: {
+            sprintId: sprint.id,
+            title: v.stepTitle,
+            type: "VIDEO",
+            order: v.stepOrder,
+            description: `Materi pembelajaran: ${v.stepTitle}. Tonton sampai habis untuk mendapatkan +15 XP, atau klik "Tandai Selesai" setelah memahami isinya.`,
+            video: {
+              create: { bunnyVideoId: v.guid, duration: v.durationSec },
+            },
+          },
+        });
+        stepsCreated += 1;
+      } else if (existingStep.type === "VIDEO") {
+        // Refresh GUID / duration in case the user re-uploaded the video.
+        await db.video.update({
+          where: { stepId: existingStep.id },
+          data: { bunnyVideoId: v.guid, duration: v.durationSec },
+        });
+        await db.step.update({
+          where: { id: existingStep.id },
+          data: { order: v.stepOrder },
+        });
+        stepsUpdated += 1;
+      }
+    }
+    console.log(
+      `  sprint:    ${sprintTitle} [${sprintAction}] (+${stepsCreated} new, ~${stepsUpdated} updated)`,
+    );
+  }
+
+  // 4b. Quiz step — additive too. If the QUIZ step already exists in its
+  // target sprint, refresh the questions in-place (delete + recreate inside
+  // the same transaction so the quiz row stays stable and any StepProgress
+  // pointing at the step is untouched).
+  const quizSprintId = sprintIdByTitle.get(QUIZ_STEP.sprintTitle);
+  if (!quizSprintId) {
+    throw new Error(
+      `Quiz target sprint "${QUIZ_STEP.sprintTitle}" not found among videos.`,
+    );
+  }
+  const existingQuizStep = await db.step.findFirst({
+    where: { sprintId: quizSprintId, type: "QUIZ" },
+    select: { id: true, quiz: { select: { id: true } } },
+  });
+  if (!existingQuizStep) {
+    await db.step.create({
+      data: {
+        sprintId: quizSprintId,
+        title: QUIZ_STEP.stepTitle,
+        type: "QUIZ",
+        order: QUIZ_STEP.stepOrder,
+        description:
+          "Kerjakan kuis berikut untuk menutup sprint. Kamu butuh skor minimum 80/100 untuk lulus dan mendapatkan +90 XP. Maksimal 3 percobaan sebelum cooldown 30 menit.",
+        quiz: {
+          create: {
+            passingScore: QUIZ_STEP.passingScore,
+            questions: {
+              create: QUIZ_STEP.questions.map((q, i) => ({
+                question: q.question,
+                questionImageUrl: q.questionImageUrl,
+                options: q.options,
+                answer: q.answer,
+                order: i + 1,
+              })),
+            },
           },
         },
-      });
-    }
-    console.log(`  sprint:    ${sprintTitle} (${videos.length} step)`);
+      },
+    });
+    console.log(
+      `  quiz:      "${QUIZ_STEP.stepTitle}" [created] — ${QUIZ_STEP.questions.length} soal (lulus ${QUIZ_STEP.passingScore})`,
+    );
+  } else if (existingQuizStep.quiz) {
+    await db.$transaction([
+      db.quizQuestion.deleteMany({ where: { quizId: existingQuizStep.quiz.id } }),
+      db.quizQuestion.createMany({
+        data: QUIZ_STEP.questions.map((q, i) => ({
+          quizId: existingQuizStep.quiz!.id,
+          question: q.question,
+          questionImageUrl: q.questionImageUrl,
+          options: q.options,
+          answer: q.answer,
+          order: i + 1,
+        })),
+      }),
+      db.quiz.update({
+        where: { id: existingQuizStep.quiz.id },
+        data: { passingScore: QUIZ_STEP.passingScore },
+      }),
+      db.step.update({
+        where: { id: existingQuizStep.id },
+        data: { title: QUIZ_STEP.stepTitle, order: QUIZ_STEP.stepOrder },
+      }),
+    ]);
+    console.log(
+      `  quiz:      "${QUIZ_STEP.stepTitle}" [refreshed] — ${QUIZ_STEP.questions.length} soal (lulus ${QUIZ_STEP.passingScore})`,
+    );
   }
 
   // 6. Enroll the target user
