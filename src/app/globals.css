@@ -97,8 +97,8 @@
   --player-surface-strong: #f7f8fb;
   --player-hairline: rgba(15, 23, 42, 0.08);
   --player-hairline-strong: rgba(15, 23, 42, 0.16);
-  --player-glow: rgba(71, 142, 244, 0.18);
-  --player-glow-soft: rgba(71, 142, 244, 0.06);
+  --player-glow: rgba(71, 142, 244, 0.10);
+  --player-glow-soft: rgba(71, 142, 244, 0.04);
   --player-accent: #478ef4;
   --player-accent-yellow: #f4d600;
   --player-dot: rgba(15, 23, 42, 0.06);
@@ -182,8 +182,8 @@
   --player-surface-strong: #181c28;
   --player-hairline: rgba(255, 255, 255, 0.06);
   --player-hairline-strong: rgba(255, 255, 255, 0.12);
-  --player-glow: rgba(71, 142, 244, 0.35);
-  --player-glow-soft: rgba(71, 142, 244, 0.10);
+  --player-glow: rgba(71, 142, 244, 0.18);
+  --player-glow-soft: rgba(71, 142, 244, 0.06);
   --player-accent: #5395f8;
   --player-accent-yellow: #f4d600;
   --player-dot: rgba(255, 255, 255, 0.05);

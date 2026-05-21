@@ -32,8 +32,9 @@ export function StudentSidebar({ collapsed, variant = "rail", onNavigate }: Prop
         !isDrawer && !isCollapsed && "w-[260px]",
       )}
     >
-      {/* Brand row — centered logo, no divider beneath. */}
-      <div className="flex h-16 items-center justify-center px-3">
+      {/* Brand row — centered logo with extra vertical breathing room
+          (slightly taller than the 64px topbar). */}
+      <div className="flex h-20 items-center justify-center px-3 py-3">
         <Link
           href="/"
           target="_blank"

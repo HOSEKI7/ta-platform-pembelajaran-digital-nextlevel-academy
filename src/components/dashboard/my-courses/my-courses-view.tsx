@@ -9,8 +9,9 @@ import { useMyCoursesQuery } from "@/hooks/use-dashboard";
 import type { MyCoursesStatus } from "@/lib/student-data-loader";
 import { MY_COURSES_STATUSES } from "@/lib/validators/my-courses";
 
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PageHeader } from "@/components/dashboard/shared/page-header";
+import { SearchBox } from "@/components/dashboard/shared/search-box";
 
 import { InProgressGridSkeleton } from "../dashboard-skeletons";
 import { StudentCourseCard } from "../student-course-card";
@@ -80,8 +81,13 @@ export function MyCoursesView() {
   const isDefaultView = urlSearch.length === 0 && urlStatus === "all";
 
   return (
-    <div className="flex flex-col gap-7">
-      <Header />
+    <div className="flex flex-col gap-8">
+      <PageHeader
+        eyebrow="Perpustakaan · Akses Seumur Hidup"
+        title="Kursus"
+        accent="saya"
+        description="Daftar kursus yang sudah kamu miliki, terurut dari yang paling baru diakses. Lanjutkan dari titik terakhir kamu berhenti."
+      />
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <SearchBox
@@ -124,65 +130,6 @@ export function MyCoursesView() {
           ))}
         </div>
       )}
-    </div>
-  );
-}
-
-function Header() {
-  return (
-    <div className="flex flex-wrap items-end justify-between gap-3">
-      <div>
-        <h1 className="font-heading text-2xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50">
-          Kursus Saya
-        </h1>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-300/70">
-          Daftar kursus yang kamu miliki, terurut dari yang paling baru diakses.
-        </p>
-      </div>
-      <Link
-        href="/catalog"
-        className="inline-flex h-10 items-center gap-1.5 rounded-full bg-[color:var(--color-brand-500)] px-5 text-[12px] font-bold text-white shadow-[0_10px_24px_-12px_rgba(43,114,234,0.7)] transition hover:bg-[color:var(--color-brand-600)]"
-      >
-        <Compass className="size-3.5" strokeWidth={2.4} />
-        Jelajah Katalog
-      </Link>
-    </div>
-  );
-}
-
-function SearchBox({
-  value,
-  onChange,
-  onClear,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  onClear: () => void;
-}) {
-  return (
-    <div className="relative w-full sm:max-w-sm">
-      <Search
-        className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-400 dark:text-zinc-500"
-        strokeWidth={2}
-      />
-      <Input
-        type="search"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="Cari kursus…"
-        className="h-10 rounded-full bg-white pl-10 pr-9 dark:bg-[color:var(--color-surface-card)]"
-        aria-label="Cari kursus"
-      />
-      {value.length > 0 ? (
-        <button
-          type="button"
-          onClick={onClear}
-          className="absolute right-2 top-1/2 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-full text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-white/10 dark:hover:text-zinc-50"
-          aria-label="Hapus pencarian"
-        >
-          <X className="size-3.5" strokeWidth={2.4} />
-        </button>
-      ) : null}
     </div>
   );
 }

@@ -47,7 +47,7 @@ export function VideoStage({
         className={cn(
           "relative aspect-video w-full overflow-hidden rounded-2xl ring-1 ring-[color:var(--player-hairline-strong)]",
           "bg-gradient-to-br from-[#0e1018] via-[#0a0c12] to-[#0e1018]",
-          "shadow-[0_40px_120px_-40px_rgba(71,142,244,0.55)]",
+          "shadow-[0_40px_120px_-40px_rgba(71,142,244,0.28)]",
         )}
       >
         {isQuiz ? (

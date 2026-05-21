@@ -1,10 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Award,
-  Compass,
   Inbox,
   ScrollText,
   Sparkles,
@@ -12,6 +10,8 @@ import {
 } from "lucide-react";
 
 import { useCertificatesQuery } from "@/hooks/use-certificates";
+import { PageHeader } from "@/components/dashboard/shared/page-header";
+import { Pagination } from "@/components/dashboard/shared/pagination";
 import type {
   CertificateClaimedRowDTO,
   CertificateUnclaimedRowDTO,
@@ -88,8 +88,13 @@ export function CertificatesView() {
   const { data, isPending, isError } = useCertificatesQuery(filters);
 
   return (
-    <div className="flex flex-col gap-7">
-      <Header />
+    <div className="flex flex-col gap-8">
+      <PageHeader
+        eyebrow="Prestasi · Verifikasi Publik"
+        title="Sertifikat"
+        accent="kelulusan"
+        description="Klaim sertifikat untuk kursus yang sudah selesai, lalu unduh PDF atau bagikan tautan verifikasi publik kepada perekrut."
+      />
 
       {isPending ? (
         <LoadingState />
@@ -108,29 +113,6 @@ export function CertificatesView() {
           onPageChange={(value) => pushParams({ sort, pageSize, page: value })}
         />
       ) : null}
-    </div>
-  );
-}
-
-function Header() {
-  return (
-    <div className="flex flex-wrap items-end justify-between gap-3">
-      <div>
-        <h1 className="font-heading text-2xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50">
-          Sertifikat
-        </h1>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-300/70">
-          Klaim sertifikat untuk kursus yang sudah selesai, lalu unduh atau
-          bagikan tautan verifikasi publik.
-        </p>
-      </div>
-      <Link
-        href="/catalog"
-        className="inline-flex h-10 items-center gap-1.5 rounded-full bg-[color:var(--color-brand-500)] px-5 text-[12px] font-bold text-white shadow-[0_10px_24px_-12px_rgba(43,114,234,0.7)] transition hover:bg-[color:var(--color-brand-600)]"
-      >
-        <Compass className="size-3.5" strokeWidth={2.4} />
-        Jelajah Katalog
-      </Link>
     </div>
   );
 }
@@ -253,10 +235,11 @@ function CertificatesContent({
 
         {pagination.totalPages > 1 ? (
           <div className="border-t border-zinc-200 px-5 py-4 dark:border-[color:var(--color-surface-border)]">
-            <PaginationBar
+            <Pagination
               page={pagination.page}
               totalPages={pagination.totalPages}
-              onPageChange={onPageChange}
+              onChange={onPageChange}
+              ariaLabel="Paginasi sertifikat"
             />
           </div>
         ) : null}
@@ -558,103 +541,6 @@ function MobileRows({
   );
 }
 
-type PaginationProps = {
-  page: number;
-  totalPages: number;
-  onPageChange: (value: number) => void;
-};
-
-function PaginationBar({ page, totalPages, onPageChange }: PaginationProps) {
-  const pages = buildPageList(page, totalPages);
-  return (
-    <nav
-      aria-label="Pagination sertifikat"
-      className="flex items-center justify-center gap-1"
-    >
-      <PaginationButton
-        disabled={page <= 1}
-        onClick={() => onPageChange(page - 1)}
-        aria-label="Halaman sebelumnya"
-      >
-        Sebelumnya
-      </PaginationButton>
-      {pages.map((p, idx) =>
-        p === "ellipsis" ? (
-          <span
-            key={`e-${idx}`}
-            className="px-2 text-xs text-zinc-400"
-            aria-hidden
-          >
-            …
-          </span>
-        ) : (
-          <button
-            key={p}
-            type="button"
-            onClick={() => onPageChange(p)}
-            aria-current={p === page ? "page" : undefined}
-            className={cn(
-              "inline-flex h-8 min-w-8 items-center justify-center rounded-full px-2.5 text-[12px] font-semibold transition",
-              p === page
-                ? "bg-[color:var(--color-brand-500)] text-white shadow-[0_6px_14px_-8px_rgba(43,114,234,0.7)]"
-                : "text-zinc-700 ring-1 ring-zinc-200 hover:bg-zinc-100 dark:text-zinc-200 dark:ring-[color:var(--color-surface-border)] dark:hover:bg-white/5",
-            )}
-          >
-            {p}
-          </button>
-        ),
-      )}
-      <PaginationButton
-        disabled={page >= totalPages}
-        onClick={() => onPageChange(page + 1)}
-        aria-label="Halaman berikutnya"
-      >
-        Berikutnya
-      </PaginationButton>
-    </nav>
-  );
-}
-
-function PaginationButton({
-  children,
-  disabled,
-  onClick,
-  ...rest
-}: React.ButtonHTMLAttributes<HTMLButtonElement>) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      {...rest}
-      className={cn(
-        "inline-flex h-8 items-center rounded-full px-3 text-[12px] font-semibold text-zinc-700 ring-1 ring-zinc-200 transition",
-        "hover:bg-zinc-100 dark:text-zinc-200 dark:ring-[color:var(--color-surface-border)] dark:hover:bg-white/5",
-        "disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent",
-      )}
-    >
-      {children}
-    </button>
-  );
-}
-
-function buildPageList(
-  current: number,
-  total: number,
-): (number | "ellipsis")[] {
-  if (total <= 7) {
-    return Array.from({ length: total }, (_, i) => i + 1);
-  }
-  const items: (number | "ellipsis")[] = [1];
-  const left = Math.max(2, current - 1);
-  const right = Math.min(total - 1, current + 1);
-  if (left > 2) items.push("ellipsis");
-  for (let p = left; p <= right; p += 1) items.push(p);
-  if (right < total - 1) items.push("ellipsis");
-  items.push(total);
-  return items;
-}
-
 function EmptyState() {
   return (
     <div className="grid place-items-center gap-4 rounded-3xl bg-white p-12 ring-1 ring-zinc-200 dark:bg-[color:var(--color-surface-card)] dark:ring-[color:var(--color-surface-border)]">
@@ -670,13 +556,6 @@ function EmptyState() {
           sertifikat dengan tautan verifikasi publik.
         </p>
       </div>
-      <Link
-        href="/catalog"
-        className="inline-flex h-10 items-center gap-1.5 rounded-full bg-[color:var(--color-brand-500)] px-6 text-[12px] font-bold text-white shadow-[0_10px_24px_-12px_rgba(43,114,234,0.7)] transition hover:bg-[color:var(--color-brand-600)]"
-      >
-        <Compass className="size-3.5" strokeWidth={2.4} />
-        Jelajah Katalog
-      </Link>
     </div>
   );
 }

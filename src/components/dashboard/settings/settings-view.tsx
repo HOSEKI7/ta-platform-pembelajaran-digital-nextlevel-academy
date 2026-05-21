@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { KeyRound, ShieldCheck, UserRound } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/dashboard/shared/page-header";
 
 import { IdentityCard } from "./identity-card";
 import { ProfileForm } from "./profile-form";
@@ -67,7 +68,12 @@ export function SettingsView({ initial }: Props) {
 
   return (
     <div className="flex flex-col gap-8">
-      <Header />
+      <PageHeader
+        eyebrow="Akun · Studio Identitas"
+        title="Pengaturan"
+        accent="akun"
+        description="Atur identitas yang tampil di kursus, sertifikat, dan komunitas. Setiap perubahan tersimpan terpisah — kamu bisa mengubah profil atau password kapan saja."
+      />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)] lg:items-start lg:gap-8">
         <div className="lg:sticky lg:top-24">
@@ -97,28 +103,6 @@ export function SettingsView({ initial }: Props) {
         </div>
       </div>
     </div>
-  );
-}
-
-function Header() {
-  return (
-    <header className="flex flex-col gap-1.5">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[color:var(--color-brand-700)] dark:text-[color:var(--color-brand-300)]">
-        Akun · Studio Identitas
-      </p>
-      <h1 className="font-heading text-3xl font-extrabold leading-tight tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-4xl">
-        Pengaturan{" "}
-        <span className="bg-gradient-to-br from-[color:var(--color-brand-700)] to-[color:var(--color-brand-500)] bg-clip-text text-transparent">
-          akun
-        </span>
-        .
-      </h1>
-      <p className="max-w-2xl text-sm leading-relaxed text-zinc-600 dark:text-zinc-300/80">
-        Atur identitas yang tampil di kursus, sertifikat, dan komunitas. Setiap
-        perubahan tersimpan terpisah — kamu bisa mengubah profil atau password
-        kapan saja.
-      </p>
-    </header>
   );
 }
 

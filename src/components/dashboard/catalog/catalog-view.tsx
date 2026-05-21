@@ -1,12 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  BookOpen,
-  ChevronLeft,
-  ChevronRight,
   Filter,
   Inbox,
   Loader2,
@@ -26,7 +22,16 @@ import { useCategoriesQuery } from "@/hooks/use-categories";
 import { useStudentCatalogQuery } from "@/hooks/use-student-catalog";
 import { cn } from "@/lib/utils";
 
-import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { PageHeader } from "@/components/dashboard/shared/page-header";
+import { Pagination } from "@/components/dashboard/shared/pagination";
+import { SearchBox } from "@/components/dashboard/shared/search-box";
 
 import { InProgressGridSkeleton } from "../dashboard-skeletons";
 
@@ -129,8 +134,13 @@ export function CatalogView() {
   }, [categoriesQuery.data]);
 
   return (
-    <div className="flex flex-col gap-7">
-      <Header />
+    <div className="flex flex-col gap-8">
+      <PageHeader
+        eyebrow="Eksplorasi · Katalog Lengkap"
+        title="Jelajah"
+        accent="katalog"
+        description="Telusuri seluruh kursus NextLevel Academy. Kursus yang sudah kamu miliki ditandai dengan stempel Dimiliki."
+      />
 
       {/* Search + sort row */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -144,21 +154,33 @@ export function CatalogView() {
         />
 
         <div className="flex items-center gap-2">
-          <span className="hidden text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500 sm:inline-flex dark:text-zinc-400">
-            Urutkan
-          </span>
-          <select
-            value={urlSort}
-            onChange={(e) => updateUrl({ sort: e.target.value as Sort })}
-            aria-label="Urutkan kursus"
-            className="h-9 rounded-full bg-white px-3 text-xs font-semibold text-zinc-700 ring-1 ring-zinc-200 focus:outline-none focus:ring-[color:var(--color-brand-400)] dark:bg-[color:var(--color-surface-card)] dark:text-zinc-200 dark:ring-[color:var(--color-surface-border)]"
+          <label
+            htmlFor="catalog-sort"
+            className="hidden text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-500 sm:inline-flex dark:text-zinc-400"
           >
-            {(Object.keys(SORT_LABELS) as Sort[]).map((s) => (
-              <option key={s} value={s}>
-                {SORT_LABELS[s]}
-              </option>
-            ))}
-          </select>
+            Urutkan
+          </label>
+          <Select
+            value={urlSort}
+            onValueChange={(value) => {
+              if (typeof value === "string") updateUrl({ sort: value as Sort });
+            }}
+          >
+            <SelectTrigger
+              id="catalog-sort"
+              className="h-10 min-w-48 rounded-full"
+              aria-label="Urutkan kursus"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {(Object.keys(SORT_LABELS) as Sort[]).map((s) => (
+                <SelectItem key={s} value={s}>
+                  {SORT_LABELS[s]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -229,73 +251,16 @@ export function CatalogView() {
             ))}
           </div>
 
-          <CatalogPagination
-            current={urlPage}
-            totalPages={totalPages}
-            onChange={(p) => updateUrl({ page: p })}
-          />
+          <div className="pt-2">
+            <Pagination
+              page={urlPage}
+              totalPages={totalPages}
+              onChange={(p) => updateUrl({ page: p })}
+              ariaLabel="Paginasi katalog kursus"
+            />
+          </div>
         </>
       )}
-    </div>
-  );
-}
-
-function Header() {
-  return (
-    <div className="flex flex-wrap items-end justify-between gap-3">
-      <div>
-        <h1 className="font-heading text-2xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50">
-          Jelajah Katalog
-        </h1>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-300/70">
-          Telusuri seluruh kursus NextLevel Academy. Kursus yang sudah kamu
-          miliki ditandai dengan stempel <span className="font-semibold text-zinc-700 dark:text-zinc-200">Dimiliki</span>.
-        </p>
-      </div>
-      <Link
-        href="/my-courses"
-        className="inline-flex h-10 items-center gap-1.5 rounded-full bg-white px-5 text-[12px] font-bold text-[color:var(--color-brand-700)] ring-1 ring-[color:var(--color-brand-200)] transition hover:bg-[color:var(--color-brand-50)] dark:bg-[color:var(--color-surface-card)] dark:text-[color:var(--color-brand-200)] dark:ring-[color:var(--color-surface-border)] dark:hover:bg-[color:var(--color-surface-card-strong)]"
-      >
-        <BookOpen className="size-3.5" strokeWidth={2.4} />
-        Kursus Saya
-      </Link>
-    </div>
-  );
-}
-
-function SearchBox({
-  value,
-  onChange,
-  onClear,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  onClear: () => void;
-}) {
-  return (
-    <div className="relative w-full sm:max-w-sm">
-      <Search
-        className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-400 dark:text-zinc-500"
-        strokeWidth={2}
-      />
-      <Input
-        type="search"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="Cari kursus…"
-        className="h-10 rounded-full bg-white pl-10 pr-9 dark:bg-[color:var(--color-surface-card)]"
-        aria-label="Cari kursus"
-      />
-      {value.length > 0 ? (
-        <button
-          type="button"
-          onClick={onClear}
-          className="absolute right-2 top-1/2 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-full text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-white/10 dark:hover:text-zinc-50"
-          aria-label="Hapus pencarian"
-        >
-          <X className="size-3.5" strokeWidth={2.4} />
-        </button>
-      ) : null}
     </div>
   );
 }
@@ -366,88 +331,6 @@ function CategoryChipsSkeleton() {
       ))}
     </div>
   );
-}
-
-function CatalogPagination({
-  current,
-  totalPages,
-  onChange,
-}: {
-  current: number;
-  totalPages: number;
-  onChange: (page: number) => void;
-}) {
-  if (totalPages <= 1) return null;
-
-  // Show first, last, current, and neighbors. Ellipsis in between when gaps.
-  const pages = buildPageList(current, totalPages);
-
-  return (
-    <nav
-      aria-label="Paginasi kursus"
-      className="flex items-center justify-center gap-1.5 pt-2"
-    >
-      <button
-        type="button"
-        onClick={() => current > 1 && onChange(current - 1)}
-        disabled={current <= 1}
-        className="inline-flex size-9 items-center justify-center rounded-full bg-white text-zinc-600 ring-1 ring-zinc-200 transition hover:bg-[color:var(--color-brand-50)] hover:text-[color:var(--color-brand-800)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-zinc-600 dark:bg-[color:var(--color-surface-card)] dark:text-zinc-300 dark:ring-[color:var(--color-surface-border)] dark:hover:bg-[color:var(--color-surface-card-strong)] dark:disabled:hover:bg-[color:var(--color-surface-card)]"
-        aria-label="Halaman sebelumnya"
-      >
-        <ChevronLeft className="size-4" strokeWidth={2.4} />
-      </button>
-
-      {pages.map((p, i) =>
-        p === "ellipsis" ? (
-          <span
-            key={`e-${i}`}
-            className="px-1 text-xs text-zinc-400 dark:text-zinc-500"
-          >
-            …
-          </span>
-        ) : (
-          <button
-            key={p}
-            type="button"
-            onClick={() => onChange(p)}
-            aria-current={p === current ? "page" : undefined}
-            className={cn(
-              "inline-flex size-9 items-center justify-center rounded-full text-xs font-bold transition",
-              p === current
-                ? "bg-[color:var(--color-brand-500)] text-white shadow-[0_8px_22px_-10px_rgba(43,114,234,0.7)]"
-                : "bg-white text-zinc-700 ring-1 ring-zinc-200 hover:bg-[color:var(--color-brand-50)] hover:text-[color:var(--color-brand-800)] dark:bg-[color:var(--color-surface-card)] dark:text-zinc-200 dark:ring-[color:var(--color-surface-border)] dark:hover:bg-[color:var(--color-surface-card-strong)]",
-            )}
-          >
-            {p}
-          </button>
-        ),
-      )}
-
-      <button
-        type="button"
-        onClick={() => current < totalPages && onChange(current + 1)}
-        disabled={current >= totalPages}
-        className="inline-flex size-9 items-center justify-center rounded-full bg-white text-zinc-600 ring-1 ring-zinc-200 transition hover:bg-[color:var(--color-brand-50)] hover:text-[color:var(--color-brand-800)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-zinc-600 dark:bg-[color:var(--color-surface-card)] dark:text-zinc-300 dark:ring-[color:var(--color-surface-border)] dark:hover:bg-[color:var(--color-surface-card-strong)] dark:disabled:hover:bg-[color:var(--color-surface-card)]"
-        aria-label="Halaman berikutnya"
-      >
-        <ChevronRight className="size-4" strokeWidth={2.4} />
-      </button>
-    </nav>
-  );
-}
-
-function buildPageList(current: number, total: number): (number | "ellipsis")[] {
-  if (total <= 7) {
-    return Array.from({ length: total }, (_, i) => i + 1);
-  }
-  const pages: (number | "ellipsis")[] = [1];
-  const start = Math.max(2, current - 1);
-  const end = Math.min(total - 1, current + 1);
-  if (start > 2) pages.push("ellipsis");
-  for (let i = start; i <= end; i++) pages.push(i);
-  if (end < total - 1) pages.push("ellipsis");
-  pages.push(total);
-  return pages;
 }
 
 function ErrorState({ onRetry }: { onRetry: () => void }) {
