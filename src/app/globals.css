@@ -89,6 +89,19 @@
   --surface-card-strong: #ffffff;
   --surface-border: #e4e7ec;
   --surface-border-strong: #cdd2db;
+  /* Course Player ("Focus Theater") tokens — see src/components/course-player.
+     The player intentionally uses a slightly cooler, deeper palette than the
+     dashboard so the video frame reads as the visual focal point. */
+  --player-stage: #f3f5fa;
+  --player-surface: #ffffff;
+  --player-surface-strong: #f7f8fb;
+  --player-hairline: rgba(15, 23, 42, 0.08);
+  --player-hairline-strong: rgba(15, 23, 42, 0.16);
+  --player-glow: rgba(71, 142, 244, 0.18);
+  --player-glow-soft: rgba(71, 142, 244, 0.06);
+  --player-accent: #478ef4;
+  --player-accent-yellow: #f4d600;
+  --player-dot: rgba(15, 23, 42, 0.06);
   /* Brand-blue primary (matches --color-brand-500 = #478EF4). */
   --primary: oklch(0.65 0.165 256);
   --primary-foreground: oklch(0.985 0 0);
@@ -161,6 +174,19 @@
   --surface-card-strong: #262b3e;
   --surface-border: #2a2f3d;
   --surface-border-strong: #3a4055;
+  /* Course Player ("Focus Theater") tokens — dark variant. The stage is
+     intentionally deeper than --surface-app so the video frame's blue halo
+     reads as the only emissive light source on the page. */
+  --player-stage: #08090d;
+  --player-surface: #11141c;
+  --player-surface-strong: #181c28;
+  --player-hairline: rgba(255, 255, 255, 0.06);
+  --player-hairline-strong: rgba(255, 255, 255, 0.12);
+  --player-glow: rgba(71, 142, 244, 0.35);
+  --player-glow-soft: rgba(71, 142, 244, 0.10);
+  --player-accent: #5395f8;
+  --player-accent-yellow: #f4d600;
+  --player-dot: rgba(255, 255, 255, 0.05);
 }
 
 @layer base {
@@ -399,4 +425,72 @@
     radial-gradient(rgba(255, 255, 255, 0.18) 1px, transparent 1px);
   background-size: 5px 5px;
   background-position: 0 0;
+}
+
+/* ---------------------------------------------------------------------------
+   Course Player — "Focus Theater" motifs
+   --------------------------------------------------------------------------- */
+
+@keyframes player-rail-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+@keyframes player-burst {
+  0% {
+    transform: translate(0, 0) scale(0.4);
+    opacity: 0;
+  }
+  18% { opacity: 1; }
+  100% {
+    transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes player-morph-in {
+  from {
+    transform: translateY(6px);
+    opacity: 0;
+    letter-spacing: 0.04em;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+    letter-spacing: 0;
+  }
+}
+
+@keyframes player-stagger {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes player-halo-drift {
+  0%, 100% { transform: translate3d(0, 0, 0); opacity: 0.6; }
+  50% { transform: translate3d(0, -8px, 0); opacity: 1; }
+}
+
+/* Sidebar dot-grid background. Works in both themes via --player-dot token. */
+.player-dot-grid {
+  background-image: radial-gradient(var(--player-dot) 1px, transparent 1px);
+  background-size: 18px 18px;
+  background-position: 0 0;
+}
+
+/* Halo gradient that sits behind the video frame. Intentionally clipped by
+   the parent's `overflow-hidden` — it lights only the upper third. */
+.player-halo {
+  background: radial-gradient(
+    ellipse 80% 60% at 50% 0%,
+    var(--player-glow) 0%,
+    transparent 60%
+  );
+  animation: player-halo-drift 9s ease-in-out infinite;
 }
