@@ -48,8 +48,8 @@ export function CoursePlayer({ course }: Props) {
         onOpenCurriculum={() => setMobileOpen(true)}
       />
 
-      <main className="mx-auto max-w-[1600px] px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_400px]">
+      <main className="w-full px-4 pb-16 pt-6 sm:px-6 sm:pt-8 lg:px-8 2xl:px-12">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_420px] 2xl:grid-cols-[minmax(0,1fr)_460px] 2xl:gap-8">
           {/* Left column: video stage + tabs */}
           <div
             className="min-w-0"

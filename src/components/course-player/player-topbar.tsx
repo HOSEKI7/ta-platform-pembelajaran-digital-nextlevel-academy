@@ -44,7 +44,7 @@ export function PlayerTopbar({
         "bg-[color:var(--player-stage)]/85 backdrop-blur-xl",
       )}
     >
-      <div className="mx-auto flex h-16 max-w-[1600px] items-center justify-between gap-3 px-4 sm:px-6">
+      <div className="flex h-16 w-full items-center justify-between gap-3 px-4 sm:px-6 lg:px-8 2xl:px-12">
         {/* Left: back + breadcrumb */}
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <button
