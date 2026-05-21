@@ -39,5 +39,17 @@ export type PlayerCourse = {
   category: string;
   instructor: PlayerInstructor;
   sprints: PlayerSprint[];
-  mockCompletedStepIds: string[];
+};
+
+/**
+ * What the server-side loader returns and what the `<CoursePlayer />` root
+ * client component consumes. Embed URLs are pre-signed at request time so
+ * the client never sees the raw Bunny token-auth key.
+ */
+export type CoursePlayerData = {
+  course: PlayerCourse;
+  completedStepIds: string[];
+  embedUrls: Record<string, string>;
+  courseId: string;
+  enrollmentId: string;
 };

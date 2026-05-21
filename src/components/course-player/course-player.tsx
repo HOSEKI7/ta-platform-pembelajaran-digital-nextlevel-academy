@@ -1,10 +1,15 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 import { findStep, flattenSteps } from "@/lib/course-player/flatten";
-import type { PlayerCourse, StepStatus } from "@/lib/course-player/types";
+import type { CoursePlayerData, StepStatus } from "@/lib/course-player/types";
 import { statusOf as statusOfFn, usePlayerState } from "@/lib/course-player/use-player-state";
+import { studentKeys } from "@/lib/student-query-keys";
+
 import { CurriculumSidebar } from "./curriculum-sidebar";
 import { MobileCurriculumSheet } from "./mobile-curriculum-sheet";
 import { PlayerTopbar } from "./player-topbar";
@@ -12,33 +17,92 @@ import { StepTabs } from "./step-tabs";
 import { VideoStage } from "./video-stage";
 
 type Props = {
-  course: PlayerCourse;
+  data: CoursePlayerData;
 };
 
-export function CoursePlayer({ course }: Props) {
-  const { state, select, complete, goNext } = usePlayerState(course);
+type CompleteResponse = {
+  progressPct: number;
+  completedStepIds: string[];
+  totalExpAwarded: number;
+  courseCompleted: boolean;
+};
+
+export function CoursePlayer({ data }: Props) {
+  const { course, completedStepIds, embedUrls } = data;
+  const { state, select, complete, hydrate, goNext } = usePlayerState({
+    course,
+    completedStepIds,
+  });
   const [mobileOpen, setMobileOpen] = useState(false);
+  const router = useRouter();
+  const queryClient = useQueryClient();
 
   const statusOf = useCallback(
     (stepId: string): StepStatus => statusOfFn(stepId, state, course),
     [state, course],
   );
 
-  // Resolve current active step + whether it's the very last step in the course.
-  const activeStep = useMemo(() => findStep(course, state.activeStepId), [course, state.activeStepId]);
+  const activeStep = useMemo(
+    () => findStep(course, state.activeStepId),
+    [course, state.activeStepId],
+  );
   const isLastStep = useMemo(() => {
     const flat = flattenSteps(course);
     return flat[flat.length - 1]?.id === state.activeStepId;
   }, [course, state.activeStepId]);
 
-  const handleComplete = useCallback(() => {
-    complete(state.activeStepId);
-  }, [complete, state.activeStepId]);
+  const completeMutation = useMutation<CompleteResponse, Error, string>({
+    mutationFn: async (stepId) => {
+      const res = await fetch(`/api/learn/${stepId}/complete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const json = (await res.json().catch(() => ({}))) as {
+        data?: CompleteResponse;
+        error?: string;
+      };
+      if (!res.ok) {
+        throw new Error(json.error ?? "Gagal menandai materi selesai.");
+      }
+      if (!json.data) throw new Error("Respons tidak lengkap dari server.");
+      return json.data;
+    },
+    onMutate: (stepId) => {
+      // Optimistic — the button morph + particle burst render instantly.
+      complete(stepId);
+    },
+    onSuccess: (result) => {
+      // Reconcile with server: covers idempotent calls and cross-tab edits.
+      hydrate(new Set(result.completedStepIds));
+      if (result.totalExpAwarded > 0) {
+        toast.success(`+${result.totalExpAwarded} XP`, {
+          description: result.courseCompleted
+            ? "Selamat! Kursus tuntas — sertifikat siap diklaim."
+            : "Lanjut materi berikutnya.",
+        });
+      }
+      // Refresh downstream caches so the dashboard / "Kursus Saya" reflect
+      // the new progress immediately when the student leaves the player.
+      queryClient.invalidateQueries({ queryKey: studentKeys.gameProfile() });
+      queryClient.invalidateQueries({ queryKey: studentKeys.dashboard.stats() });
+      queryClient.invalidateQueries({ queryKey: studentKeys.dashboard.inProgress() });
+    },
+    onError: (err) => {
+      toast.error(err.message);
+      // Pull fresh state from the server — drops the optimistic completion.
+      router.refresh();
+    },
+  });
 
-  // Defensive: should never happen because `initialState` always picks a valid id.
+  const handleComplete = useCallback(() => {
+    if (!activeStep || completeMutation.isPending) return;
+    completeMutation.mutate(activeStep.id);
+  }, [activeStep, completeMutation]);
+
   if (!activeStep) return null;
 
   const isCompleted = state.completedStepIds.has(state.activeStepId);
+  const embedUrl = embedUrls[activeStep.id];
 
   return (
     <>
@@ -60,6 +124,8 @@ export function CoursePlayer({ course }: Props) {
               sprintTitle={activeStep.sprintTitle}
               isCompleted={isCompleted}
               isLast={isLastStep}
+              embedUrl={embedUrl}
+              loading={completeMutation.isPending}
               onComplete={handleComplete}
               onNext={goNext}
             />
@@ -78,7 +144,6 @@ export function CoursePlayer({ course }: Props) {
         </div>
       </main>
 
-      {/* Mobile drawer */}
       <MobileCurriculumSheet
         open={mobileOpen}
         onOpenChange={setMobileOpen}

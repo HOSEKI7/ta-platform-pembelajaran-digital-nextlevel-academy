@@ -5,8 +5,6 @@ import { useCallback, useEffect, useReducer } from "react";
 import { findNextStep, flattenSteps } from "./flatten";
 import type { PlayerCourse, StepStatus } from "./types";
 
-const COMPLETED_KEY = (slug: string) => `nla:player:completed:${slug}`;
-
 export type PlayerState = {
   activeStepId: string;
   completedStepIds: Set<string>;
@@ -29,16 +27,18 @@ function reducer(state: PlayerState, action: PlayerAction): PlayerState {
       return { ...state, completedStepIds: next };
     }
     case "hydrate": {
-      const merged = new Set([...state.completedStepIds, ...action.completedStepIds]);
-      return { ...state, completedStepIds: merged };
+      // Replace, not merge — server is the source of truth for completion.
+      return { ...state, completedStepIds: new Set(action.completedStepIds) };
     }
     default:
       return state;
   }
 }
 
-function initialState(course: PlayerCourse): PlayerState {
-  const seeded = new Set(course.mockCompletedStepIds);
+type InitArgs = { course: PlayerCourse; completedStepIds: string[] };
+
+function initialState({ course, completedStepIds }: InitArgs): PlayerState {
+  const seeded = new Set(completedStepIds);
   const flat = flattenSteps(course);
   const firstUncompleted = flat.find((s) => !seeded.has(s.id));
   return {
@@ -67,36 +67,9 @@ export function statusOf(
   return "available";
 }
 
-export function usePlayerState(course: PlayerCourse) {
-  const [state, dispatch] = useReducer(reducer, course, initialState);
-
-  // Hydrate persisted completions on mount (per-slug).
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const raw = window.localStorage.getItem(COMPLETED_KEY(course.slug));
-      if (!raw) return;
-      const ids: string[] = JSON.parse(raw);
-      if (Array.isArray(ids) && ids.length > 0) {
-        dispatch({ kind: "hydrate", completedStepIds: new Set(ids) });
-      }
-    } catch {
-      // ignore malformed storage
-    }
-  }, [course.slug]);
-
-  // Persist completions whenever they change.
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      window.localStorage.setItem(
-        COMPLETED_KEY(course.slug),
-        JSON.stringify(Array.from(state.completedStepIds)),
-      );
-    } catch {
-      // ignore quota errors
-    }
-  }, [course.slug, state.completedStepIds]);
+export function usePlayerState(args: InitArgs) {
+  const { course } = args;
+  const [state, dispatch] = useReducer(reducer, args, initialState);
 
   // URL hash sync: write the active step id so the page can be deep-linked.
   useEffect(() => {
@@ -130,11 +103,16 @@ export function usePlayerState(course: PlayerCourse) {
     (stepId: string) => dispatch({ kind: "complete", stepId }),
     [],
   );
+  const hydrate = useCallback(
+    (completedStepIds: Set<string>) =>
+      dispatch({ kind: "hydrate", completedStepIds }),
+    [],
+  );
   const goNext = useCallback(() => {
     const upcoming = findNextStep(course, state.activeStepId);
     if (!upcoming) return;
     dispatch({ kind: "select", stepId: upcoming.id });
   }, [course, state.activeStepId]);
 
-  return { state, select, complete, goNext } as const;
+  return { state, select, complete, hydrate, goNext } as const;
 }

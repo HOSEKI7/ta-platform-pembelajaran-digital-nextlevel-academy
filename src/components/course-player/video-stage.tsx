@@ -5,12 +5,15 @@ import { Brain, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { PlayerStep } from "@/lib/course-player/types";
 import { CompleteButton } from "./complete-button";
+import { VideoFrame } from "./video-frame";
 
 type Props = {
   step: PlayerStep;
   sprintTitle: string;
   isCompleted: boolean;
   isLast: boolean;
+  embedUrl?: string;
+  loading?: boolean;
   onComplete: () => void;
   onNext: () => void;
 };
@@ -26,6 +29,8 @@ export function VideoStage({
   sprintTitle,
   isCompleted,
   isLast,
+  embedUrl,
+  loading,
   onComplete,
   onNext,
 }: Props) {
@@ -52,6 +57,13 @@ export function VideoStage({
       >
         {isQuiz ? (
           <QuizPlaceholder title={step.title} />
+        ) : embedUrl ? (
+          <VideoFrame
+            embedUrl={embedUrl}
+            stepId={step.id}
+            isCompleted={isCompleted}
+            onEnded={onComplete}
+          />
         ) : (
           <VideoPlaceholder title={step.title} duration={formatDuration(step.durationSec)} />
         )}
@@ -84,6 +96,8 @@ export function VideoStage({
           <CompleteButton
             isCompleted={isCompleted}
             isLast={isLast}
+            loading={loading}
+            disabled={isQuiz}
             onComplete={onComplete}
             onNext={onNext}
           />

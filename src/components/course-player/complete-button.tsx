@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight, Check, Loader2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { CompletionBurst } from "./completion-burst";
@@ -13,6 +13,8 @@ type Props = {
   onNext: () => void;
   /** When true, the button is locked (e.g. quiz step that isn't passable yet). */
   disabled?: boolean;
+  /** Mutation-in-flight indicator — disables click + swaps icon to a spinner. */
+  loading?: boolean;
 };
 
 /**
@@ -32,6 +34,7 @@ export function CompleteButton({
   onComplete,
   onNext,
   disabled,
+  loading,
 }: Props) {
   const [burstShown, setBurstShown] = useState(false);
   const [prevIsCompleted, setPrevIsCompleted] = useState(isCompleted);
@@ -44,7 +47,7 @@ export function CompleteButton({
   }
 
   function handleClick() {
-    if (disabled) return;
+    if (disabled || loading) return;
     if (!isCompleted) {
       setBurstShown(true);
       onComplete();
@@ -68,8 +71,9 @@ export function CompleteButton({
       <button
         type="button"
         onClick={handleClick}
-        disabled={disabled || (isCompleted && isLast)}
+        disabled={disabled || loading || (isCompleted && isLast)}
         aria-label={label}
+        aria-busy={loading || undefined}
         className={cn(
           "relative inline-flex h-11 items-center gap-2 overflow-hidden rounded-full px-5 text-sm font-semibold text-white",
           "transition-[background,box-shadow,transform,width] duration-500 ease-[cubic-bezier(0.2,0.7,0.2,1)]",
@@ -82,7 +86,7 @@ export function CompleteButton({
           isCompleted &&
             isLast &&
             "bg-gradient-to-r from-emerald-500 to-emerald-400 shadow-[0_18px_40px_-18px_rgba(16,185,129,0.6)] cursor-default",
-          disabled && "opacity-50 cursor-not-allowed",
+          (disabled || loading) && "opacity-70 cursor-not-allowed",
         )}
       >
         {/* Icon swap */}
@@ -90,7 +94,9 @@ export function CompleteButton({
           className="relative inline-flex size-5 items-center justify-center"
           aria-hidden
         >
-          {isCompleted ? (
+          {loading ? (
+            <Loader2 className="size-4 animate-spin" strokeWidth={2.6} />
+          ) : isCompleted ? (
             isLast ? (
               <Check className="size-4" strokeWidth={3} />
             ) : (
