@@ -1,10 +1,18 @@
 ## NextLevel Academy
 NextLevel Academy adalah platform edukasi digital yang menyediakan kursus online, pelatihan, mentoring, seminar, dan workshop di berbagai bidang seperti multimedia, AI, programming, digital creative.
+
+
 Repositori dan source code ini bertujuan sebagai identifikasi progres pengembangan platform untuk keperluan Skripsi atau Tugas Akhir berjudul "PENGEMBANGAN PLATFORM PEMBELAJARAN DIGITAL BERBASIS WEB DENGAN GAMIFIKASI DAN SISTEM MAGANG TERINTEGARASI (STUDI KASUS: NEXTLEVEL ACADEMY)".
 
 #### How To Install?
 
-First, install depedencies:
+First, clone the repo:
+
+```bash
+git clone <URL>
+```
+
+next, install depedencies:
 
 ```bash
 npm install
