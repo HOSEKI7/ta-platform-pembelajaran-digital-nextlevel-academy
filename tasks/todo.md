@@ -1,32 +1,47 @@
-# TODO — Integrasi Halaman EXP & Level dengan Backend (PRD §6.7) ✅ SELESAI
+# TODO — Halaman Detail Transaksi `/transactions/[id]` (frontend + backend)
 
-Plan: `~/.claude/plans/integrasikan-halaman-exp-misty-tome.md`
-Keputusan user: voucher pakai tombol **Klaim** (tulis ke DB), masa berlaku **180 hari**, badge **semua trigger**.
+## Konteks
+Lanjutan halaman Transaksi. Tombol "Detail Transaksi" di tabel kini hanya toast
+placeholder. Buat halaman detail penuh **menarik & informatif**, terintegrasi
+backend, **konsisten** dengan design system dashboard (rounded-3xl, ring zinc,
+brand blue, font-heading) — bukan estetika menyimpang.
 
-## A. Mesin gamifikasi (backend)
-- [x] `src/lib/gamification-types.ts` — DTO + `badgeTitleForLevel` + `badgeVisual`
-- [x] `src/lib/voucher-code.ts` — `generateVoucherCode(level)` (nanoid, `NLA-LV{n}-{8}`)
-- [x] `src/lib/gamification.ts` — `awardExp`, `applyExpGain` (level-up + reset exp→0), `awardLevelBadges`, `awardCompletionBadges`, `claimRewardVoucher`, `reconcileLevelBadges`, loaders
+> STATUS: ✅ SELESAI. Keputusan CTA user: PENDING → tombol "Lanjutkan Pembayaran"
+> placeholder (gateway belum ada) + countdown; SUCCESS → tombol "Unduh Bukti
+> Transaksi" (PDF receipt); FAILED → tanpa tombol; EXPIRED → tanpa tombol (asumsi,
+> konsisten dengan FAILED). Visual: konsisten design system dashboard.
 
-## B. Wire ke route EXP
-- [x] `complete/route.ts` — `awardExp` + `awardCompletionBadges`
-- [x] `quiz/submit/route.ts` — `awardExp` + `awardCompletionBadges`
+## A. Backend
+- [x] `transaction-data-loader.ts` — `loadTransactionDetail(userId, orderId)`:
+      `order.findFirst({ where: { id, userId } })` (scope userId = keamanan → null
+      jika bukan miliknya). Include `course` (title/slug/thumbnailUrl/instructor/
+      category.name) + `voucher` (code/discountPct). Return `TransactionDetailDTO | null`.
+- [ ] DTO `TransactionDetailDTO`: id, status, course{...}, pricing{originalPrice,
+      discountAmount, finalPrice}, voucher{code,discountPct}|null, paymentMethod,
+      paymentInvoiceId, checkoutAt, paidAt, expiresAt (ISO).
 
-## C. Klaim voucher (API + hook)
-- [x] `src/lib/validators/rewards.ts`
-- [x] `POST /api/student/me/reward-vouchers/claim`
-- [x] `src/hooks/use-claim-reward-voucher.ts`
-- [~] `studentKeys.rewardVouchers()` — DILEWATI (view pakai local-state, key tak terpakai)
+## B. Page (Server Component, direct fetch — no TanStack)
+- [ ] `src/app/(student)/transactions/[id]/page.tsx`: `params: Promise<{id}>`,
+      `requireRole(PESERTA_DIDIK)`, `await params`, loader → `notFound()` jika null,
+      `generateMetadata` noindex, wrapper `max-w-5xl`.
 
-## D. Frontend
-- [x] `exp-level/page.tsx` — load data nyata (`loadExpLevelPage`)
-- [x] `exp-level-view.tsx` — claim mutation + toast, hapus localStorage
-- [x] `reward-roadmap.tsx` — chip status + disable saat claiming
-- [x] `badge-collection.tsx` — ganti import type (`level-hero-card.tsx` tidak perlu)
-- [x] hapus `mock-data.ts`
+## C. View
+- [ ] `transaction-detail-view.tsx` (Server Component): back link, hero card
+      (status badge + ID mono + salin + judul + waktu checkout), Rincian Pembayaran
+      (Harga Asli → Diskon −/chip voucher → Total ditebalkan), grid metadata (metode,
+      invoice id+salin, tgl checkout, tgl dibayar, batas waktu), kartu kursus
+      (thumbnail+instruktur+kategori), CTA sadar-status, animasi masuk staggered.
+- [ ] `CopyButton` (client) salin id/invoice → toast.
+- [ ] (Opsional) `PendingCountdown` (client) untuk status PENDING.
 
-## E. Seed + verifikasi
-- [x] `prisma/seed.ts` — 7 badge
-- [x] `npm run db:seed`
-- [x] `npx tsc --noEmit` + `npm run lint` (bersih)
-- [x] verifikasi engine via rolled-back tx (level-up + reset + badge + voucher) ✔
+## D. Sambung tabel
+- [ ] `transactions-view.tsx` `DetailButton`: `onClick/toast` → `<Link href="/transactions/${id}">`.
+
+## E. Verifikasi
+- [ ] `tsc --noEmit` + `eslint` bersih.
+- [ ] throwaway: `loadTransactionDetail` order nyata → DTO benar; id asing → null.
+- [ ] browser: klik detail dari tabel, cek SUCCESS/FAILED nyata, salin, back, 404, mobile.
+- [ ] `init` (catat CLAUDE.md).
+
+## Keputusan check-in (CTA sadar-status)
+Menunggu konfirmasi user — lihat pertanyaan.

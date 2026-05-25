@@ -1,11 +1,16 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { toast } from "sonner";
-import { FileText, Receipt } from "lucide-react";
+import { FileText, Inbox, Receipt } from "lucide-react";
 
+import { useTransactionsQuery } from "@/hooks/use-transactions";
 import { PageHeader } from "@/components/dashboard/shared/page-header";
 import { Pagination } from "@/components/dashboard/shared/pagination";
+import type {
+  TransactionRowDTO,
+  TransactionsPageDTO,
+} from "@/lib/transaction-data-loader";
 import { formatDateID, formatTimeID } from "@/lib/format-date";
 import { idr } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -25,42 +30,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import {
-  MOCK_TRANSACTIONS,
-  type TransactionRowDTO,
-  type TransactionStatus,
-} from "./mock-data";
+import { StatusBadge } from "./transaction-status";
 
 const SORT_OPTIONS: { value: TransactionsSort; label: string }[] = [
   { value: "desc", label: "Terbaru" },
   { value: "asc", label: "Terlama" },
 ];
-
-const STATUS_META: Record<
-  TransactionStatus,
-  { label: string; dot: string; pill: string }
-> = {
-  PENDING: {
-    label: "Menunggu",
-    dot: "bg-amber-500",
-    pill: "bg-amber-50 text-amber-700 ring-amber-600/20 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-400/20",
-  },
-  SUCCESS: {
-    label: "Berhasil",
-    dot: "bg-emerald-500",
-    pill: "bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-400/20",
-  },
-  FAILED: {
-    label: "Gagal",
-    dot: "bg-red-500",
-    pill: "bg-red-50 text-red-700 ring-red-600/20 dark:bg-red-500/10 dark:text-red-300 dark:ring-red-400/20",
-  },
-  EXPIRED: {
-    label: "Kedaluwarsa",
-    dot: "bg-zinc-400",
-    pill: "bg-zinc-100 text-zinc-600 ring-zinc-500/20 dark:bg-white/5 dark:text-zinc-400 dark:ring-white/10",
-  },
-};
 
 function parseSort(value: string | null): TransactionsSort {
   return value === "asc" ? "asc" : "desc";
@@ -87,6 +62,8 @@ export function TransactionsView() {
   const pageSize = parsePageSize(searchParams.get("pageSize"));
   const page = parsePage(searchParams.get("page"));
 
+  const filters = { sort, pageSize, page };
+
   function pushParams(next: {
     sort: TransactionsSort;
     pageSize: TransactionsPageSize;
@@ -100,24 +77,7 @@ export function TransactionsView() {
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   }
 
-  // Mock-only: sort + paginate in memory. When the backend lands this whole
-  // block becomes a `useQuery` over `/api/student/transactions`.
-  const sorted = [...MOCK_TRANSACTIONS].sort((a, b) => {
-    const da = new Date(a.checkoutAt).getTime();
-    const db = new Date(b.checkoutAt).getTime();
-    return sort === "asc" ? da - db : db - da;
-  });
-
-  const total = sorted.length;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const currentPage = Math.min(page, totalPages);
-  const rows = sorted.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize,
-  );
-
-  const rangeStart = total === 0 ? 0 : (currentPage - 1) * pageSize + 1;
-  const rangeEnd = Math.min(currentPage * pageSize, total);
+  const { data, isPending, isError } = useTransactionsQuery(filters);
 
   return (
     <div className="flex flex-col gap-8">
@@ -128,67 +88,110 @@ export function TransactionsView() {
         description="Semua pembelian kursusmu tersimpan permanen di sini — termasuk transaksi yang masih menunggu, gagal, atau kedaluwarsa."
       />
 
-      {total === 0 ? (
-        <EmptyState />
-      ) : (
-        <div className="overflow-hidden rounded-3xl bg-white ring-1 ring-zinc-200 dark:bg-[color:var(--color-surface-card)] dark:ring-[color:var(--color-surface-border)]">
-          <Toolbar
-            total={total}
-            rangeStart={rangeStart}
-            rangeEnd={rangeEnd}
-            sort={sort}
-            pageSize={pageSize}
-            onSortChange={(value) =>
-              pushParams({ sort: value, pageSize, page: 1 })
-            }
-            onPageSizeChange={(value) =>
-              pushParams({ sort, pageSize: value, page: 1 })
-            }
+      {isPending ? (
+        <LoadingState />
+      ) : isError ? (
+        <ErrorState />
+      ) : data ? (
+        <TransactionsContent
+          data={data}
+          filters={filters}
+          onSortChange={(value) => pushParams({ sort: value, pageSize, page: 1 })}
+          onPageSizeChange={(value) =>
+            pushParams({ sort, pageSize: value, page: 1 })
+          }
+          onPageChange={(value) => pushParams({ sort, pageSize, page: value })}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+type ContentProps = {
+  data: TransactionsPageDTO;
+  filters: {
+    sort: TransactionsSort;
+    pageSize: TransactionsPageSize;
+    page: number;
+  };
+  onSortChange: (value: TransactionsSort) => void;
+  onPageSizeChange: (value: TransactionsPageSize) => void;
+  onPageChange: (value: number) => void;
+};
+
+function TransactionsContent({
+  data,
+  filters,
+  onSortChange,
+  onPageSizeChange,
+  onPageChange,
+}: ContentProps) {
+  const { rows, pagination } = data;
+
+  if (pagination.total === 0) {
+    return <EmptyState />;
+  }
+
+  const rangeStart =
+    pagination.total === 0 ? 0 : (pagination.page - 1) * pagination.pageSize + 1;
+  const rangeEnd = Math.min(
+    pagination.page * pagination.pageSize,
+    pagination.total,
+  );
+
+  return (
+    <div className="overflow-hidden rounded-3xl bg-white ring-1 ring-zinc-200 dark:bg-[color:var(--color-surface-card)] dark:ring-[color:var(--color-surface-border)]">
+      <Toolbar
+        total={pagination.total}
+        rangeStart={rangeStart}
+        rangeEnd={rangeEnd}
+        sort={filters.sort}
+        pageSize={filters.pageSize}
+        onSortChange={onSortChange}
+        onPageSizeChange={onPageSizeChange}
+      />
+
+      <div className="hidden md:block">
+        <Table>
+          <TableHeader>
+            <TableRow className="border-b border-zinc-200 bg-zinc-50/60 hover:bg-zinc-50/60 dark:border-[color:var(--color-surface-border)] dark:bg-white/[0.02]">
+              <TableHead className="h-11 px-5 text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-500">
+                ID Transaksi
+              </TableHead>
+              <TableHead className="h-11 text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-500">
+                Nama Kursus
+              </TableHead>
+              <TableHead className="h-11 text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-500">
+                Waktu Checkout
+              </TableHead>
+              <TableHead className="h-11 text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-500">
+                Status
+              </TableHead>
+              <TableHead className="h-11 pr-5 text-right text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-500">
+                Aksi
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((row) => (
+              <TransactionRow key={row.id} row={row} />
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      <MobileRows rows={rows} />
+
+      {pagination.totalPages > 1 ? (
+        <div className="border-t border-zinc-200 px-5 py-4 dark:border-[color:var(--color-surface-border)]">
+          <Pagination
+            page={pagination.page}
+            totalPages={pagination.totalPages}
+            onChange={onPageChange}
+            ariaLabel="Paginasi transaksi"
           />
-
-          <div className="hidden md:block">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-b border-zinc-200 bg-zinc-50/60 hover:bg-zinc-50/60 dark:border-[color:var(--color-surface-border)] dark:bg-white/[0.02]">
-                  <TableHead className="h-11 px-5 text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-500">
-                    ID Transaksi
-                  </TableHead>
-                  <TableHead className="h-11 text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-500">
-                    Nama Kursus
-                  </TableHead>
-                  <TableHead className="h-11 text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-500">
-                    Waktu Checkout
-                  </TableHead>
-                  <TableHead className="h-11 text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-500">
-                    Status
-                  </TableHead>
-                  <TableHead className="h-11 pr-5 text-right text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-500">
-                    Aksi
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((row) => (
-                  <TransactionRow key={row.id} row={row} />
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-
-          <MobileRows rows={rows} />
-
-          {totalPages > 1 ? (
-            <div className="border-t border-zinc-200 px-5 py-4 dark:border-[color:var(--color-surface-border)]">
-              <Pagination
-                page={currentPage}
-                totalPages={totalPages}
-                onChange={(value) => pushParams({ sort, pageSize, page: value })}
-                ariaLabel="Paginasi transaksi"
-              />
-            </div>
-          ) : null}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -287,30 +290,10 @@ function Toolbar({
   );
 }
 
-function StatusBadge({ status }: { status: TransactionStatus }) {
-  const meta = STATUS_META[status];
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold ring-1 ring-inset",
-        meta.pill,
-      )}
-    >
-      <span className={cn("size-1.5 rounded-full", meta.dot)} aria-hidden />
-      {meta.label}
-    </span>
-  );
-}
-
 function DetailButton({ transactionId }: { transactionId: string }) {
   return (
-    <button
-      type="button"
-      onClick={() =>
-        toast.info("Detail transaksi akan segera tersedia.", {
-          description: `ID: ${transactionId}`,
-        })
-      }
+    <Link
+      href={`/transactions/${transactionId}`}
       className={cn(
         "inline-flex h-8 items-center gap-1.5 rounded-full px-3.5 text-[12px] font-bold transition",
         "text-zinc-700 ring-1 ring-zinc-200 hover:bg-zinc-100 hover:text-zinc-900",
@@ -319,7 +302,7 @@ function DetailButton({ transactionId }: { transactionId: string }) {
     >
       <FileText className="size-3.5" strokeWidth={2.4} />
       <span>Detail Transaksi</span>
-    </button>
+    </Link>
   );
 }
 
@@ -424,6 +407,34 @@ function EmptyState() {
           pembayaran dan waktu checkout.
         </p>
       </div>
+    </div>
+  );
+}
+
+function LoadingState() {
+  return (
+    <div className="rounded-3xl bg-white p-6 ring-1 ring-zinc-200 dark:bg-[color:var(--color-surface-card)] dark:ring-[color:var(--color-surface-border)]">
+      <div className="flex flex-col gap-3">
+        {Array.from({ length: 5 }).map((_, idx) => (
+          <div
+            key={idx}
+            className="h-10 animate-pulse rounded-lg bg-zinc-100 dark:bg-white/5"
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ErrorState() {
+  return (
+    <div className="grid place-items-center gap-3 rounded-3xl bg-white p-10 ring-1 ring-zinc-200 dark:bg-[color:var(--color-surface-card)] dark:ring-[color:var(--color-surface-border)]">
+      <div className="grid size-12 place-items-center rounded-2xl bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-300">
+        <Inbox className="size-5" />
+      </div>
+      <p className="text-sm text-zinc-500 dark:text-zinc-300/70">
+        Gagal memuat transaksi. Coba muat ulang halaman.
+      </p>
     </div>
   );
 }

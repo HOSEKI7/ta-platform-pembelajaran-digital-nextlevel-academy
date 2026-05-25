@@ -24,5 +24,13 @@ export const studentKeys = {
     filters
       ? ([...studentKeys.all, "certificates", filters] as const)
       : ([...studentKeys.all, "certificates"] as const),
+  transactions: (filters?: {
+    sort: "asc" | "desc";
+    pageSize: number;
+    page: number;
+  }) =>
+    filters
+      ? ([...studentKeys.all, "transactions", filters] as const)
+      : ([...studentKeys.all, "transactions"] as const),
   notifications: () => [...studentKeys.all, "notifications"] as const,
 } as const;
