@@ -57,6 +57,27 @@ export class GamificationError extends Error {
   }
 }
 
+/**
+ * True when `err` is a Prisma unique-constraint violation (P2002).
+ *
+ * We deliberately duck-type on the stable `code` field instead of
+ * `err instanceof Prisma.PrismaClientKnownRequestError`: in the Next.js /
+ * Turbopack server runtime the generated client that throws the error and the
+ * `Prisma` namespace imported into this module can be distinct bundle copies,
+ * so the prototype chain doesn't match and `instanceof` returns false even for
+ * a genuine `PrismaClientKnownRequestError`. That silently broke every
+ * idempotency guard below (e.g. re-running `reconcileLevelBadges` on each
+ * `/exp-level` load). The numeric error code is identity-independent.
+ */
+function isUniqueConstraintError(err: unknown): boolean {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "code" in err &&
+    (err as { code?: unknown }).code === "P2002"
+  );
+}
+
 // -----------------------------------------------------------------------------
 // EXP + level-up cascade
 // -----------------------------------------------------------------------------
@@ -83,10 +104,7 @@ export async function awardExp(
   try {
     await db.expLog.create({ data: { userId, amount, source, refId } });
   } catch (err) {
-    if (
-      err instanceof Prisma.PrismaClientKnownRequestError &&
-      err.code === "P2002"
-    ) {
+    if (isUniqueConstraintError(err)) {
       // Already awarded for this (user, source, refId) — no double grant.
       return { awarded: 0, leveledUp: false, newLevel: null };
     }
@@ -144,10 +162,7 @@ async function awardBadges(
         data: { userId, badgeId: badge.id, badgeSnapshot: badge.name },
       });
     } catch (err) {
-      if (
-        err instanceof Prisma.PrismaClientKnownRequestError &&
-        err.code === "P2002"
-      ) {
+      if (isUniqueConstraintError(err)) {
         // Already earned — fine.
         continue;
       }
@@ -282,10 +297,7 @@ async function createVoucherWithUniqueCode(
         select: { code: true, endDate: true, usageCount: true, isActive: true },
       });
     } catch (err) {
-      if (
-        err instanceof Prisma.PrismaClientKnownRequestError &&
-        err.code === "P2002"
-      ) {
+      if (isUniqueConstraintError(err)) {
         // Code collision (astronomically unlikely) — regenerate and retry.
         continue;
       }

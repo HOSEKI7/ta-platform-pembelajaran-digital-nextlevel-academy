@@ -30,7 +30,10 @@ export default async function TransactionDetailPage({ params }: Props) {
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-5 py-8 sm:px-8 sm:py-10 lg:px-10">
-      <TransactionDetailView tx={tx} />
+      <TransactionDetailView
+        tx={tx}
+        customer={{ name: session.user.name, email: session.user.email }}
+      />
     </div>
   );
 }
