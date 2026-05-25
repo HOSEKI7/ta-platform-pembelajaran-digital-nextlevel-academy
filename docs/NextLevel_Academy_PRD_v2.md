@@ -381,7 +381,7 @@ Sistem membuat Order (status: PENDING)
 Timer 60 menit dimulai
         │
         ▼
-User menyelesaikan pembayaran via DOKU / Midtrans
+User menyelesaikan pembayaran via Midtrans
         │
         ▼
 [Payment Gateway Webhook]
@@ -400,13 +400,13 @@ User menyelesaikan pembayaran via DOKU / Midtrans
   - Jika valid: tampilkan potongan harga dan harga akhir.
   - Jika tidak valid: tampilkan pesan error.
 - Harga final yang harus dibayar.
-- Pilihan metode pembayaran (QRIS, Transfer Bank, E-Wallet via DOKU / Midtrans).
+- Pilihan metode pembayaran (QRIS, Transfer Bank, E-Wallet via Midtrans).
 - Timer countdown 60 menit (dimulai setelah klik "Bayar Sekarang").
 - Tombol "Bayar Sekarang".
 
 #### 6.4.3 Metode Pembayaran
 
-Terintegrasi dengan **DOKU** (atau **Midtrans**):
+Terintegrasi dengan **Midtrans**:
 
 - QRIS
 - Virtual Account (Transfer Bank) — BCA, BNI, BRI, Mandiri, dll.
@@ -437,8 +437,8 @@ Seluruh riwayat transaksi tersimpan permanen, termasuk yang expired atau failed.
 
 #### 6.4.7 Payment Gateway Webhook Handler
 
-- Endpoint backend menerima webhook dari DOKU / Midtrans untuk update status pembayaran.
-- Webhook divalidasi menggunakan signature/token yang disediakan oleh payment gateway (header validasi sesuai dokumentasi DOKU / Midtrans).
+- Endpoint backend menerima webhook dari Midtrans untuk update status pembayaran.
+- Webhook divalidasi menggunakan signature/token yang disediakan oleh payment gateway (header validasi sesuai dokumentasi Midtrans).
 - Idempotency: setiap webhook diproses sekali; order yang sudah `SUCCESS` tidak bisa diubah statusnya.
 
 ---
@@ -1032,7 +1032,7 @@ Jika ada yang tidak lolos validasi, sistem menampilkan pesan error spesifik dan 
 
 - Tabel seluruh transaksi: user, kursus, jumlah, metode, status, tanggal.
 - Filter: status, rentang tanggal, kursus, user.
-- Detail transaksi: seluruh informasi order + webhook log dari payment gateway (DOKU / Midtrans).
+- Detail transaksi: seluruh informasi order + webhook log dari payment gateway (Midtrans).
 - Admin dapat menambahkan catatan manual pada transaksi (untuk keperluan dispute handling).
 
 #### 6.11.6 Manajemen Voucher
@@ -1131,7 +1131,7 @@ Admin dapat melakukan CRUD badge dengan ketentuan:
 
 - Uptime target: **99.5%** per bulan.
 - Graceful error handling: setiap error ditampilkan sebagai pesan yang ramah pengguna, bukan raw error.
-- Webhook payment gateway (DOKU / Midtrans) harus memiliki retry mechanism (handled by payment gateway; backend harus idempotent).
+- Webhook payment gateway (Midtrans) harus memiliki retry mechanism (handled by payment gateway; backend harus idempotent).
 
 ### 7.3 Scalability
 
@@ -1192,7 +1192,7 @@ Admin dapat melakukan CRUD badge dengan ketentuan:
        ┌───────────────┼─────────────────┐
        │               │                 │
 ┌──────▼──────┐ ┌──────▼──────┐  ┌──────▼──────┐
-│  Supabase   │ │  Bunny.net  │  │DOKU/Midtrans│
+│  Supabase   │ │  Bunny.net  │  │  Midtrans   │
 │ (PostgreSQL)│ │ (Video CDN) │  │  (Payment)  │
 └─────────────┘ └─────────────┘  └─────────────┘
 ```
@@ -1208,7 +1208,7 @@ Admin dapat melakukan CRUD badge dengan ketentuan:
 | **ORM**              | Prisma                   | Schema-first, migrations                  |
 | **Authentication**   | Better Auth              | Sessions                                  |
 | **Video Hosting**    | Bunny.net                | Stream + Signed URLs                      |
-| **Payment Gateway**  | DOKU (atau Midtrans)     | Webhook-based                             |
+| **Payment Gateway**  | Midtrans                 | Webhook-based                             |
 | **Email**            | Resend + React Email     | Transactional email, tanpa queue          |
 | **Input Validation** | Zod                      | Frontend & Backend (Route Handlers)       |
 | **Testing**          | Playwright + Blackbox    | E2E + manual                              |
@@ -1224,7 +1224,7 @@ Admin dapat melakukan CRUD badge dengan ketentuan:
 | Prisma ORM                         | Type-safe query, auto-migration, developer experience yang baik                                    |
 | Bunny.net (bukan S3+CloudFront)    | Lebih terjangkau, CDN built-in, video streaming support, signed URL support                        |
 | Resend + React Email               | API email modern, template berbasis React/JSX, deliverability tinggi; menggantikan Nodemailer+SMTP |
-| DOKU / Midtrans (bukan Xendit)     | Payment gateway lokal Indonesia dengan dukungan metode pembayaran yang lengkap                     |
+| Midtrans                           | Payment gateway lokal Indonesia dengan dukungan metode pembayaran yang lengkap                     |
 | TanStack Query                     | Manajemen server state, caching, dan data fetching yang robust di sisi client                      |
 | Better Auth                        | Fitur lengkap (session, email verification) dengan implementasi yang mudah                         |
 | Nodemailer/BullMQ/Redis ditunda    | Over-engineering untuk MVP; Resend sudah cukup tanpa queue untuk volume awal                       |
@@ -1424,7 +1424,7 @@ Order {
   discountAmount Integer
   finalPrice    Integer
   status        Enum: PENDING | SUCCESS | FAILED | EXPIRED
-  paymentInvoiceId String (nullable — ID invoice dari DOKU / Midtrans)
+  paymentInvoiceId String (nullable — ID invoice dari Midtrans)
   paymentMethod String (nullable)
   expiresAt     DateTime
   paidAt        DateTime (nullable)
@@ -1662,7 +1662,7 @@ Seluruh API endpoint menggunakan prefix `/api/v1/`, diimplementasikan sebagai Ne
 | GET    | `/orders`            | Riwayat transaksi user       | Auth                            |
 | GET    | `/orders/:id`        | Detail order                 | Auth                            |
 | POST   | `/vouchers/validate` | Validasi kode voucher        | Auth                            |
-| POST   | `/webhooks/payment`  | Webhook dari DOKU / Midtrans | Public (validated by signature) |
+| POST   | `/webhooks/payment`  | Webhook dari Midtrans        | Public (validated by signature) |
 
 ### 10.5 Certificates
 
@@ -1761,13 +1761,13 @@ Seluruh API endpoint menggunakan prefix `/api/v1/`, diimplementasikan sebagai Ne
 
 ### 11.5 Payment Security
 
-- Webhook dari DOKU / Midtrans divalidasi menggunakan signature/token header sesuai dokumentasi masing-masing payment gateway.
+- Webhook dari Midtrans divalidasi menggunakan signature/token header sesuai dokumentasi masing-masing payment gateway.
 - Backend idempotent: order yang sudah `SUCCESS` tidak akan diproses ulang meski webhook diterima lebih dari sekali.
 - Seluruh transaksi dicatat dengan timestamp dan IP log.
 
 ### 11.6 Secrets Management
 
-- Seluruh API key (DOKU/Midtrans, Bunny.net, Resend, Supabase) disimpan di environment variables.
+- Seluruh API key (Midtrans, Bunny.net, Resend, Supabase) disimpan di environment variables.
 - Tidak ada hardcoded secret di kode sumber.
 - `.env` tidak di-commit ke version control (`.gitignore`).
 
@@ -1891,7 +1891,7 @@ Seluruh email menggunakan template React Email yang konsisten dengan branding Ne
 | 14  | Next.js Fullstack (tanpa Express terpisah)   | Simplifikasi codebase dan deployment; Route Handlers cukup untuk kebutuhan v1.0        |
 | 15  | Supabase sebagai database provider           | Managed PostgreSQL dengan koneksi standar; kompatibel penuh dengan Prisma ORM          |
 | 16  | Resend + React Email (bukan Nodemailer+SMTP) | API email modern, template JSX, deliverability lebih terjamin, konfigurasi minimal     |
-| 17  | DOKU / Midtrans (bukan Xendit)               | Payment gateway lokal Indonesia; dukungan metode pembayaran lengkap untuk pasar ID     |
+| 17  | Midtrans                                     | Payment gateway lokal Indonesia; dukungan metode pembayaran lengkap untuk pasar ID     |
 | 18  | TanStack Query untuk data fetching           | Manajemen server state dan caching yang robust; sinergi baik dengan Next.js App Router |
 
 ---
@@ -1927,7 +1927,7 @@ Fitur-fitur berikut **tidak termasuk** dalam v1.0 dan dapat dipertimbangkan untu
 | **Enrollment**              | Kepemilikan akses user terhadap suatu kursus setelah pembelian berhasil.                      |
 | **Voucher**                 | Kode diskon yang dapat digunakan saat checkout.                                               |
 | **Signed URL**              | URL dengan token keamanan sementara untuk mengakses video di Bunny.net.                       |
-| **Webhook**                 | Notifikasi HTTP yang dikirim DOKU / Midtrans ke backend saat status pembayaran berubah.       |
+| **Webhook**                 | Notifikasi HTTP yang dikirim Midtrans ke backend saat status pembayaran berubah.              |
 | **Bidang**                  | Kategori keahlian/pekerjaan dalam sistem magang (contoh: Multimedia, Web Programming).        |
 | **Kelas**                   | Sub-kelompok opsional dalam satu bidang magang untuk memisahkan peserta (contoh: Kelas A, B). |
 | **Window Absensi**          | Rentang waktu yang dikonfigurasi admin dalam sehari di mana peserta magang dapat check-in.    |
