@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { ExpSource, Prisma, Role } from "@/generated/prisma";
+import { ExpSource, Role } from "@/generated/prisma";
 import { requireRoleInRoute } from "@/lib/auth-server";
+import { awardCompletionBadges, awardExp } from "@/lib/gamification";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -22,19 +23,17 @@ const EXP_COURSE_COMPLETE = 600;
  * passing the quiz is what marks a QUIZ step complete. Submitting QUIZ
  * stepIds here returns 400.
  *
- * The endpoint is idempotent: repeated calls do NOT award EXP twice. The
- * `ExpLog` table's `@@unique([userId, source, refId])` constraint enforces
- * this at the DB level — we catch the unique-violation and treat it as
- * "already awarded".
+ * EXP/level handling is delegated to `awardExp()` (see `@/lib/gamification`),
+ * which is idempotent per `(userId, source, refId)` and runs the level-up
+ * cascade (level increment, `exp` reset to 0, LEVEL_REACHED badge awards).
  *
  * Side effects (atomic transaction):
  *   1. Upsert `StepProgress` -> isCompleted: true
- *   2. Award +15 VIDEO_COMPLETE EXP — first time only
- *   3. Increment `UserGameProfile.exp` + `totalExp`
- *   4. Recompute `Enrollment.progressPct`
- *   5. If 100% and not previously completed: set `Enrollment.completedAt`,
- *      award +600 COURSE_COMPLETE EXP
- *   6. Bump `Enrollment.lastAccessedAt`
+ *   2. Award +15 VIDEO_COMPLETE EXP — first time only (+ level-up cascade)
+ *   3. Recompute `Enrollment.progressPct`
+ *   4. If 100% and not previously completed: award +600 COURSE_COMPLETE EXP,
+ *      set `Enrollment.completedAt`, award completion badges
+ *   5. Bump `Enrollment.lastAccessedAt`
  *
  * Response: `{ data: { progressPct, completedStepIds, totalExpAwarded, courseCompleted } }`
  */
@@ -99,46 +98,15 @@ export async function POST(
         },
       });
 
-      // 2. Award VIDEO_COMPLETE EXP — idempotent via ExpLog unique([userId, source, refId])
-      let awardedStepExp = 0;
-      try {
-        await tx.expLog.create({
-          data: {
-            userId,
-            amount: EXP_VIDEO_COMPLETE,
-            source: ExpSource.VIDEO_COMPLETE,
-            refId: stepId,
-          },
-        });
-        awardedStepExp = EXP_VIDEO_COMPLETE;
-      } catch (err) {
-        if (
-          err instanceof Prisma.PrismaClientKnownRequestError &&
-          err.code === "P2002"
-        ) {
-          // Already awarded for this user+source+step — that's fine.
-        } else {
-          throw err;
-        }
-      }
+      // 2. Award VIDEO_COMPLETE EXP — idempotent + level-up cascade.
+      const { awarded: awardedStepExp } = await awardExp(tx, {
+        userId,
+        amount: EXP_VIDEO_COMPLETE,
+        source: ExpSource.VIDEO_COMPLETE,
+        refId: stepId,
+      });
 
-      // 3. Increment UserGameProfile if EXP was actually awarded
-      if (awardedStepExp > 0) {
-        await tx.userGameProfile.upsert({
-          where: { userId },
-          create: {
-            userId,
-            exp: awardedStepExp,
-            totalExp: awardedStepExp,
-          },
-          update: {
-            exp: { increment: awardedStepExp },
-            totalExp: { increment: awardedStepExp },
-          },
-        });
-      }
-
-      // 4. Recompute progress
+      // 3. Recompute progress
       const [totalSteps, completedSteps, completedRows] = await Promise.all([
         tx.step.count({ where: { sprint: { courseId } } }),
         tx.stepProgress.count({
@@ -155,44 +123,24 @@ export async function POST(
           ? 0
           : Math.round((completedSteps / totalSteps) * 1000) / 10;
 
-      // 5. Course completion bonus
+      // 4. Course completion bonus (idempotent via awardExp)
       const isCourseComplete = totalSteps > 0 && completedSteps === totalSteps;
       let courseCompleted = false;
       let awardedCourseExp = 0;
 
       if (isCourseComplete && !enrollment.completedAt) {
-        courseCompleted = true;
-        try {
-          await tx.expLog.create({
-            data: {
-              userId,
-              amount: EXP_COURSE_COMPLETE,
-              source: ExpSource.COURSE_COMPLETE,
-              refId: courseId,
-            },
-          });
-          awardedCourseExp = EXP_COURSE_COMPLETE;
-          await tx.userGameProfile.update({
-            where: { userId },
-            data: {
-              exp: { increment: EXP_COURSE_COMPLETE },
-              totalExp: { increment: EXP_COURSE_COMPLETE },
-            },
-          });
-        } catch (err) {
-          if (
-            err instanceof Prisma.PrismaClientKnownRequestError &&
-            err.code === "P2002"
-          ) {
-            // Already awarded course bonus earlier
-            courseCompleted = false;
-          } else {
-            throw err;
-          }
-        }
+        const courseAward = await awardExp(tx, {
+          userId,
+          amount: EXP_COURSE_COMPLETE,
+          source: ExpSource.COURSE_COMPLETE,
+          refId: courseId,
+        });
+        awardedCourseExp = courseAward.awarded;
+        // awarded === 0 means the bonus was already granted earlier.
+        courseCompleted = courseAward.awarded > 0;
       }
 
-      // 6. Update enrollment (progress + access timestamp + maybe completedAt)
+      // 5. Update enrollment (progress + access timestamp + maybe completedAt)
       await tx.enrollment.update({
         where: { id: enrollment.id },
         data: {
@@ -201,6 +149,12 @@ export async function POST(
           ...(courseCompleted ? { completedAt: now } : {}),
         },
       });
+
+      // 6. Completion badges — after completedAt is set so the count includes
+      //    this course (COURSES_COMPLETED + COURSE_SPECIFIC triggers).
+      if (courseCompleted) {
+        await awardCompletionBadges(tx, userId, courseId);
+      }
 
       return {
         progressPct,

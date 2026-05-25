@@ -1,34 +1,31 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Copy, Lock, Sparkles, Ticket } from "lucide-react";
+import { Check, Copy, Loader2, Lock, Sparkles, Ticket } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import type {
+  RewardMilestoneLevel,
+  RewardVoucherDTO,
+  VoucherStatus,
+} from "@/lib/gamification-types";
 import { cn } from "@/lib/utils";
-
-import type { RewardMilestone } from "./mock-data";
-
-type MilestoneState = "locked" | "claimable" | "claimed";
 
 type Props = {
   currentLevel: number;
-  milestones: RewardMilestone[];
-  claimed: Record<number, true>;
-  onClaim: (level: number) => void;
+  milestones: RewardVoucherDTO[];
+  onClaim: (level: RewardMilestoneLevel) => void;
+  /** Milestone level currently being claimed (mutation in flight), if any. */
+  claimingLevel: number | null;
 };
 
-function getState(
-  milestone: RewardMilestone,
-  currentLevel: number,
-  claimed: Record<number, true>,
-): MilestoneState {
-  if (claimed[milestone.targetLevel]) return "claimed";
-  if (currentLevel >= milestone.targetLevel) return "claimable";
-  return "locked";
-}
-
-export function RewardRoadmap({ currentLevel, milestones, claimed, onClaim }: Props) {
-  const maxLevel = milestones[milestones.length - 1].targetLevel;
+export function RewardRoadmap({
+  currentLevel,
+  milestones,
+  onClaim,
+  claimingLevel,
+}: Props) {
+  const maxLevel = milestones[milestones.length - 1]?.targetLevel ?? 15;
   const linePct = Math.min(100, Math.round((currentLevel / maxLevel) * 100));
 
   return (
@@ -79,35 +76,54 @@ export function RewardRoadmap({ currentLevel, milestones, claimed, onClaim }: Pr
         </div>
 
         <div className="relative grid gap-8 lg:grid-cols-3 lg:gap-6">
-          {milestones.map((m) => {
-            const state = getState(m, currentLevel, claimed);
-            return (
-              <MilestoneCard
-                key={m.targetLevel}
-                milestone={m}
-                state={state}
-                onClaim={() => onClaim(m.targetLevel)}
-              />
-            );
-          })}
+          {milestones.map((m) => (
+            <MilestoneCard
+              key={m.targetLevel}
+              milestone={m}
+              isClaiming={claimingLevel === m.targetLevel}
+              onClaim={() => onClaim(m.targetLevel)}
+            />
+          ))}
         </div>
       </div>
     </section>
   );
 }
 
+const VOUCHER_STATUS_META: Record<
+  VoucherStatus,
+  { label: string; className: string }
+> = {
+  active: {
+    label: "Aktif",
+    className:
+      "text-emerald-700 dark:text-emerald-300",
+  },
+  used: {
+    label: "Sudah dipakai",
+    className: "text-zinc-500 dark:text-zinc-400",
+  },
+  expired: {
+    label: "Kadaluarsa",
+    className: "text-rose-600 dark:text-rose-400",
+  },
+};
+
 type MilestoneCardProps = {
-  milestone: RewardMilestone;
-  state: MilestoneState;
+  milestone: RewardVoucherDTO;
+  isClaiming: boolean;
   onClaim: () => void;
 };
 
-function MilestoneCard({ milestone, state, onClaim }: MilestoneCardProps) {
+function MilestoneCard({ milestone, isClaiming, onClaim }: MilestoneCardProps) {
   const [copied, setCopied] = useState(false);
+  const { state, discountPct, targetLevel, code, endDate, voucherStatus } =
+    milestone;
 
   const handleCopy = async () => {
+    if (!code) return;
     try {
-      await navigator.clipboard.writeText(milestone.voucherCode);
+      await navigator.clipboard.writeText(code);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1600);
     } catch {
@@ -159,7 +175,7 @@ function MilestoneCard({ milestone, state, onClaim }: MilestoneCardProps) {
                 Diskon
               </span>
               <span className="font-heading text-3xl font-extrabold">
-                {milestone.discountPct}%
+                {discountPct}%
               </span>
             </div>
           )}
@@ -176,12 +192,12 @@ function MilestoneCard({ milestone, state, onClaim }: MilestoneCardProps) {
           Target Level
         </p>
         <h3 className="font-heading text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-100">
-          Level {milestone.targetLevel}
+          Level {targetLevel}
         </h3>
         <p className="max-w-[18rem] text-xs leading-relaxed text-zinc-600 dark:text-zinc-300/80">
           Voucher diskon{" "}
           <span className="font-bold text-zinc-900 dark:text-zinc-100">
-            {milestone.discountPct}%
+            {discountPct}%
           </span>{" "}
           untuk pembelian kursus berikutnya.
         </p>
@@ -196,10 +212,10 @@ function MilestoneCard({ milestone, state, onClaim }: MilestoneCardProps) {
             className="h-11 w-full rounded-full text-sm"
           >
             <Lock className="size-4" />
-            Capai Lv {milestone.targetLevel} dulu
+            Capai Lv {targetLevel} dulu
           </Button>
           <p className="text-[10px] text-zinc-400 dark:text-zinc-500">
-            Hadiah akan terbuka otomatis
+            Hadiah terkunci sampai level tercapai
           </p>
         </div>
       )}
@@ -208,6 +224,7 @@ function MilestoneCard({ milestone, state, onClaim }: MilestoneCardProps) {
         <div className="mt-1 w-full max-w-[220px] space-y-2">
           <Button
             onClick={onClaim}
+            disabled={isClaiming}
             size="lg"
             className={cn(
               "h-11 w-full rounded-full text-sm",
@@ -216,8 +233,17 @@ function MilestoneCard({ milestone, state, onClaim }: MilestoneCardProps) {
               "hover:from-[color:var(--color-brand-600)] hover:to-[color:var(--color-brand-800)]",
             )}
           >
-            <Sparkles className="size-4" />
-            Klaim Voucher
+            {isClaiming ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Mengklaim...
+              </>
+            ) : (
+              <>
+                <Sparkles className="size-4" />
+                Klaim Voucher
+              </>
+            )}
           </Button>
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-brand-700)] dark:text-[color:var(--color-brand-300)]">
             Siap diklaim
@@ -225,11 +251,11 @@ function MilestoneCard({ milestone, state, onClaim }: MilestoneCardProps) {
         </div>
       )}
 
-      {state === "claimed" && (
+      {state === "claimed" && code && (
         <div className="mt-1 w-full max-w-[260px] space-y-2">
           <div className="flex items-stretch gap-2">
             <code className="flex flex-1 items-center truncate rounded-lg bg-zinc-50 px-3 py-2.5 text-left font-mono text-xs font-bold tracking-wider text-zinc-900 ring-1 ring-zinc-200 dark:bg-white/5 dark:text-zinc-100 dark:ring-white/10">
-              {milestone.voucherCode}
+              {code}
             </code>
             <button
               onClick={handleCopy}
@@ -249,14 +275,26 @@ function MilestoneCard({ milestone, state, onClaim }: MilestoneCardProps) {
               )}
             </button>
           </div>
-          <p className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">
+          <p
+            className={cn(
+              "inline-flex items-center gap-1.5 text-[10px] font-semibold",
+              voucherStatus
+                ? VOUCHER_STATUS_META[voucherStatus].className
+                : "text-zinc-500",
+            )}
+          >
             <Ticket className="size-3" strokeWidth={2.6} />
-            Berlaku hingga{" "}
-            {milestone.expiresAt.toLocaleDateString("id-ID", {
-              day: "2-digit",
-              month: "long",
-              year: "numeric",
-            })}
+            {voucherStatus ? VOUCHER_STATUS_META[voucherStatus].label : "—"}
+            {voucherStatus === "active" && endDate ? (
+              <span className="font-normal">
+                · Berlaku hingga{" "}
+                {endDate.toLocaleDateString("id-ID", {
+                  day: "2-digit",
+                  month: "long",
+                  year: "numeric",
+                })}
+              </span>
+            ) : null}
           </p>
         </div>
       )}

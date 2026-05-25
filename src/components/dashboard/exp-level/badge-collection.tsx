@@ -13,9 +13,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import type { BadgeIconKey, BadgeItemDTO } from "@/lib/gamification-types";
 import { cn } from "@/lib/utils";
-
-import type { BadgeIconKey, BadgeItem } from "./mock-data";
 
 const ICON_MAP: Record<BadgeIconKey, LucideIcon> = {
   sparkles: Sparkles,
@@ -29,7 +28,7 @@ const ICON_MAP: Record<BadgeIconKey, LucideIcon> = {
 };
 
 type Props = {
-  badges: BadgeItem[];
+  badges: BadgeItemDTO[];
 };
 
 export function BadgeCollection({ badges }: Props) {
@@ -95,7 +94,7 @@ export function BadgeCollection({ badges }: Props) {
   );
 }
 
-function BadgeCard({ badge }: { badge: BadgeItem }) {
+function BadgeCard({ badge }: { badge: BadgeItemDTO }) {
   const Icon = ICON_MAP[badge.iconKey];
   const earned = Boolean(badge.earnedAt);
 

@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { ExpSource, Prisma, Role } from "@/generated/prisma";
+import { ExpSource, Role } from "@/generated/prisma";
 import { requireRoleInRoute } from "@/lib/auth-server";
+import { awardCompletionBadges, awardExp } from "@/lib/gamification";
 import { prisma } from "@/lib/prisma";
 import { submitQuizSchema } from "@/lib/validators/quiz";
 
@@ -188,43 +189,16 @@ export async function POST(
         },
       });
 
-      // 8. Award +90 EXP on first pass (idempotent via ExpLog unique)
+      // 8. Award +90 EXP on first pass — idempotent + level-up cascade.
       let awardedQuizExp = 0;
       if (passed) {
-        try {
-          await tx.expLog.create({
-            data: {
-              userId,
-              amount: EXP_QUIZ_PASS,
-              source: ExpSource.QUIZ_PASS,
-              refId: stepId,
-            },
-          });
-          awardedQuizExp = EXP_QUIZ_PASS;
-        } catch (err) {
-          if (
-            err instanceof Prisma.PrismaClientKnownRequestError &&
-            err.code === "P2002"
-          ) {
-            // Already awarded — retake after pass, no double-award.
-          } else {
-            throw err;
-          }
-        }
-        if (awardedQuizExp > 0) {
-          await tx.userGameProfile.upsert({
-            where: { userId },
-            create: {
-              userId,
-              exp: awardedQuizExp,
-              totalExp: awardedQuizExp,
-            },
-            update: {
-              exp: { increment: awardedQuizExp },
-              totalExp: { increment: awardedQuizExp },
-            },
-          });
-        }
+        const quizAward = await awardExp(tx, {
+          userId,
+          amount: EXP_QUIZ_PASS,
+          source: ExpSource.QUIZ_PASS,
+          refId: stepId,
+        });
+        awardedQuizExp = quizAward.awarded;
       }
 
       // 9. Recompute course progress
@@ -241,39 +215,20 @@ export async function POST(
           ? 0
           : Math.round((completedSteps / totalSteps) * 1000) / 10;
 
-      // 10. Course completion bonus (idempotent)
+      // 10. Course completion bonus (idempotent via awardExp)
       const isCourseComplete = totalSteps > 0 && completedSteps === totalSteps;
       let courseCompleted = false;
       let awardedCourseExp = 0;
       if (isCourseComplete && !enrollment.completedAt) {
-        courseCompleted = true;
-        try {
-          await tx.expLog.create({
-            data: {
-              userId,
-              amount: EXP_COURSE_COMPLETE,
-              source: ExpSource.COURSE_COMPLETE,
-              refId: courseId,
-            },
-          });
-          awardedCourseExp = EXP_COURSE_COMPLETE;
-          await tx.userGameProfile.update({
-            where: { userId },
-            data: {
-              exp: { increment: EXP_COURSE_COMPLETE },
-              totalExp: { increment: EXP_COURSE_COMPLETE },
-            },
-          });
-        } catch (err) {
-          if (
-            err instanceof Prisma.PrismaClientKnownRequestError &&
-            err.code === "P2002"
-          ) {
-            courseCompleted = false;
-          } else {
-            throw err;
-          }
-        }
+        const courseAward = await awardExp(tx, {
+          userId,
+          amount: EXP_COURSE_COMPLETE,
+          source: ExpSource.COURSE_COMPLETE,
+          refId: courseId,
+        });
+        awardedCourseExp = courseAward.awarded;
+        // awarded === 0 means the bonus was already granted earlier.
+        courseCompleted = courseAward.awarded > 0;
       }
 
       await tx.enrollment.update({
@@ -284,6 +239,12 @@ export async function POST(
           ...(courseCompleted ? { completedAt: now } : {}),
         },
       });
+
+      // Completion badges — after completedAt is set (COURSES_COMPLETED +
+      // COURSE_SPECIFIC triggers).
+      if (courseCompleted) {
+        await awardCompletionBadges(tx, userId, courseId);
+      }
 
       return {
         score,

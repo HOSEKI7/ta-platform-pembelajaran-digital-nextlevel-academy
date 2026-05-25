@@ -631,16 +631,73 @@ async function main() {
     update: {},
   });
 
-  // --- Badge -----------------------------------------------------------------
-  await db.badge.upsert({
-    where: { id: "seed-badge-beginner" },
-    create: {
+  // --- Badges (PRD §6.7.3) ---------------------------------------------------
+  // Level badges (LEVEL_REACHED) + completion badges (COURSES_COMPLETED).
+  const seedBadges = [
+    {
       id: "seed-badge-beginner",
       name: "Beginner",
-      description: "Diberikan saat user mencapai level 1.",
+      description: "Diberikan saat mencapai Level 1.",
       trigger: BadgeTrigger.LEVEL_REACHED,
       threshold: 1,
       logoUrl: "https://placehold.co/128x128/png?text=B",
+    },
+    {
+      id: "seed-badge-explorer",
+      name: "Explorer",
+      description: "Capai Level 5 untuk membuka badge ini.",
+      trigger: BadgeTrigger.LEVEL_REACHED,
+      threshold: 5,
+      logoUrl: "https://placehold.co/128x128/png?text=E",
+    },
+    {
+      id: "seed-badge-scholar",
+      name: "Scholar",
+      description: "Capai Level 10 untuk membuka badge ini.",
+      trigger: BadgeTrigger.LEVEL_REACHED,
+      threshold: 10,
+      logoUrl: "https://placehold.co/128x128/png?text=S",
+    },
+    {
+      id: "seed-badge-master",
+      name: "Master",
+      description: "Capai Level 15 — pencapaian tertinggi.",
+      trigger: BadgeTrigger.LEVEL_REACHED,
+      threshold: 15,
+      logoUrl: "https://placehold.co/128x128/png?text=M",
+    },
+    {
+      id: "seed-badge-course-champion",
+      name: "Course Champion",
+      description: "Selesaikan 3 kursus berbeda hingga 100%.",
+      trigger: BadgeTrigger.COURSES_COMPLETED,
+      threshold: 3,
+      logoUrl: "https://placehold.co/128x128/png?text=C3",
+    },
+    {
+      id: "seed-badge-marathoner",
+      name: "Marathoner",
+      description: "Selesaikan 10 kursus berbeda hingga 100%.",
+      trigger: BadgeTrigger.COURSES_COMPLETED,
+      threshold: 10,
+      logoUrl: "https://placehold.co/128x128/png?text=C10",
+    },
+  ];
+  for (const b of seedBadges) {
+    await db.badge.upsert({ where: { id: b.id }, create: b, update: {} });
+  }
+
+  // COURSE_SPECIFIC badge tied to the seed course (threshold unused).
+  await db.badge.upsert({
+    where: { id: "seed-badge-course-specific" },
+    create: {
+      id: "seed-badge-course-specific",
+      name: `Lulusan ${course.title}`,
+      description: "Selesaikan kursus ini hingga 100% untuk meraih badge.",
+      trigger: BadgeTrigger.COURSE_SPECIFIC,
+      threshold: 0,
+      courseId: course.id,
+      logoUrl: "https://placehold.co/128x128/png?text=CS",
     },
     update: {},
   });
