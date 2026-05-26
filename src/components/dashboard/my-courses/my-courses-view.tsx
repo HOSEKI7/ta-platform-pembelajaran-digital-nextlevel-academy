@@ -124,7 +124,7 @@ export function MyCoursesView() {
           <NoFilterMatchState status={urlStatus} />
         )
       ) : (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {courses.map((c) => (
             <StudentCourseCard key={c.enrollmentId} item={c} />
           ))}

@@ -242,7 +242,7 @@ export function CatalogView() {
         <>
           <div
             className={cn(
-              "grid gap-5 transition-opacity sm:grid-cols-2 lg:grid-cols-3",
+              "grid gap-5 transition-opacity sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
               isFetching && "opacity-60",
             )}
           >

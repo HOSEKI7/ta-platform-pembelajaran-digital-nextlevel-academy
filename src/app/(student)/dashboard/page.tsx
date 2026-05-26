@@ -17,6 +17,7 @@ import { DashboardGreeting } from "@/components/dashboard/overview/dashboard-gre
 import { InProgressSection } from "@/components/dashboard/overview/in-progress-section";
 import { RecommendationsSection } from "@/components/dashboard/overview/recommendations-section";
 import { StatsRow } from "@/components/dashboard/overview/stats-row";
+import { StudentPageContainer } from "@/components/dashboard/shared/student-page-container";
 
 export const dynamic = "force-dynamic";
 
@@ -62,12 +63,12 @@ export default async function DashboardPage() {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-5 py-8 sm:px-8 sm:py-10 lg:px-10">
+      <StudentPageContainer>
         <DashboardGreeting firstName={firstName} />
         <StatsRow />
         <InProgressSection />
         <RecommendationsSection />
-      </div>
+      </StudentPageContainer>
     </HydrationBoundary>
   );
 }

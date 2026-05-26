@@ -27,7 +27,7 @@ export function InProgressSection() {
       ) : data!.courses.length === 0 ? (
         <EmptyState />
       ) : (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {data!.courses.map((c) => (
             <StudentCourseCard key={c.enrollmentId} item={c} />
           ))}

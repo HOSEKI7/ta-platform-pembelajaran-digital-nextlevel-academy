@@ -5,6 +5,7 @@ import { Role } from "@/generated/prisma";
 import { requireRole } from "@/lib/auth-server";
 import { loadTransactionDetail } from "@/lib/transaction-data-loader";
 
+import { StudentPageContainer } from "@/components/dashboard/shared/student-page-container";
 import { TransactionDetailView } from "@/components/dashboard/transactions/transaction-detail-view";
 
 export const dynamic = "force-dynamic";
@@ -29,11 +30,11 @@ export default async function TransactionDetailPage({ params }: Props) {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-5 py-8 sm:px-8 sm:py-10 lg:px-10">
+    <StudentPageContainer width="narrow">
       <TransactionDetailView
         tx={tx}
         customer={{ name: session.user.name, email: session.user.email }}
       />
-    </div>
+    </StudentPageContainer>
   );
 }

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Role } from "@/generated/prisma";
 import { requireRole } from "@/lib/auth-server";
 
+import { StudentPageContainer } from "@/components/dashboard/shared/student-page-container";
 import { SettingsView } from "@/components/dashboard/settings/settings-view";
 
 export const dynamic = "force-dynamic";
@@ -22,7 +23,7 @@ export default async function SettingsPage() {
   const user = session.user;
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-5 py-8 sm:px-8 sm:py-10 lg:px-10">
+    <StudentPageContainer width="narrow">
       <SettingsView
         initial={{
           id: user.id,
@@ -37,6 +38,6 @@ export default async function SettingsPage() {
               : new Date(user.createdAt as unknown as string).toISOString(),
         }}
       />
-    </div>
+    </StudentPageContainer>
   );
 }

@@ -16,6 +16,7 @@ import {
 } from "@/lib/student-catalog-query";
 
 import { CatalogView } from "@/components/dashboard/catalog/catalog-view";
+import { StudentPageContainer } from "@/components/dashboard/shared/student-page-container";
 
 export const dynamic = "force-dynamic";
 
@@ -81,9 +82,9 @@ export default async function StudentCatalogPage({ searchParams }: Props) {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-5 py-8 sm:px-8 sm:py-10 lg:px-10">
+      <StudentPageContainer>
         <CatalogView />
-      </div>
+      </StudentPageContainer>
     </HydrationBoundary>
   );
 }

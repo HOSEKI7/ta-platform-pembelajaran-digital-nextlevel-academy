@@ -8,6 +8,7 @@ import { loadMyCourses } from "@/lib/student-data-loader";
 import { studentKeys } from "@/lib/student-query-keys";
 
 import { MyCoursesView } from "@/components/dashboard/my-courses/my-courses-view";
+import { StudentPageContainer } from "@/components/dashboard/shared/student-page-container";
 
 export const dynamic = "force-dynamic";
 
@@ -33,9 +34,9 @@ export default async function MyCoursesPage() {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-5 py-8 sm:px-8 sm:py-10 lg:px-10">
+      <StudentPageContainer>
         <MyCoursesView />
-      </div>
+      </StudentPageContainer>
     </HydrationBoundary>
   );
 }
