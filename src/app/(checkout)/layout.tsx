@@ -35,7 +35,7 @@ export default async function CheckoutLayout({
         <footer className="border-t border-zinc-200 bg-white/60 py-6">
           <div className="mx-auto max-w-6xl px-5 text-center text-[11px] text-zinc-500 sm:px-8 lg:px-10">
             © {new Date().getFullYear()} NextLevel Academy · Semua transaksi
-            diproses dan dienkripsi oleh DOKU.
+            diproses dan dienkripsi oleh Midtrans.
           </div>
         </footer>
       </div>

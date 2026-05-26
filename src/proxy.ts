@@ -24,6 +24,7 @@ const PROTECTED_PREFIXES = [
   "/certificates",
   "/exp-level",
   "/transactions",
+  "/payment",
   "/settings",
   "/internship",
   "/mentor",

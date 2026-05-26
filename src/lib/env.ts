@@ -41,4 +41,27 @@ export const env = {
     /** Public bucket used for user avatars. */
     avatarBucket: () => readOptional("SUPABASE_AVATAR_BUCKET") ?? "avatars",
   },
+
+  midtrans: {
+    serverKey: () => readOptional("MIDTRANS_SERVER_KEY"),
+    /** Browser-safe client key. Prefer the public var, fall back to the server one. */
+    clientKey: () =>
+      readOptional("NEXT_PUBLIC_MIDTRANS_CLIENT_KEY") ??
+      readOptional("MIDTRANS_CLIENT_KEY"),
+    merchantId: () => readOptional("MIDTRANS_MERCHANT_ID"),
+    isProduction: () => process.env.MIDTRANS_IS_PRODUCTION === "true",
+    /**
+     * True only when both keys are present. When false the payment flow uses a
+     * simulated fallback (see src/lib/payment/fulfillment.ts) so the whole flow
+     * stays testable locally without real credentials.
+     */
+    isConfigured: () =>
+      Boolean(
+        readOptional("MIDTRANS_SERVER_KEY") &&
+          (readOptional("NEXT_PUBLIC_MIDTRANS_CLIENT_KEY") ??
+            readOptional("MIDTRANS_CLIENT_KEY")),
+      ),
+  },
+
+  cronSecret: () => readOptional("CRON_SECRET"),
 } as const;

@@ -483,6 +483,11 @@ model Order {
   status           OrderStatus @default(PENDING)
   paymentInvoiceId String?     @unique
   paymentMethod    String?
+  // Midtrans Snap artefacts (PRD §6.4) — populated when the Snap transaction
+  // is created; let the payment page resume `snap.pay(token)` without
+  // re-charging. Null in the dev fallback (no gateway call) and for free orders.
+  paymentToken       String?
+  paymentRedirectUrl String?
   expiresAt        DateTime
   paidAt           DateTime?
   createdAt        DateTime    @default(now())

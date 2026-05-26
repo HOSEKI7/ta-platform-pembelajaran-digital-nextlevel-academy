@@ -27,7 +27,8 @@ export default async function CheckoutPage({ params }: { params: Params }) {
 
   if (result.status === "not-found") notFound();
   if (result.status === "owned") redirect("/dashboard?owned=1");
-  if (result.status === "pending") redirect(`/dashboard?pending=${result.orderId}`);
+  // A live PENDING order already exists — resume payment instead of re-checkout.
+  if (result.status === "pending") redirect(`/payment/${result.orderId}`);
 
   return <CheckoutForm course={result.course} />;
 }

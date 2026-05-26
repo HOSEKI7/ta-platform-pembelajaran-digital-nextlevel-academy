@@ -1,47 +1,45 @@
-# TODO — Halaman Detail Transaksi `/transactions/[id]` (frontend + backend)
+# Task: Sistem Checkout & Pembayaran Midtrans (PRD §6.4) — SELESAI ✅
 
-## Konteks
-Lanjutan halaman Transaksi. Tombol "Detail Transaksi" di tabel kini hanya toast
-placeholder. Buat halaman detail penuh **menarik & informatif**, terintegrasi
-backend, **konsisten** dengan design system dashboard (rounded-3xl, ring zinc,
-brand blue, font-heading) — bukan estetika menyimpang.
+## Schema & Env
+- [x] `prisma/schema.prisma` — Order: add `paymentToken`, `paymentRedirectUrl`
+- [x] `.env.local` + `.env.example` — add `NEXT_PUBLIC_MIDTRANS_CLIENT_KEY`, `CRON_SECRET` (DOKU block dihapus)
+- [x] `src/lib/env.ts` — add `midtrans` group + `cronSecret()`
 
-> STATUS: ✅ SELESAI. Keputusan CTA user: PENDING → tombol "Lanjutkan Pembayaran"
-> placeholder (gateway belum ada) + countdown; SUCCESS → tombol "Unduh Bukti
-> Transaksi" (PDF receipt); FAILED → tanpa tombol; EXPIRED → tanpa tombol (asumsi,
-> konsisten dengan FAILED). Visual: konsisten design system dashboard.
+## Core libs
+- [x] `src/types/midtrans-client.d.ts` — ambient types (paket tak punya types)
+- [x] `src/lib/midtrans.ts` — Snap client, createSnapTransaction, verifySignature (SHA512), mappers
+- [x] `src/lib/payment/fulfillment.ts` — `fulfillOrderPaid` (idempotent, enroll + email)
+- [x] `src/lib/payment-instructions.ts` — "cara membayar" per group
+- [x] `src/lib/validators/payment.ts` — `midtransWebhookSchema`
+- [x] `src/lib/payment-data-loader.ts` — `loadPaymentPageData` (+ isExpired)
+- [x] `src/lib/invoice-number.ts` — `generateInvoiceNumber` (INV-YYYYMMDD-XXXXXXXX, WIB)
+- [x] `src/emails/order-confirmation.tsx`
 
-## A. Backend
-- [x] `transaction-data-loader.ts` — `loadTransactionDetail(userId, orderId)`:
-      `order.findFirst({ where: { id, userId } })` (scope userId = keamanan → null
-      jika bukan miliknya). Include `course` (title/slug/thumbnailUrl/instructor/
-      category.name) + `voucher` (code/discountPct). Return `TransactionDetailDTO | null`.
-- [ ] DTO `TransactionDetailDTO`: id, status, course{...}, pricing{originalPrice,
-      discountAmount, finalPrice}, voucher{code,discountPct}|null, paymentMethod,
-      paymentInvoiceId, checkoutAt, paidAt, expiresAt (ISO).
+## API routes
+- [x] `src/app/api/orders/route.ts` — Snap + dev fallback + free course
+- [x] `src/app/api/payment/webhook/route.ts` — signature + amount + idempotency + fulfill
+- [x] `src/app/api/payment/orders/[id]/status/route.ts` — polling
+- [x] `src/app/api/payment/dev-simulate/route.ts` — dev-only simulate
+- [x] `src/app/api/cron/expire-orders/route.ts` — CRON_SECRET
 
-## B. Page (Server Component, direct fetch — no TanStack)
-- [ ] `src/app/(student)/transactions/[id]/page.tsx`: `params: Promise<{id}>`,
-      `requireRole(PESERTA_DIDIK)`, `await params`, loader → `notFound()` jika null,
-      `generateMetadata` noindex, wrapper `max-w-5xl`.
+## Payment page
+- [x] `src/app/(checkout)/payment/[orderId]/page.tsx`
+- [x] `src/components/checkout/payment/payment-view.tsx`
+- [x] `src/hooks/use-midtrans-snap.ts`
+- [x] `src/hooks/use-order-status.ts`
 
-## C. View
-- [ ] `transaction-detail-view.tsx` (Server Component): back link, hero card
-      (status badge + ID mono + salin + judul + waktu checkout), Rincian Pembayaran
-      (Harga Asli → Diskon −/chip voucher → Total ditebalkan), grid metadata (metode,
-      invoice id+salin, tgl checkout, tgl dibayar, batas waktu), kartu kursus
-      (thumbnail+instruktur+kategori), CTA sadar-status, animasi masuk staggered.
-- [ ] `CopyButton` (client) salin id/invoice → toast.
-- [ ] (Opsional) `PendingCountdown` (client) untuk status PENDING.
+## Wiring & cleanup
+- [x] `src/hooks/use-checkout.ts` — extend CreatedOrder + CreateOrderError (resume)
+- [x] `src/app/(checkout)/checkout/[slug]/checkout-form.tsx` — redirect to /payment
+- [x] `src/components/dashboard/transactions/transaction-detail-actions.tsx` — Link
+- [x] `src/components/dashboard/transactions/transaction-detail-view.tsx` — pass orderId
+- [x] `src/proxy.ts` — add `/payment`
+- [x] DOKU→Midtrans text: `(checkout)/layout.tsx`, `payment-methods.ts`
+- [x] `vercel.json` — cron */5 (optional deploy)
 
-## D. Sambung tabel
-- [ ] `transactions-view.tsx` `DetailButton`: `onClick/toast` → `<Link href="/transactions/${id}">`.
-
-## E. Verifikasi
-- [ ] `tsc --noEmit` + `eslint` bersih.
-- [ ] throwaway: `loadTransactionDetail` order nyata → DTO benar; id asing → null.
-- [ ] browser: klik detail dari tabel, cek SUCCESS/FAILED nyata, salin, back, 404, mobile.
-- [ ] `init` (catat CLAUDE.md).
-
-## Keputusan check-in (CTA sadar-status)
-Menunggu konfirmasi user — lihat pertanyaan.
+## Verify
+- [x] `npx tsc --noEmit` (clean)
+- [x] `npx eslint` changed files (clean)
+- [x] `prisma generate` + `prisma db push` (in sync)
+- [x] `npm run build` (all routes compiled, client/server boundaries valid)
+- [ ] dev-fallback flow end-to-end (manual, browser — login PESERTA_DIDIK)

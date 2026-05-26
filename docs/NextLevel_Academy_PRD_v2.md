@@ -409,8 +409,9 @@ User menyelesaikan pembayaran via Midtrans
 Terintegrasi dengan **Midtrans**:
 
 - QRIS
-- Virtual Account (Transfer Bank) — BCA, BNI, BRI, Mandiri, dll.
+- Virtual Account (Transfer Bank) — BCA, BNI, BRI, Mandiri, BSI, Seabank, Jago, dll.
 - E-Wallet — OVO, GoPay, DANA, ShopeePay
+- Metode lainnya
 
 #### 6.4.4 Status Transaksi
 
@@ -423,7 +424,7 @@ Terintegrasi dengan **Midtrans**:
 
 Seluruh riwayat transaksi tersimpan permanen, termasuk yang expired atau failed.
 
-#### 6.4.5 Pencegahan Double Purchase
+#### 6.4.5 Pencegahan Double Purchase (idempotency)
 
 - Sebelum proses checkout dimulai, sistem melakukan query: apakah user sudah memiliki `enrollment` aktif untuk kursus tersebut.
 - Jika ya, proses checkout diblokir di sisi backend (bukan hanya UI).

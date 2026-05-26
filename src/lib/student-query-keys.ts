@@ -33,4 +33,6 @@ export const studentKeys = {
       ? ([...studentKeys.all, "transactions", filters] as const)
       : ([...studentKeys.all, "transactions"] as const),
   notifications: () => [...studentKeys.all, "notifications"] as const,
+  orderStatus: (orderId: string) =>
+    [...studentKeys.all, "order-status", orderId] as const,
 } as const;

@@ -1,9 +1,9 @@
 /**
- * Static catalog of DOKU payment methods exposed on the checkout page.
- * IDs are the contract value sent to the backend (and eventually mapped to
- * DOKU channel codes when the gateway integration ships). Labels are the
- * Indonesian user-facing strings. Groups drive the visual sectioning of the
- * accordion on the right column.
+ * Static catalog of payment methods exposed on the checkout page. IDs are the
+ * contract value sent to the backend and mapped to Midtrans Snap
+ * `enabled_payments` codes (see `mapPaymentMethodToSnap` in `@/lib/midtrans`).
+ * Labels are the Indonesian user-facing strings. Groups drive the visual
+ * sectioning of the accordion on the right column.
  *
  * Keep IDs stable — they are persisted on `Order.paymentMethod`.
  */

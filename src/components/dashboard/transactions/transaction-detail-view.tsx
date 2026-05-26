@@ -85,7 +85,7 @@ export function TransactionDetailView({ tx, customer }: Props) {
 
         {tx.status === "PENDING" ? (
           <>
-            <ContinuePaymentButton />
+            <ContinuePaymentButton orderId={tx.id} />
             <div className="flex justify-center">
               <PendingCountdown expiresAt={tx.expiresAt} />
             </div>

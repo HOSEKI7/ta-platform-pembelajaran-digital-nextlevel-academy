@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 
 import { OrderSummaryCard } from "@/components/checkout/order-summary-card";
 import { PaymentDetailsCard } from "@/components/checkout/payment-details-card";
 import { PaymentMethodCard } from "@/components/checkout/payment-method-card";
 import {
+  CreateOrderError,
   useCreateOrder,
   useValidateVoucher,
   type AppliedVoucher,
@@ -62,16 +62,20 @@ export function CheckoutForm({ course }: Props) {
       },
       {
         onSuccess: (data) => {
-          toast.success(`Pesanan #${data.orderId.slice(-8).toUpperCase()} dibuat`, {
-            description:
-              "Integrasi gateway pembayaran DOKU sedang dalam pengembangan. Tim admin akan menghubungimu untuk menyelesaikan pembayaran.",
-          });
-          // Send the student back to the dashboard with a banner-ready
-          // query param. The dashboard page can later consume `?pending=...`
-          // to surface a "complete your purchase" prompt.
-          router.push(`/dashboard?pending=${data.orderId}`);
+          // Free order (100% voucher) is fulfilled instantly → go to the course.
+          if (data.status === "SUCCESS" && data.slug) {
+            router.push(`/learn/${data.slug}`);
+            return;
+          }
+          // Paid order → hand off to the branded payment page (Snap / dev sim).
+          router.push(`/payment/${data.orderId}`);
         },
         onError: (err) => {
+          // A live PENDING order already exists — resume it rather than erroring.
+          if (err instanceof CreateOrderError && err.resumeOrderId) {
+            router.push(`/payment/${err.resumeOrderId}`);
+            return;
+          }
           setSubmitError(err.message);
         },
       },

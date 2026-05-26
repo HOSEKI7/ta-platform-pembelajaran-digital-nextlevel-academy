@@ -1,7 +1,7 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
 import { ArrowUpRight, Timer } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -14,24 +14,16 @@ const primaryBtn = cn(
 );
 
 /**
- * PENDING → placeholder for the gateway hand-off. Midtrans isn't wired yet
- * (see `POST /api/orders` TODO), so this surfaces a "coming soon" toast
- * instead of a dead button.
+ * PENDING → resume payment. Links to the branded payment page
+ * (`/payment/[orderId]`), which loads the stored Snap token and opens the
+ * Midtrans popup (or the dev simulate button when Midtrans isn't configured).
  */
-export function ContinuePaymentButton() {
+export function ContinuePaymentButton({ orderId }: { orderId: string }) {
   return (
-    <button
-      type="button"
-      onClick={() =>
-        toast.info("Pembayaran online akan segera tersedia.", {
-          description: "Integrasi gateway Midtrans sedang disiapkan.",
-        })
-      }
-      className={primaryBtn}
-    >
+    <Link href={`/payment/${orderId}`} className={primaryBtn}>
       <ArrowUpRight className="size-4" strokeWidth={2.4} />
       <span>Lanjutkan Pembayaran</span>
-    </button>
+    </Link>
   );
 }
 

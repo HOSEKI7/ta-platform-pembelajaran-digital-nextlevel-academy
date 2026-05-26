@@ -14,8 +14,25 @@ export type AppliedVoucher = {
 
 export type CreatedOrder = {
   orderId: string;
-  expiresAt: string;
+  /** Present for paid orders (PENDING). */
+  expiresAt?: string;
+  /** True when Midtrans is not configured — payment page offers a dev simulate. */
+  simulated?: boolean;
+  /** "SUCCESS" only for free orders fulfilled instantly. */
+  status?: "SUCCESS";
+  /** Course slug — returned for free orders so the client can jump to the course. */
+  slug?: string;
 };
+
+/** Carries the existing order id when checkout is blocked by a live PENDING order. */
+export class CreateOrderError extends Error {
+  resumeOrderId?: string;
+  constructor(message: string, resumeOrderId?: string) {
+    super(message);
+    this.name = "CreateOrderError";
+    this.resumeOrderId = resumeOrderId;
+  }
+}
 
 async function postJson<TBody, TData>(path: string, body: TBody): Promise<TData> {
   const res = await fetch(path, {
@@ -25,9 +42,6 @@ async function postJson<TBody, TData>(path: string, body: TBody): Promise<TData>
     cache: "no-store",
   });
   const text = await res.text();
-  // We intentionally tolerate both `{ data }` (success) and `{ error }`
-  // (failure) shapes — and propagate the server's Indonesian message so the
-  // form can surface it inline.
   let json: { data?: TData; error?: string } = {};
   try {
     json = text ? JSON.parse(text) : {};
@@ -49,8 +63,31 @@ export function useValidateVoucher() {
   });
 }
 
+async function createOrder(input: CreateOrderInput): Promise<CreatedOrder> {
+  const res = await fetch("/api/orders", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify(input),
+    cache: "no-store",
+  });
+  const json = (await res.json().catch(() => ({}))) as {
+    data?: CreatedOrder & { orderId?: string };
+    error?: string;
+  };
+
+  if (!res.ok) {
+    // 409 (live PENDING order) ships an orderId so the UI can resume payment.
+    throw new CreateOrderError(
+      json.error ?? `Gagal membuat pesanan (${res.status}).`,
+      json.data?.orderId,
+    );
+  }
+  if (!json.data) throw new Error("Respon tidak valid.");
+  return json.data;
+}
+
 export function useCreateOrder() {
   return useMutation<CreatedOrder, Error, CreateOrderInput>({
-    mutationFn: (input) => postJson("/api/orders", input),
+    mutationFn: createOrder,
   });
 }
