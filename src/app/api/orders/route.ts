@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
 
     // ---- Free order (100% voucher) — fulfill instantly, no gateway --------
     if (finalPrice === 0) {
-      const order = await createOrderTx({
+      const result = await createOrderTx({
         userId,
         course,
         appliedVoucherId,
@@ -131,9 +131,10 @@ export async function POST(request: NextRequest) {
         paymentMethod,
         expiresAt,
       });
-      await fulfillOrderPaid(order.id, { paymentMethod, paidAt: new Date() });
+      if (!result.ok) return conflictResponse(result);
+      await fulfillOrderPaid(result.order.id, { paymentMethod, paidAt: new Date() });
       return NextResponse.json(
-        { data: { orderId: order.id, status: "SUCCESS", slug: course.slug } },
+        { data: { orderId: result.order.id, status: "SUCCESS", slug: course.slug } },
         { status: 201 },
       );
     }
@@ -161,7 +162,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const order = await createOrderTx({
+      const result = await createOrderTx({
         userId,
         course,
         appliedVoucherId,
@@ -173,15 +174,17 @@ export async function POST(request: NextRequest) {
         paymentToken: snap.token,
         paymentRedirectUrl: snap.redirectUrl,
       });
+      // A racing request won — the orphaned Snap transaction just expires.
+      if (!result.ok) return conflictResponse(result);
 
       return NextResponse.json(
-        { data: { orderId: order.id, expiresAt: order.expiresAt, simulated: false } },
+        { data: { orderId: result.order.id, expiresAt: result.order.expiresAt, simulated: false } },
         { status: 201 },
       );
     }
 
     // ---- Dev fallback: no gateway — PENDING order, simulate on payment page
-    const order = await createOrderTx({
+    const result = await createOrderTx({
       userId,
       course,
       appliedVoucherId,
@@ -191,8 +194,9 @@ export async function POST(request: NextRequest) {
       paymentMethod,
       expiresAt,
     });
+    if (!result.ok) return conflictResponse(result);
     return NextResponse.json(
-      { data: { orderId: order.id, expiresAt: order.expiresAt, simulated: true } },
+      { data: { orderId: result.order.id, expiresAt: result.order.expiresAt, simulated: true } },
       { status: 201 },
     );
   } catch (err) {
@@ -201,10 +205,22 @@ export async function POST(request: NextRequest) {
   }
 }
 
+type CreateOrderTxResult =
+  | { ok: true; order: { id: string; expiresAt: Date } }
+  | { ok: false; conflict: "enrolled" | "pending"; orderId?: string };
+
 /**
  * Atomically creates the Order plus (when a voucher applies) its VoucherUsage
  * and a usageCount bump. Rolling back together prevents a voucher being "spent"
  * without a backing order, and vice versa.
+ *
+ * Hardening against the double-PENDING / double-charge race: a Postgres
+ * transaction advisory lock keyed on (userId, courseId) serializes concurrent
+ * create-order requests for the same pair (works across serverless instances,
+ * unlike the in-memory pre-checks). The enrollment + live-PENDING guards are
+ * re-checked **inside** the lock so a racing request can't slip a second order
+ * past the pre-checks. A partial unique index isn't used because Prisma can't
+ * declare one and `prisma db push` would drop a hand-rolled index.
  */
 async function createOrderTx(args: {
   userId: string;
@@ -217,8 +233,35 @@ async function createOrderTx(args: {
   expiresAt: Date;
   paymentToken?: string;
   paymentRedirectUrl?: string;
-}) {
+}): Promise<CreateOrderTxResult> {
   return prisma.$transaction(async (tx) => {
+    // $executeRaw (not $queryRaw): pg_advisory_xact_lock returns `void`, which
+    // the pg driver adapter can't serialize as a result column — executeRaw
+    // runs the statement without serializing a result, so the lock is taken
+    // cleanly. Auto-released on commit/rollback.
+    const lockKey = `order:${args.userId}:${args.course.id}`;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey})::int8)`;
+
+    // Re-check guards under the lock — closes the TOCTOU window left by the
+    // fast pre-checks in the handler.
+    const enrolled = await tx.enrollment.findFirst({
+      where: { userId: args.userId, courseId: args.course.id },
+      select: { id: true },
+    });
+    if (enrolled) return { ok: false, conflict: "enrolled" };
+
+    const pending = await tx.order.findFirst({
+      where: {
+        userId: args.userId,
+        courseId: args.course.id,
+        status: "PENDING",
+        expiresAt: { gt: new Date() },
+      },
+      select: { id: true },
+      orderBy: { createdAt: "desc" },
+    });
+    if (pending) return { ok: false, conflict: "pending", orderId: pending.id };
+
     const created = await tx.order.create({
       data: {
         userId: args.userId,
@@ -247,6 +290,22 @@ async function createOrderTx(args: {
       });
     }
 
-    return created;
+    return { ok: true, order: created };
   });
+}
+
+/** Maps a createOrderTx conflict to the matching 409 response. */
+function conflictResponse(
+  result: Extract<CreateOrderTxResult, { ok: false }>,
+): NextResponse {
+  if (result.conflict === "enrolled") {
+    return NextResponse.json({ error: "Kamu sudah memiliki kursus ini." }, { status: 409 });
+  }
+  return NextResponse.json(
+    {
+      error: "Kamu sudah punya pesanan aktif untuk kursus ini.",
+      data: { orderId: result.orderId },
+    },
+    { status: 409 },
+  );
 }

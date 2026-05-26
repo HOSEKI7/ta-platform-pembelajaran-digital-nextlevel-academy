@@ -21,13 +21,13 @@ const GROUP_INSTRUCTIONS: Record<PaymentMethodGroup, Instruction> = {
       "Status otomatis diperbarui begitu pembayaran terkonfirmasi.",
     ],
   },
-  ewallet: {
-    title: "Pembayaran E-Wallet",
+  cardless: {
+    title: "Kredit Tanpa Kartu (Akulaku)",
     steps: [
-      "Klik “Bayar Sekarang” untuk membuka instruksi pembayaran.",
-      "Selesaikan pembayaran di aplikasi e-wallet yang kamu pilih.",
-      "Pastikan nominal yang dibayar sesuai dengan total tagihan.",
-      "Halaman ini akan otomatis memperbarui status setelah berhasil.",
+      "Klik “Bayar Sekarang” untuk membuka pembayaran Akulaku PayLater.",
+      "Masuk ke akun Akulaku dan pilih tenor cicilan yang diinginkan.",
+      "Konfirmasi pembayaran sesuai total tagihan.",
+      "Status otomatis diperbarui setelah Akulaku menyetujui transaksi.",
     ],
   },
   va: {

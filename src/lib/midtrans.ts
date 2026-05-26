@@ -130,20 +130,29 @@ export function verifyMidtransSignature(args: {
 
 /**
  * Maps a checkout payment-method id (see src/lib/payment-methods.ts) to its
- * Snap `enabled_payments` code. Methods Snap does not expose as a standalone
- * channel (e.g. OVO, DANA) return `null` — we then leave `enabled_payments`
- * unset so the user can still pick a channel inside the Snap popup.
+ * Snap `enabled_payments` code.
+ *
+ * Snap only exposes dedicated VA channels for BCA/BNI/BRI/CIMB/Permata and
+ * `echannel` (Mandiri Bill). The "Bank Lainnya" option (`other_va`) is a
+ * generic VA payable from any bank, for banks without a dedicated channel.
+ * Unknown ids return `null`, leaving `enabled_payments` unset so Snap shows
+ * every active channel.
+ *
+ * Note: channels must be activated in the Midtrans dashboard (MAP) or Snap
+ * won't display them even when listed here.
  */
 const SNAP_PAYMENT_MAP: Record<string, string> = {
   qris: "qris",
-  gopay: "gopay",
-  shopeepay: "shopeepay",
   bca_va: "bca_va",
-  bni_va: "bni_va",
   bri_va: "bri_va",
+  bni_va: "bni_va",
   mandiri_va: "echannel", // Mandiri Bill via Snap
+  permata_va: "permata_va",
+  cimb_va: "cimb_va",
+  other_va: "other_va",
   indomaret: "indomaret",
   alfamart: "alfamart",
+  akulaku: "akulaku",
 };
 
 export function mapPaymentMethodToSnap(methodId: string): string[] | null {

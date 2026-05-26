@@ -4,13 +4,13 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
   ChevronDown,
+  CreditCard,
   Landmark,
   Loader2,
   Lock,
   QrCode,
   ShieldCheck,
   Store,
-  Wallet,
   type LucideIcon,
 } from "lucide-react";
 
@@ -27,9 +27,9 @@ import { cn } from "@/lib/utils";
 
 const GROUP_ICONS: Record<PaymentMethodGroup, LucideIcon> = {
   qris: QrCode,
-  ewallet: Wallet,
   va: Landmark,
   store: Store,
+  cardless: CreditCard,
 };
 
 type Props = {
@@ -54,10 +54,12 @@ export function PaymentMethodCard({
   // Auto-expand the group that currently holds the selected method on mount
   // (handy when the user re-renders the page with a previous selection),
   // otherwise start with everything collapsed so the card stays compact.
+  // Single-option groups render as a direct row (no accordion) so never expand.
   const [expandedGroup, setExpandedGroup] = useState<PaymentMethodGroup | null>(
     () => {
       const selected = selectedMethod ? paymentMethodById(selectedMethod) : null;
-      return selected && selected.group !== "qris" ? selected.group : null;
+      if (!selected) return null;
+      return paymentMethodsInGroup(selected.group).length > 1 ? selected.group : null;
     },
   );
 
@@ -93,12 +95,15 @@ export function PaymentMethodCard({
         </div>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-600 ring-1 ring-zinc-200">
           <Lock className="size-3" strokeWidth={2.6} />
-          Powered by DOKU
+          Powered by Midtrans
         </span>
       </header>
 
       <RadioGroup
-        value={selectedMethod ?? undefined}
+        // Always pass a defined value ("" = nothing selected) so the group is
+        // controlled from first render — switching undefined→string later trips
+        // Base UI's uncontrolled→controlled warning.
+        value={selectedMethod ?? ""}
         onValueChange={(value: string) => onMethodChange(value)}
         className="mt-6 grid gap-2.5"
       >
@@ -106,9 +111,9 @@ export function PaymentMethodCard({
           const methods = paymentMethodsInGroup(group.id);
           const Icon = GROUP_ICONS[group.id];
 
-          // QRIS is a single-option group — render as a direct radio panel
-          // so the student doesn't have to expand a dropdown for one item.
-          if (group.id === "qris" && methods.length === 1) {
+          // Single-option groups (QRIS, Akulaku) render as a direct radio
+          // panel so the student doesn't expand a dropdown for one item.
+          if (methods.length === 1) {
             return (
               <SinglePaymentRow
                 key={group.id}
@@ -204,8 +209,8 @@ export function PaymentMethodCard({
 
       <p className="mt-4 inline-flex items-start gap-1.5 text-[11px] leading-relaxed text-zinc-500">
         <ShieldCheck className="mt-0.5 size-3.5 shrink-0 text-[color:var(--color-success)]" />
-        Transaksi diproses langsung oleh DOKU dengan enkripsi standar PCI-DSS.
-        Data kartu kamu tidak pernah disimpan di server NextLevel Academy.
+        Transaksi diproses langsung oleh Midtrans dengan enkripsi standar
+        PCI-DSS. Data pembayaranmu tidak pernah disimpan di server NextLevel Academy.
       </p>
     </form>
   );
