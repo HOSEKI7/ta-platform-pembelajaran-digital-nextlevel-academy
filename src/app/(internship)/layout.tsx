@@ -1,0 +1,36 @@
+import { cookies } from "next/headers";
+
+import { Role } from "@/generated/prisma";
+import { requireRole } from "@/lib/auth-server";
+
+import { InternshipShell } from "@/components/internship/internship-shell";
+
+const COLLAPSED_COOKIE = "internship-sidebar-collapsed";
+
+export default async function InternshipLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  // Gate the whole internship surface to PESERTA_MAGANG. Wrong role → "/".
+  const session = await requireRole(Role.PESERTA_MAGANG, {
+    redirectTo: "/internship/dashboard",
+  });
+
+  const cookieStore = await cookies();
+  const initialCollapsed = cookieStore.get(COLLAPSED_COOKIE)?.value === "1";
+
+  return (
+    <InternshipShell
+      user={{
+        name: session.user.name,
+        email: session.user.email,
+        username: session.user.username ?? null,
+        image: session.user.image ?? null,
+      }}
+      initialCollapsed={initialCollapsed}
+    >
+      {children}
+    </InternshipShell>
+  );
+}
