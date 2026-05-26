@@ -42,9 +42,14 @@ export function InvoiceCard({ tx, customer }: Props) {
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
-            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#225bd7] font-heading text-lg font-extrabold text-white">
-              N
-            </span>
+            {/* eslint-disable-next-line @next/next/no-img-element -- plain <img> required so html-to-image reliably inlines the logo into the downloaded PNG (next/image lazy-loading/srcset breaks the capture). */}
+            <img
+              src="/NextLevel_Mini_Logo.webp"
+              alt="NextLevel Academy"
+              width={40}
+              height={40}
+              className="size-10 shrink-0 object-contain"
+            />
             <div>
               <p className="font-heading text-[15px] font-extrabold leading-tight text-[#18181b]">
                 NextLevel Academy

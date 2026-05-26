@@ -75,7 +75,7 @@ export function SettingsView({ initial }: Props) {
         description="Atur identitas yang tampil di kursus, sertifikat, dan komunitas. Setiap perubahan tersimpan terpisah — kamu bisa mengubah profil atau password kapan saja."
       />
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)] lg:items-start lg:gap-8">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)] lg:items-start lg:gap-8 xl:gap-10">
         <div className="lg:sticky lg:top-24">
           <IdentityCard
             id={initial.id}

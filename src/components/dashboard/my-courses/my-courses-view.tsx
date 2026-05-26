@@ -96,19 +96,29 @@ export function MyCoursesView() {
           onClear={handleClearSearch}
         />
 
-        <Tabs
-          value={urlStatus}
-          onValueChange={handleStatusChange}
-          className="w-full sm:w-auto"
-        >
-          <TabsList className="h-9 w-full sm:w-auto">
-            {MY_COURSES_STATUSES.map((s) => (
-              <TabsTrigger key={s} value={s} className="text-[12px] font-semibold">
-                {STATUS_LABELS[s]}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3">
+          <Tabs
+            value={urlStatus}
+            onValueChange={handleStatusChange}
+            className="w-full sm:w-auto"
+          >
+            <TabsList className="h-9 w-full sm:w-auto">
+              {MY_COURSES_STATUSES.map((s) => (
+                <TabsTrigger key={s} value={s} className="text-[12px] font-semibold">
+                  {STATUS_LABELS[s]}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+
+          <Link
+            href="/catalog"
+            className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-full bg-[color:var(--color-brand-500)] px-4 text-[12px] font-bold text-white shadow-[0_10px_24px_-12px_rgba(43,114,234,0.7)] transition hover:bg-[color:var(--color-brand-600)]"
+          >
+            <Compass className="size-3.5" strokeWidth={2.4} />
+            Jelajah Katalog
+          </Link>
+        </div>
       </div>
 
       {isPending ? (

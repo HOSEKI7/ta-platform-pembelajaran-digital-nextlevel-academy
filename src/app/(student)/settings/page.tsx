@@ -23,7 +23,7 @@ export default async function SettingsPage() {
   const user = session.user;
 
   return (
-    <StudentPageContainer width="narrow">
+    <StudentPageContainer>
       <SettingsView
         initial={{
           id: user.id,
