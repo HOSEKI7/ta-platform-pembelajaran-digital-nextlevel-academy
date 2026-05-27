@@ -24,6 +24,15 @@ type Props = {
   /** Live status for today's cell (from the view's check-in state). */
   todayStatus: AttendanceDisplayStatus;
   todayCheckInTime: string | null;
+  /** Internship period bounds (date-only "yyyy-MM-dd") — days outside dim out. */
+  periodStartISO: string;
+  periodEndISO: string;
+  /** dateISO → holiday description, for LIBUR tooltips. */
+  holidayMap: Map<string, string>;
+  canPrev: boolean;
+  canNext: boolean;
+  /** Whether today falls within the period (controls the "Hari ini" shortcut). */
+  canJumpToday: boolean;
   onPrev: () => void;
   onNext: () => void;
   onToday: () => void;
@@ -35,6 +44,12 @@ export function AttendanceCalendar({
   todayISO,
   todayStatus,
   todayCheckInTime,
+  periodStartISO,
+  periodEndISO,
+  holidayMap,
+  canPrev,
+  canNext,
+  canJumpToday,
   onPrev,
   onNext,
   onToday,
@@ -45,7 +60,11 @@ export function AttendanceCalendar({
   // Build the month, then overlay today's live status so a Check-In immediately
   // turns today's cell green.
   const cells = useMemo<CalendarDay[]>(() => {
-    const base = buildMockMonth(year, month, todayISO).cells;
+    const base = buildMockMonth(year, month, todayISO, {
+      periodStartISO,
+      periodEndISO,
+      holidayMap,
+    }).cells;
     if (!isCurrentMonth) return base;
     return base.map((c) =>
       c.isToday
@@ -56,7 +75,17 @@ export function AttendanceCalendar({
           }
         : c,
     );
-  }, [year, month, todayISO, isCurrentMonth, todayStatus, todayCheckInTime]);
+  }, [
+    year,
+    month,
+    todayISO,
+    periodStartISO,
+    periodEndISO,
+    holidayMap,
+    isCurrentMonth,
+    todayStatus,
+    todayCheckInTime,
+  ]);
 
   const { hadir, tidakHadir } = useMemo(() => {
     let h = 0;
@@ -89,7 +118,7 @@ export function AttendanceCalendar({
           </h2>
         </div>
         <div className="flex items-center gap-2">
-          {!isCurrentMonth ? (
+          {!isCurrentMonth && canJumpToday ? (
             <button
               type="button"
               onClick={onToday}
@@ -98,10 +127,10 @@ export function AttendanceCalendar({
               Hari ini
             </button>
           ) : null}
-          <NavButton label="Bulan sebelumnya" onClick={onPrev}>
+          <NavButton label="Bulan sebelumnya" onClick={onPrev} disabled={!canPrev}>
             <ChevronLeft className="size-4" strokeWidth={2.4} />
           </NavButton>
-          <NavButton label="Bulan berikutnya" onClick={onNext}>
+          <NavButton label="Bulan berikutnya" onClick={onNext} disabled={!canNext}>
             <ChevronRight className="size-4" strokeWidth={2.4} />
           </NavButton>
         </div>
@@ -156,21 +185,27 @@ export function AttendanceCalendar({
 function NavButton({
   label,
   onClick,
+  disabled = false,
   children,
 }: {
   label: string;
   onClick: () => void;
+  disabled?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <button
       type="button"
       aria-label={label}
+      aria-disabled={disabled}
+      disabled={disabled}
       onClick={onClick}
       className={cn(
         "inline-flex size-9 items-center justify-center rounded-full text-zinc-600 ring-1 ring-zinc-200 transition",
         "hover:bg-[color:var(--color-brand-50)] hover:text-[color:var(--color-brand-700)] hover:ring-[color:var(--color-brand-300)]",
         "dark:text-zinc-300 dark:ring-[color:var(--color-surface-border)] dark:hover:bg-white/5",
+        disabled &&
+          "cursor-not-allowed opacity-40 hover:bg-transparent hover:text-zinc-600 hover:ring-zinc-200 dark:hover:bg-transparent dark:hover:text-zinc-300",
       )}
     >
       {children}
@@ -205,9 +240,13 @@ function SummaryStat({
 
 function DayCell({ cell }: { cell: CalendarDay }) {
   const status = cell.status!;
-  const title = cell.checkInTime
-    ? `Tanggal ${cell.day} · Hadir ${cell.checkInTime} WIB`
-    : `Tanggal ${cell.day}`;
+  const title = cell.holidayLabel
+    ? `Tanggal ${cell.day} · Libur: ${cell.holidayLabel}`
+    : cell.checkInTime
+      ? `Tanggal ${cell.day} · Hadir ${cell.checkInTime} WIB`
+      : status === "LUAR_PERIODE"
+        ? `Tanggal ${cell.day} · Di luar periode magang`
+        : `Tanggal ${cell.day}`;
 
   return (
     <div
@@ -222,7 +261,9 @@ function DayCell({ cell }: { cell: CalendarDay }) {
       <span
         className={cn(
           "text-xs font-bold sm:text-sm",
-          status === "LIBUR" || status === "FUTURE" ? "opacity-70" : "",
+          status === "LIBUR" || status === "FUTURE" || status === "LUAR_PERIODE"
+            ? "opacity-70"
+            : "",
         )}
       >
         {cell.day}

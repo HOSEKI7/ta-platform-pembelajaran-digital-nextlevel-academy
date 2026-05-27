@@ -1,4 +1,5 @@
 import {
+  CalendarRange,
   Clock3,
   Globe2,
   Info,
@@ -8,16 +9,31 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import type { AttendanceWindow } from "@/components/internship/dashboard/mock-data";
+import type {
+  AttendanceWindow,
+  InternshipPeriod,
+} from "@/components/internship/dashboard/mock-data";
 
 import { STATUS_LEGEND } from "./attendance-data";
 
 type Props = {
   window: AttendanceWindow;
+  period: InternshipPeriod;
 };
 
-export function AttendanceGuideCard({ window }: Props) {
+/** "yyyy-MM-dd" → "DD/MM/YYYY" (no Date object — the string is already a WIB
+ *  calendar date, so reformat the parts directly). */
+function formatDateID(dateISO: string): string {
+  const [y, m, d] = dateISO.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+export function AttendanceGuideCard({ window, period }: Props) {
   const rules: { icon: LucideIcon; text: string }[] = [
+    {
+      icon: CalendarRange,
+      text: `Periode magang: ${formatDateID(period.startISO)} – ${formatDateID(period.endISO)}. Kalender hanya menampilkan rentang ini.`,
+    },
     {
       icon: Clock3,
       text: `Check-in sekali per hari dalam jendela waktu ${window.start}–${window.end} WIB.`,

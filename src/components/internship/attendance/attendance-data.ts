@@ -6,7 +6,10 @@
  */
 import { formatInTimeZone } from "date-fns-tz";
 
-import type { AttendanceWindow } from "@/components/internship/dashboard/mock-data";
+import type {
+  AttendanceWindow,
+  Holiday,
+} from "@/components/internship/dashboard/mock-data";
 
 export const WIB_TZ = "Asia/Jakarta";
 
@@ -30,14 +33,17 @@ export const WEEKDAY_LABELS_ID = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min
 
 /**
  * Calendar cell status. Superset of the tri-state in `mock-data.ts`: adds LIBUR
- * (weekend / non-working) and FUTURE (upcoming) so a month grid reads fully.
+ * (weekend / holiday / non-working), FUTURE (upcoming within the period) and
+ * LUAR_PERIODE (outside the internship period — not counted) so a month grid
+ * reads fully even on the period's first/last partial months.
  */
 export type CalendarDayStatus =
   | "HADIR"
   | "TIDAK_HADIR"
   | "BELUM"
   | "LIBUR"
-  | "FUTURE";
+  | "FUTURE"
+  | "LUAR_PERIODE";
 
 export type CalendarDay = {
   /** Day-of-month (1..31), or null for leading/trailing padding cells. */
@@ -47,6 +53,8 @@ export type CalendarDay = {
   dateISO?: string;
   /** Mock check-in time "HH:mm" for HADIR days. */
   checkInTime?: string;
+  /** Holiday description for LIBUR-by-holiday days (tooltip). */
+  holidayLabel?: string;
   isToday?: boolean;
 };
 
@@ -71,6 +79,8 @@ export const CALENDAR_STATUS_STYLES: Record<CalendarDayStatus, string> = {
   LIBUR: "bg-zinc-50 text-zinc-300 dark:bg-white/[0.02] dark:text-zinc-600",
   FUTURE:
     "bg-transparent text-zinc-300 ring-1 ring-inset ring-zinc-100 dark:text-zinc-600 dark:ring-white/5",
+  LUAR_PERIODE:
+    "bg-transparent text-zinc-200 ring-1 ring-inset ring-dashed ring-zinc-100 dark:text-zinc-700 dark:ring-white/5",
 };
 
 export const STATUS_LEGEND: ReadonlyArray<{
@@ -82,16 +92,84 @@ export const STATUS_LEGEND: ReadonlyArray<{
   { status: "TIDAK_HADIR", label: "Tidak hadir", swatch: "bg-red-500" },
   { status: "BELUM", label: "Belum absen", swatch: "bg-zinc-300 dark:bg-white/25" },
   { status: "LIBUR", label: "Libur", swatch: "bg-zinc-200 dark:bg-white/10" },
+  {
+    status: "LUAR_PERIODE",
+    label: "Di luar periode",
+    swatch: "border border-dashed border-zinc-300 bg-transparent dark:border-white/15",
+  },
 ];
 
+export type Ymd = { year: number; month: number; day: number };
+
 /** WIB year/month(0-based)/day for an ISO instant. */
-export function getWibYmd(iso: string): { year: number; month: number; day: number } {
+export function getWibYmd(iso: string): Ymd {
   const d = new Date(iso);
   return {
     year: parseInt(formatInTimeZone(d, WIB_TZ, "yyyy"), 10),
     month: parseInt(formatInTimeZone(d, WIB_TZ, "M"), 10) - 1,
     day: parseInt(formatInTimeZone(d, WIB_TZ, "d"), 10),
   };
+}
+
+/** Parse a date-only "yyyy-MM-dd" into a y/m/d tuple (month 0-based). No TZ math
+ *  — the string already encodes a WIB calendar date. */
+export function parseYmd(dateISO: string): Ymd {
+  const [y, m, d] = dateISO.split("-").map((n) => parseInt(n, 10));
+  return { year: y, month: m - 1, day: d };
+}
+
+/** Zero-pad a y/m/d into "yyyy-MM-dd". */
+function toDateISO({ year, month, day }: Ymd): string {
+  return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+/**
+ * Expand admin holiday spans into a dateISO → description map. Each span covers
+ * `days` consecutive days from `startISO` (inclusive). Pure & hydration-safe:
+ * stepping via UTC-noon dates avoids DST/timezone drift on the increment.
+ */
+export function expandHolidays(holidays: Holiday[]): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const h of holidays) {
+    const start = parseYmd(h.startISO);
+    const base = Date.UTC(start.year, start.month, start.day, 12);
+    for (let i = 0; i < Math.max(1, h.days); i += 1) {
+      const d = new Date(base + i * 86_400_000);
+      const iso = toDateISO({
+        year: d.getUTCFullYear(),
+        month: d.getUTCMonth(),
+        day: d.getUTCDate(),
+      });
+      if (!map.has(iso)) map.set(iso, h.description);
+    }
+  }
+  return map;
+}
+
+/** First/last navigable {year, month} from a date-only period (0-based month). */
+export function periodMonthBounds(period: { startISO: string; endISO: string }): {
+  first: { year: number; month: number };
+  last: { year: number; month: number };
+} {
+  const s = parseYmd(period.startISO);
+  const e = parseYmd(period.endISO);
+  return {
+    first: { year: s.year, month: s.month },
+    last: { year: e.year, month: e.month },
+  };
+}
+
+/** Clamp a {year, month} into [first, last] using a month ordinal. */
+export function clampMonth(
+  target: { year: number; month: number },
+  first: { year: number; month: number },
+  last: { year: number; month: number },
+): { year: number; month: number } {
+  const ord = (m: { year: number; month: number }) => m.year * 12 + m.month;
+  const t = ord(target);
+  if (t < ord(first)) return first;
+  if (t > ord(last)) return last;
+  return target;
 }
 
 /** -1 / 0 / 1 comparison of two y/m/d tuples. */
@@ -110,18 +188,31 @@ function weekdayUtc(year: number, month: number, day: number): number {
   return new Date(Date.UTC(year, month, day, 12)).getUTCDay();
 }
 
+export type BuildMonthOptions = {
+  /** Period bounds (date-only "yyyy-MM-dd"); days outside → LUAR_PERIODE. */
+  periodStartISO?: string;
+  periodEndISO?: string;
+  /** dateISO → holiday description; matching days → LIBUR with a tooltip. */
+  holidayMap?: Map<string, string>;
+};
+
 /**
- * Generate a deterministic mock month. Weekday rules: weekend → LIBUR,
+ * Generate a deterministic mock month. Status precedence per day: outside the
+ * internship period → LUAR_PERIODE, holiday → LIBUR (+label), weekend → LIBUR,
  * after today → FUTURE, today → BELUM, past weekday → HADIR with a sparse,
  * reproducible set of TIDAK_HADIR (modulo pattern). Pure: same inputs → same
- * output, so it's hydration-safe.
+ * output, so it's hydration-safe. Period/holiday options are optional and
+ * backward-compatible (omitted → original unbounded behaviour).
  */
 export function buildMockMonth(
   year: number,
   month: number,
   todayISO: string,
+  opts: BuildMonthOptions = {},
 ): CalendarMonth {
   const today = getWibYmd(todayISO);
+  const periodStart = opts.periodStartISO ? parseYmd(opts.periodStartISO) : null;
+  const periodEnd = opts.periodEndISO ? parseYmd(opts.periodEndISO) : null;
   const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
   const lead = (weekdayUtc(year, month, 1) + 6) % 7; // Monday-first padding
 
@@ -132,19 +223,28 @@ export function buildMockMonth(
   let tidakHadir = 0;
 
   for (let day = 1; day <= daysInMonth; day += 1) {
+    const ymd = { year, month, day };
     const dow = weekdayUtc(year, month, day);
     const isWeekend = dow === 0 || dow === 6;
-    const cmp = compareYmd({ year, month, day }, today);
+    const cmp = compareYmd(ymd, today);
     const isToday = cmp === 0;
-    const dateISO = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const dateISO = toDateISO(ymd);
+    const outOfPeriod =
+      (periodStart !== null && compareYmd(ymd, periodStart) < 0) ||
+      (periodEnd !== null && compareYmd(ymd, periodEnd) > 0);
+    const holidayLabel = opts.holidayMap?.get(dateISO);
 
     let status: CalendarDayStatus;
     let checkInTime: string | undefined;
 
-    if (cmp > 0) {
-      status = "FUTURE";
+    if (outOfPeriod) {
+      status = "LUAR_PERIODE";
+    } else if (holidayLabel) {
+      status = "LIBUR";
     } else if (isWeekend) {
       status = "LIBUR";
+    } else if (cmp > 0) {
+      status = "FUTURE";
     } else if (isToday) {
       status = "BELUM";
     } else {
@@ -159,7 +259,7 @@ export function buildMockMonth(
       }
     }
 
-    cells.push({ day, status, dateISO, isToday, checkInTime });
+    cells.push({ day, status, dateISO, isToday, checkInTime, holidayLabel });
   }
 
   while (cells.length % 7 !== 0) cells.push({ day: null, status: null });

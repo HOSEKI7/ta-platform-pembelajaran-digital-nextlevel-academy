@@ -4,7 +4,11 @@ import { Role } from "@/generated/prisma";
 import { requireRole } from "@/lib/auth-server";
 
 import { AttendanceView } from "@/components/internship/attendance/attendance-view";
-import { MOCK_ATTENDANCE_WINDOW } from "@/components/internship/dashboard/mock-data";
+import {
+  MOCK_ATTENDANCE_WINDOW,
+  MOCK_HOLIDAYS,
+  MOCK_INTERNSHIP_PERIOD,
+} from "@/components/internship/dashboard/mock-data";
 
 export const dynamic = "force-dynamic";
 
@@ -22,5 +26,12 @@ export default async function InternshipAttendancePage() {
   // real loaders (Attendance table) replace this in a later backend pass.
   const serverNowISO = new Date().toISOString();
 
-  return <AttendanceView serverNowISO={serverNowISO} window={MOCK_ATTENDANCE_WINDOW} />;
+  return (
+    <AttendanceView
+      serverNowISO={serverNowISO}
+      window={MOCK_ATTENDANCE_WINDOW}
+      period={MOCK_INTERNSHIP_PERIOD}
+      holidays={MOCK_HOLIDAYS}
+    />
+  );
 }

@@ -25,6 +25,21 @@ export type MagangContext = {
 /** Daily check-in window, "HH:mm" in WIB. Admin-configured in the real system. */
 export type AttendanceWindow = { start: string; end: string };
 
+/**
+ * Internship period for the cohort (Batch). Bounds the attendance calendar so it
+ * can't be navigated before the first day or after the last. Date-only strings
+ * "yyyy-MM-dd" in WIB. In the real system this maps to `Batch.startDate`/`endDate`
+ * (PRD §9.4), read via the `InternshipProfile → Class → Field → Batch` chain.
+ */
+export type InternshipPeriod = { startISO: string; endISO: string };
+
+/**
+ * A holiday entry, admin-configured & global across batches (PRD §9.6.1). `days`
+ * is the span starting at `startISO` (inclusive). Calendar days inside the span
+ * render as LIBUR with `description` as a tooltip, on top of the weekend rule.
+ */
+export type Holiday = { startISO: string; days: number; description: string };
+
 export type MonthSummary = {
   presentDays: number;
   totalDays: number;
@@ -58,6 +73,25 @@ export const MOCK_ATTENDANCE_WINDOW: AttendanceWindow = {
   start: "09:00",
   end: "12:00",
 };
+
+/**
+ * Demo internship period — deliberately brackets "today" so the calendar shows a
+ * past stretch, the current month, and a future tail all within bounds. April
+ * starts mid-month and July ends early, so both edge months carry "di luar
+ * periode" cells and the prev/next nav clamps cleanly.
+ */
+export const MOCK_INTERNSHIP_PERIOD: InternshipPeriod = {
+  startISO: "2026-04-14",
+  endISO: "2026-07-04",
+};
+
+/** Demo holidays (global). Includes a single-day and a multi-day span that fall
+ *  inside the period so the calendar's LIBUR + tooltip behaviour is visible. */
+export const MOCK_HOLIDAYS: Holiday[] = [
+  { startISO: "2026-05-01", days: 1, description: "Hari Buruh Internasional" },
+  { startISO: "2026-06-01", days: 1, description: "Hari Lahir Pancasila" },
+  { startISO: "2026-06-17", days: 3, description: "Cuti Bersama Idul Adha" },
+];
 
 export const MOCK_MONTH_SUMMARY: MonthSummary = {
   presentDays: 18,

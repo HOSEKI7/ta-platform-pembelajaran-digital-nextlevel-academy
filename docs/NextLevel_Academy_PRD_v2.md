@@ -787,6 +787,13 @@ Jika tidak valid → tampilkan pesan error yang deskriptif.
 - Mentor: melihat rekap absensi seluruh peserta di bawah bimbingannya per hari (tabel per hari, menampilkan nama, jam check-ind dan status, terdapat filter untuk memilih tanggal data rekapan sebelumnya).
 - Admin: melihat dan dapat mengedit seluruh data absensi.
 
+**Periode Magang (rentang kalender):**
+
+- Kalender absensi dibatasi oleh `Batch.startDate`–`Batch.endDate` (lihat §9.4). Navigasi bulan tidak dapat melewati bulan tanggal mulai (prev) maupun bulan tanggal berakhir (next).
+- Bulan tampil pertama saat halaman dibuka = bulan berjalan jika berada dalam periode; jika di luar, di-clamp ke batas periode terdekat.
+- Tanggal di luar `[startDate, endDate]` ditandai **Di luar periode** (netral) dan **tidak** dihitung sebagai kehadiran/ketidakhadiran.
+- Hari libur (lihat §9.6.1 Holiday) di dalam periode ditandai **Libur** beserta keterangannya, selain Sabtu/Minggu yang sudah otomatis libur.
+
 **Waktu Absensi:**
 
 - Jam mulai window (contoh: 09:00).
@@ -1081,7 +1088,14 @@ Admin dapat melakukan CRUD badge dengan ketentuan:
 - CRUD daftar batch/angkatan (contoh: Batch 1, Batch 2, Batch 3).
 - Batch yang masih digunakan akun aktif tidak dapat dihapus.
 - Batch tidak dapat dihapus setelah dibuat.
-- Saat menambahkan Batch, Admin diwajibkan mengisi field Keterangan Batch (contoh: Batch 1 Periode November 2025 – Januari 2026) dan mengonfirmasi pembuatan melalui popup konfirmasi.
+- Saat menambahkan Batch, Admin diwajibkan mengisi field Keterangan Batch (contoh: Batch 1 Periode November 2025 – Januari 2026), **Tanggal Mulai** dan **Tanggal Berakhir** magang (validasi: tanggal berakhir harus setelah tanggal mulai), dan mengonfirmasi pembuatan melalui popup konfirmasi.
+- Tanggal Mulai/Berakhir menentukan rentang waktu magang batch & membatasi kalender absensi peserta (lihat §6.9.2 & §9.4).
+
+**Pengaturan Tanggal Libur:**
+
+- Admin mengelola daftar tanggal libur (global, berlaku semua batch — lihat §9.6.1).
+- Menambah libur: klik "Set Tanggal Libur" → isi **tanggal mulai libur**, **jumlah hari**, dan **keterangan**. Rentang libur dihitung dari tanggal mulai sepanjang jumlah hari.
+- CRUD daftar libur; libur tampil sebagai hari **Libur** di kalender absensi seluruh peserta magang.
 
 **Kelola Bidang:**
 
@@ -1283,9 +1297,13 @@ Batch {
   id          UUID (PK)
   name        String (unique, contoh: Batch 1, Batch 2)
   description String (keterangan batch, contoh: Periode November 2025 – Januari 2026)
+  startDate   DateTime (tanggal mulai magang batch, WIB — wajib saat pembuatan)
+  endDate     DateTime (tanggal berakhir magang batch, WIB — wajib, harus > startDate)
   createdAt   DateTime
 }
 ```
+
+`startDate`/`endDate` mendefinisikan rentang waktu magang satu angkatan: menjadi acuan periode program dan membatasi kalender absensi Peserta Magang (bulan & tanggal pertama–terakhir yang dapat dinavigasi). Seluruh Bidang & Kelas di bawah Batch mewarisi periode ini.
 
 ### 9.5 Field
 
@@ -1310,6 +1328,24 @@ Class {
   updatedAt   DateTime
 }
 ```
+
+#### 9.6.1 Holiday (Tanggal Libur)
+
+Daftar tanggal libur yang dikonfigurasi Admin. **Global** — berlaku untuk semua batch (tidak punya `batchId`). Hari yang masuk rentang libur ditandai **Libur** di kalender absensi (di luar Sabtu/Minggu yang sudah otomatis libur) dan tidak dihitung sebagai Tidak Hadir.
+
+```
+Holiday {
+  id          UUID (PK)
+  startDate   DateTime (hari pertama libur, WIB)
+  days        Integer  (jumlah hari libur, ≥ 1, default 1)
+  endDate     DateTime (turunan = startDate + days - 1; disimpan untuk query rentang "apakah tanggal X libur")
+  description String   (keterangan, contoh: "Cuti Bersama Idul Adha")
+  createdAt   DateTime
+  updatedAt   DateTime
+}
+```
+
+Admin menambah libur dengan mengisi: tanggal mulai libur, jumlah hari, dan keterangan; `endDate` dihitung otomatis saat penyimpanan.
 
 ### 9.7 Course
 
@@ -1721,6 +1757,8 @@ Seluruh API endpoint menggunakan prefix `/api/v1/`, diimplementasikan sebagai Ne
 | GET       | `/admin/gamification/leveling` | Monitor leveling           | ADMIN |
 | CRUD      | `/admin/gamification/badges`   | Kelola badge               | ADMIN |
 | GET/PATCH | `/admin/internship/attendance` | Rekap & edit absensi       | ADMIN |
+| CRUD      | `/admin/internship/batches`    | Kelola batch (+ tanggal mulai/berakhir) | ADMIN |
+| CRUD      | `/admin/internship/holidays`   | Kelola tanggal libur (global) | ADMIN |
 | GET       | `/admin/internship/tasks`      | Monitor tugas              | ADMIN |
 | GET/PATCH | `/admin/internship/grades`     | Monitor & edit nilai akhir | ADMIN |
 | CRUD      | `/admin/settings`              | Konfigurasi platform       | ADMIN |
