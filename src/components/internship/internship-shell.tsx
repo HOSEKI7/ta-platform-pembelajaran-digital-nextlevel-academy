@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import type { MagangContext } from "@/lib/internship-types";
 
 import { InternshipSidebar } from "./internship-sidebar";
 import { InternshipTopbar } from "./internship-topbar";
@@ -18,11 +19,12 @@ type Props = {
     username?: string | null;
     image?: string | null;
   };
+  context: MagangContext | null;
   initialCollapsed: boolean;
   children: React.ReactNode;
 };
 
-export function InternshipShell({ user, initialCollapsed, children }: Props) {
+export function InternshipShell({ user, context, initialCollapsed, children }: Props) {
   const [collapsed, setCollapsed] = useState<boolean>(initialCollapsed);
   const [mobileOpen, setMobileOpen] = useState<boolean>(false);
 
@@ -87,7 +89,11 @@ export function InternshipShell({ user, initialCollapsed, children }: Props) {
 
       {/* Main column */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <InternshipTopbar user={user} onOpenMobileNav={() => setMobileOpen(true)} />
+        <InternshipTopbar
+          user={user}
+          context={context}
+          onOpenMobileNav={() => setMobileOpen(true)}
+        />
         <main className="relative flex-1">
           {/* Workspace atmosphere: subtle radial gradient for depth */}
           <div

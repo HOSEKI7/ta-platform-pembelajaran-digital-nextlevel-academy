@@ -1,15 +1,20 @@
 /**
- * Pure data + helpers for the Peserta-Magang attendance page (UI-only pass — no
- * backend). The calendar mock is generated deterministically from a server-
- * captured `todayISO`, so SSR and the first client render agree. Real data from
- * the `Attendance` table replaces `buildMockMonth` in a later backend pass.
+ * Pure presentation helpers + status engine for the Peserta-Magang attendance
+ * calendar. `buildMonthFromData` turns real Attendance/Holiday/period data
+ * (resolved server-side) into a month grid. Pure & deterministic given its
+ * inputs, so SSR and the first client render agree (hydration-safe).
  */
 import { formatInTimeZone } from "date-fns-tz";
 
 import type {
+  AttendanceMonthDTO,
   AttendanceWindow,
+  CalendarDay,
+  CalendarDayStatus,
   Holiday,
-} from "@/components/internship/dashboard/mock-data";
+} from "@/lib/internship-types";
+
+export type { CalendarDay, CalendarDayStatus, AttendanceMonthDTO } from "@/lib/internship-types";
 
 export const WIB_TZ = "Asia/Jakarta";
 
@@ -30,43 +35,6 @@ export const MONTH_NAMES_ID = [
 
 /** Monday-first weekday labels (Indonesia convention). */
 export const WEEKDAY_LABELS_ID = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"] as const;
-
-/**
- * Calendar cell status. Superset of the tri-state in `mock-data.ts`: adds LIBUR
- * (weekend / holiday / non-working), FUTURE (upcoming within the period) and
- * LUAR_PERIODE (outside the internship period — not counted) so a month grid
- * reads fully even on the period's first/last partial months.
- */
-export type CalendarDayStatus =
-  | "HADIR"
-  | "TIDAK_HADIR"
-  | "BELUM"
-  | "LIBUR"
-  | "FUTURE"
-  | "LUAR_PERIODE";
-
-export type CalendarDay = {
-  /** Day-of-month (1..31), or null for leading/trailing padding cells. */
-  day: number | null;
-  status: CalendarDayStatus | null;
-  /** "yyyy-MM-dd" for real cells. */
-  dateISO?: string;
-  /** Mock check-in time "HH:mm" for HADIR days. */
-  checkInTime?: string;
-  /** Holiday description for LIBUR-by-holiday days (tooltip). */
-  holidayLabel?: string;
-  isToday?: boolean;
-};
-
-export type CalendarMonth = {
-  year: number;
-  /** 0-based month index. */
-  month: number;
-  /** Flat cell list including padding; length is a multiple of 7. */
-  cells: CalendarDay[];
-  hadir: number;
-  tidakHadir: number;
-};
 
 /** Cell background/text per status — light + dark. Colour language matches the
  *  dashboard (Hadir = hijau, Tidak Hadir = merah, Belum = abu-abu). */
@@ -190,29 +158,33 @@ function weekdayUtc(year: number, month: number, day: number): number {
 
 export type BuildMonthOptions = {
   /** Period bounds (date-only "yyyy-MM-dd"); days outside → LUAR_PERIODE. */
-  periodStartISO?: string;
-  periodEndISO?: string;
+  periodStartISO: string;
+  periodEndISO: string;
   /** dateISO → holiday description; matching days → LIBUR with a tooltip. */
-  holidayMap?: Map<string, string>;
+  holidayMap: Map<string, string>;
+  /** dateISO → check-in time "HH:mm" for days the student was PRESENT. */
+  presentMap: Map<string, string>;
+  /** True when the daily check-in window has already closed in WIB — flips an
+   *  un-checked-in today from BELUM to TIDAK_HADIR. */
+  windowClosedToday: boolean;
 };
 
 /**
- * Generate a deterministic mock month. Status precedence per day: outside the
- * internship period → LUAR_PERIODE, holiday → LIBUR (+label), weekend → LIBUR,
- * after today → FUTURE, today → BELUM, past weekday → HADIR with a sparse,
- * reproducible set of TIDAK_HADIR (modulo pattern). Pure: same inputs → same
- * output, so it's hydration-safe. Period/holiday options are optional and
- * backward-compatible (omitted → original unbounded behaviour).
+ * Build a month grid from real data. Status precedence per day:
+ *   outside period → LUAR_PERIODE · holiday → LIBUR(+label) · weekend → LIBUR ·
+ *   future → FUTURE · today → HADIR if present, else (window closed → TIDAK_HADIR,
+ *   else BELUM) · past working day → HADIR if present, else TIDAK_HADIR.
+ * Pure & deterministic given its inputs → hydration-safe.
  */
-export function buildMockMonth(
+export function buildMonthFromData(
   year: number,
   month: number,
   todayISO: string,
-  opts: BuildMonthOptions = {},
-): CalendarMonth {
+  opts: BuildMonthOptions,
+): AttendanceMonthDTO {
   const today = getWibYmd(todayISO);
-  const periodStart = opts.periodStartISO ? parseYmd(opts.periodStartISO) : null;
-  const periodEnd = opts.periodEndISO ? parseYmd(opts.periodEndISO) : null;
+  const periodStart = parseYmd(opts.periodStartISO);
+  const periodEnd = parseYmd(opts.periodEndISO);
   const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
   const lead = (weekdayUtc(year, month, 1) + 6) % 7; // Monday-first padding
 
@@ -230,9 +202,9 @@ export function buildMockMonth(
     const isToday = cmp === 0;
     const dateISO = toDateISO(ymd);
     const outOfPeriod =
-      (periodStart !== null && compareYmd(ymd, periodStart) < 0) ||
-      (periodEnd !== null && compareYmd(ymd, periodEnd) > 0);
-    const holidayLabel = opts.holidayMap?.get(dateISO);
+      compareYmd(ymd, periodStart) < 0 || compareYmd(ymd, periodEnd) > 0;
+    const holidayLabel = opts.holidayMap.get(dateISO);
+    const presentTime = opts.presentMap.get(dateISO);
 
     let status: CalendarDayStatus;
     let checkInTime: string | undefined;
@@ -245,18 +217,16 @@ export function buildMockMonth(
       status = "LIBUR";
     } else if (cmp > 0) {
       status = "FUTURE";
-    } else if (isToday) {
+    } else if (presentTime) {
+      status = "HADIR";
+      hadir += 1;
+      checkInTime = presentTime;
+    } else if (isToday && !opts.windowClosedToday) {
       status = "BELUM";
     } else {
-      const absent = day % 8 === 5 || day % 13 === 0;
-      if (absent) {
-        status = "TIDAK_HADIR";
-        tidakHadir += 1;
-      } else {
-        status = "HADIR";
-        hadir += 1;
-        checkInTime = `09:${String((day * 13) % 55).padStart(2, "0")}`;
-      }
+      // Past working day with no PRESENT row, or today after the window closed.
+      status = "TIDAK_HADIR";
+      tidakHadir += 1;
     }
 
     cells.push({ day, status, dateISO, isToday, checkInTime, holidayLabel });

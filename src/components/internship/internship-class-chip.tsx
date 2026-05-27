@@ -8,8 +8,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import type { MagangContext } from "@/lib/internship-types";
 
-import { MOCK_MAGANG_CONTEXT } from "./dashboard/mock-data";
+type Props = {
+  /** Real placement context (from the layout loader); null when not placed. */
+  context: MagangContext | null;
+};
 
 /**
  * Class chip — the Peserta-Magang counterpart to the student LevelChip. Peserta
@@ -18,8 +22,23 @@ import { MOCK_MAGANG_CONTEXT } from "./dashboard/mock-data";
  * Batch/Bidang/Kelas/Mentor context in the popover). Matches the LevelChip
  * ring/height so it sits in the same visual family.
  */
-export function InternshipClassChip() {
-  const ctx = MOCK_MAGANG_CONTEXT;
+export function InternshipClassChip({ context }: Props) {
+  if (!context) {
+    return (
+      <span
+        className={cn(
+          "inline-flex h-10 items-center gap-2 rounded-full px-3.5 text-[11px] font-semibold ring-1",
+          "bg-zinc-50 text-zinc-500 ring-zinc-200",
+          "dark:bg-white/5 dark:text-zinc-400 dark:ring-[color:var(--color-surface-border)]",
+        )}
+      >
+        <GraduationCap className="size-4" strokeWidth={2.2} />
+        Belum ada kelas
+      </span>
+    );
+  }
+
+  const ctx = context;
 
   return (
     <Popover>

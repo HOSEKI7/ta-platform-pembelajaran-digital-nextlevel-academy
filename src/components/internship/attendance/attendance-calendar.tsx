@@ -1,34 +1,27 @@
 "use client";
 
-import { useMemo } from "react";
 import { Check, ChevronLeft, ChevronRight, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import type { AttendanceDisplayStatus } from "@/components/internship/dashboard/mock-data";
+import type { AttendanceMonthDTO, CalendarDay } from "@/lib/internship-types";
 
 import {
   CALENDAR_STATUS_STYLES,
   MONTH_NAMES_ID,
   STATUS_LEGEND,
   WEEKDAY_LABELS_ID,
-  buildMockMonth,
-  getWibYmd,
-  type CalendarDay,
 } from "./attendance-data";
 
 type Props = {
   year: number;
   /** 0-based month index. */
   month: number;
-  todayISO: string;
-  /** Live status for today's cell (from the view's check-in state). */
-  todayStatus: AttendanceDisplayStatus;
-  todayCheckInTime: string | null;
-  /** Internship period bounds (date-only "yyyy-MM-dd") — days outside dim out. */
-  periodStartISO: string;
-  periodEndISO: string;
-  /** dateISO → holiday description, for LIBUR tooltips. */
-  holidayMap: Map<string, string>;
+  /** Server/query-resolved month grid (undefined while first-loading). */
+  data: AttendanceMonthDTO | undefined;
+  /** True while fetching a new month — dims the grid. */
+  isFetching: boolean;
+  /** True when the displayed month is the current (today's) month. */
+  isCurrentMonth: boolean;
   canPrev: boolean;
   canNext: boolean;
   /** Whether today falls within the period (controls the "Hari ini" shortcut). */
@@ -36,17 +29,14 @@ type Props = {
   onPrev: () => void;
   onNext: () => void;
   onToday: () => void;
-};
+}
 
 export function AttendanceCalendar({
   year,
   month,
-  todayISO,
-  todayStatus,
-  todayCheckInTime,
-  periodStartISO,
-  periodEndISO,
-  holidayMap,
+  data,
+  isFetching,
+  isCurrentMonth,
   canPrev,
   canNext,
   canJumpToday,
@@ -54,57 +44,18 @@ export function AttendanceCalendar({
   onNext,
   onToday,
 }: Props) {
-  const today = getWibYmd(todayISO);
-  const isCurrentMonth = year === today.year && month === today.month;
-
-  // Build the month, then overlay today's live status so a Check-In immediately
-  // turns today's cell green.
-  const cells = useMemo<CalendarDay[]>(() => {
-    const base = buildMockMonth(year, month, todayISO, {
-      periodStartISO,
-      periodEndISO,
-      holidayMap,
-    }).cells;
-    if (!isCurrentMonth) return base;
-    return base.map((c) =>
-      c.isToday
-        ? {
-            ...c,
-            status: todayStatus,
-            checkInTime: todayStatus === "HADIR" ? todayCheckInTime ?? undefined : undefined,
-          }
-        : c,
-    );
-  }, [
-    year,
-    month,
-    todayISO,
-    periodStartISO,
-    periodEndISO,
-    holidayMap,
-    isCurrentMonth,
-    todayStatus,
-    todayCheckInTime,
-  ]);
-
-  const { hadir, tidakHadir } = useMemo(() => {
-    let h = 0;
-    let t = 0;
-    for (const c of cells) {
-      if (c.status === "HADIR") h += 1;
-      else if (c.status === "TIDAK_HADIR") t += 1;
-    }
-    return { hadir: h, tidakHadir: t };
-  }, [cells]);
-
+  const cells: CalendarDay[] = data?.cells ?? [];
+  const hadir = data?.hadir ?? 0;
+  const tidakHadir = data?.tidakHadir ?? 0;
   const recorded = hadir + tidakHadir;
   const ratePct = recorded ? Math.round((hadir / recorded) * 100) : 0;
 
   return (
     <section
       className={cn(
-        "flex flex-col gap-5 rounded-3xl bg-white p-5 ring-1 ring-zinc-200 sm:p-6",
+        "flex flex-col gap-5 rounded-3xl bg-white p-5 ring-1 ring-zinc-200 transition-opacity sm:p-6",
         "dark:bg-[color:var(--color-surface-card)] dark:ring-[color:var(--color-surface-border)]",
+        isFetching && "opacity-60",
       )}
     >
       {/* Header: month nav */}

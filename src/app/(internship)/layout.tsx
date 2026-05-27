@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 
 import { Role } from "@/generated/prisma";
 import { requireRole } from "@/lib/auth-server";
+import { loadMagangContext } from "@/lib/internship-data-loader";
 
 import { InternshipShell } from "@/components/internship/internship-shell";
 
@@ -19,6 +20,7 @@ export default async function InternshipLayout({
 
   const cookieStore = await cookies();
   const initialCollapsed = cookieStore.get(COLLAPSED_COOKIE)?.value === "1";
+  const bundle = await loadMagangContext(session.user.id);
 
   return (
     <InternshipShell
@@ -28,6 +30,7 @@ export default async function InternshipLayout({
         username: session.user.username ?? null,
         image: session.user.image ?? null,
       }}
+      context={bundle?.context ?? null}
       initialCollapsed={initialCollapsed}
     >
       {children}

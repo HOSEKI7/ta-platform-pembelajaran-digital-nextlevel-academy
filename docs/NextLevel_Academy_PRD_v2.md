@@ -799,6 +799,8 @@ Jika tidak valid → tampilkan pesan error yang deskriptif.
 - Jam mulai window (contoh: 09:00).
 - Jam selesai window (contoh: 12:00).
 - Timezone: WIB (UTC+7) — hardcoded karena target pasar Indonesia.
+- Jendela jam ini **global** (satu nilai untuk semua batch, bukan per-batch). Saat ini disimpan sebagai konstanta platform (`src/lib/internship-config.ts`); dipromosikan ke tabel `Setting` ketika halaman admin settings dibangun.
+- **Gating server-side:** endpoint Check-In menghitung waktu WIB sendiri dan menolak absen di luar jendela, di hari libur/akhir pekan, di luar periode batch, atau jika sudah absen (idempoten via unique `(userId, date)`). Hari kerja lampau tanpa baris `Attendance` PRESENT diturunkan sebagai **Tidak Hadir** saat dibaca (tanpa job materialisasi ABSENT).
 
 #### 6.9.3 Fitur Tugas
 

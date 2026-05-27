@@ -3,13 +3,10 @@
 import { useEffect, useState } from "react";
 import { formatInTimeZone } from "date-fns-tz";
 import { id as idLocale } from "date-fns/locale";
-import { CalendarCheck, CheckCircle2, Clock, Fingerprint } from "lucide-react";
+import { CalendarCheck, CheckCircle2, Clock, Fingerprint, Loader2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import type {
-  AttendanceDisplayStatus,
-  AttendanceWindow,
-} from "@/components/internship/dashboard/mock-data";
+import type { AttendanceDisplayStatus, AttendanceWindow } from "@/lib/internship-types";
 
 import { WIB_TZ, computeWindow } from "./attendance-data";
 
@@ -18,7 +15,10 @@ type Props = {
   serverNowISO: string;
   window: AttendanceWindow;
   status: AttendanceDisplayStatus;
-  checkedInAt: string | null;
+  checkInLabel: string | null;
+  /** Server fact: today is an eligible working day (in period, not holiday). */
+  checkable: boolean;
+  isPending: boolean;
   onCheckIn: () => void;
 };
 
@@ -44,7 +44,9 @@ export function CheckInCard({
   serverNowISO,
   window,
   status,
-  checkedInAt,
+  checkInLabel,
+  checkable,
+  isPending,
   onCheckIn,
 }: Props) {
   const [now, setNow] = useState<Date>(() => new Date(serverNowISO));
@@ -61,18 +63,20 @@ export function CheckInCard({
   const { state, markerPct } = computeWindow(now, window);
 
   const checkedIn = status === "HADIR";
-  const checkInTime = checkedInAt
-    ? formatInTimeZone(new Date(checkedInAt), WIB_TZ, "HH:mm")
-    : null;
+  const checkInTime = checkInLabel;
   const pill = STATUS_PILL[status];
+  // Enabled only when the server marks today eligible AND the window is open.
+  const canCheckIn = checkable && state === "OPEN" && !checkedIn;
 
   const windowHint = checkedIn
     ? "Kehadiranmu hari ini sudah tercatat."
-    : state === "OPEN"
-      ? "Jendela absen sedang dibuka — silakan check-in."
-      : state === "BEFORE"
-        ? `Jendela absen dibuka pukul ${window.start} WIB.`
-        : "Jendela absen hari ini sudah ditutup.";
+    : !checkable
+      ? "Hari ini bukan hari absen (libur/akhir pekan/di luar periode)."
+      : state === "OPEN"
+        ? "Jendela absen sedang dibuka — silakan check-in."
+        : state === "BEFORE"
+          ? `Jendela absen dibuka pukul ${window.start} WIB.`
+          : "Jendela absen hari ini sudah ditutup.";
 
   return (
     <section
@@ -172,14 +176,20 @@ export function CheckInCard({
               <button
                 type="button"
                 onClick={onCheckIn}
+                disabled={!canCheckIn || isPending}
                 className={cn(
                   "group inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl px-5 text-sm font-bold transition",
                   "bg-[color:var(--color-brand-accent)] text-[color:var(--color-brand-950)]",
                   "shadow-[0_14px_30px_-12px_rgba(244,214,0,0.8)] hover:-translate-y-0.5 hover:shadow-[0_18px_36px_-12px_rgba(244,214,0,0.9)] active:translate-y-0",
+                  "disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none disabled:hover:translate-y-0",
                 )}
               >
-                <Fingerprint className="size-5 transition group-hover:scale-110" strokeWidth={2.3} />
-                Check-In Sekarang
+                {isPending ? (
+                  <Loader2 className="size-5 animate-spin" strokeWidth={2.3} />
+                ) : (
+                  <Fingerprint className="size-5 transition group-hover:scale-110" strokeWidth={2.3} />
+                )}
+                {isPending ? "Memproses…" : "Check-In Sekarang"}
               </button>
             )}
           </div>

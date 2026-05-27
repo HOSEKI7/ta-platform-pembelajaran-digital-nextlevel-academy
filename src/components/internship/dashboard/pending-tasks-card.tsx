@@ -11,7 +11,7 @@ import {
 
 import { cn } from "@/lib/utils";
 
-import type { PendingTask } from "./mock-data";
+import type { PendingTask } from "@/lib/internship-types";
 
 const WIB_TZ = "Asia/Jakarta";
 

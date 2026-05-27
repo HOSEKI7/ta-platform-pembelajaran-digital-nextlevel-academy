@@ -8,8 +8,9 @@ import { cn } from "@/lib/utils";
 import type {
   AttendanceDisplayStatus,
   DayMark,
+  Last7Status,
   MonthSummary,
-} from "./mock-data";
+} from "@/lib/internship-types";
 
 type Props = {
   status: AttendanceDisplayStatus;
@@ -40,10 +41,11 @@ const STATUS_META: Record<
   },
 };
 
-const DOT_COLOR: Record<AttendanceDisplayStatus, string> = {
+const DOT_COLOR: Record<Last7Status, string> = {
   HADIR: "bg-emerald-500",
   BELUM: "bg-zinc-300 dark:bg-white/20",
   TIDAK_HADIR: "bg-red-500",
+  LIBUR: "bg-zinc-200 dark:bg-white/10",
 };
 
 export function TodayAttendanceCard({

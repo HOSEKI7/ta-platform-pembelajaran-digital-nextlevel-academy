@@ -2,15 +2,10 @@ import type { Metadata } from "next";
 
 import { Role } from "@/generated/prisma";
 import { requireRole } from "@/lib/auth-server";
+import { loadDashboardData } from "@/lib/internship-data-loader";
 
 import { InternshipDashboard } from "@/components/internship/dashboard/internship-dashboard";
-import {
-  MOCK_ATTENDANCE_WINDOW,
-  MOCK_LAST7,
-  MOCK_MAGANG_CONTEXT,
-  MOCK_MONTH_SUMMARY,
-  buildMockPendingTasks,
-} from "@/components/internship/dashboard/mock-data";
+import { InternshipEmptyState } from "@/components/internship/internship-empty-state";
 
 export const dynamic = "force-dynamic";
 
@@ -26,22 +21,28 @@ export default async function InternshipDashboardPage() {
   });
   const firstName = session.user.name.split(" ")[0] ?? session.user.name;
 
-  // Capture "now" on the server so the live clock's first client render matches
-  // and task urgency stays deterministic across hydration. Mock data only —
-  // real loaders replace this in a later backend pass.
-  const now = new Date();
-  const serverNowISO = now.toISOString();
-  const tasks = buildMockPendingTasks(now);
+  // Capture "now" on the server so the live clock's first client render matches.
+  const serverNowISO = new Date().toISOString();
+
+  const data = await loadDashboardData(session.user.id);
+  if (!data) {
+    return (
+      <InternshipEmptyState eyebrow="Magang · Dashboard" title="Ringkasan" accent="Magang" />
+    );
+  }
 
   return (
     <InternshipDashboard
       firstName={firstName}
       serverNowISO={serverNowISO}
-      context={MOCK_MAGANG_CONTEXT}
-      window={MOCK_ATTENDANCE_WINDOW}
-      monthSummary={MOCK_MONTH_SUMMARY}
-      last7={MOCK_LAST7}
-      tasks={tasks}
+      context={data.context}
+      window={data.window}
+      todayStatus={data.todayStatus}
+      todayCheckInLabel={data.todayCheckInLabel}
+      todayCheckable={data.todayCheckable}
+      monthSummary={data.monthSummary}
+      last7={data.last7}
+      tasks={data.tasks}
     />
   );
 }

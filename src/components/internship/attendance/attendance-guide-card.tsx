@@ -9,10 +9,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import type {
-  AttendanceWindow,
-  InternshipPeriod,
-} from "@/components/internship/dashboard/mock-data";
+import type { AttendanceWindow, InternshipPeriod } from "@/lib/internship-types";
 
 import { STATUS_LEGEND } from "./attendance-data";
 

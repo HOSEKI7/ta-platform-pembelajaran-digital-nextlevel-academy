@@ -5,6 +5,7 @@ import { Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ProfileMenu } from "@/components/dashboard/profile-menu";
 import { ThemeToggle } from "@/components/dashboard/theme-toggle";
+import type { MagangContext } from "@/lib/internship-types";
 
 import { InternshipClassChip } from "./internship-class-chip";
 import { InternshipNotificationsButton } from "./internship-notifications-button";
@@ -16,10 +17,11 @@ type Props = {
     username?: string | null;
     image?: string | null;
   };
+  context: MagangContext | null;
   onOpenMobileNav: () => void;
 };
 
-export function InternshipTopbar({ user, onOpenMobileNav }: Props) {
+export function InternshipTopbar({ user, context, onOpenMobileNav }: Props) {
   return (
     <header
       className={cn(
@@ -50,7 +52,7 @@ export function InternshipTopbar({ user, onOpenMobileNav }: Props) {
           Group 2: workspace controls (Theme + Notifications).
           Group 3: identity (Profile). */}
       <div className="flex items-center gap-3 sm:gap-4">
-        <InternshipClassChip />
+        <InternshipClassChip context={context} />
 
         <Separator />
 

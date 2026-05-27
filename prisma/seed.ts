@@ -102,7 +102,12 @@ async function main() {
   // --- Internship org structure ---------------------------------------------
   const batch = await db.batch.upsert({
     where: { name: "Batch 1 2026" },
-    create: { name: "Batch 1 2026", description: "Periode Mei – Juli 2026" },
+    create: {
+      name: "Batch 1 2026",
+      description: "Periode April – Juli 2026",
+      startDate: new Date("2026-04-14"),
+      endDate: new Date("2026-07-04"),
+    },
     update: {},
   });
 

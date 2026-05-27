@@ -1,25 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { formatInTimeZone } from "date-fns-tz";
-import { toast } from "sonner";
+import { useState } from "react";
 
 import { PageHeader } from "@/components/dashboard/shared/page-header";
 import { StudentPageContainer } from "@/components/dashboard/shared/student-page-container";
+import { useAttendanceMonthQuery, useCheckInMutation } from "@/hooks/use-internship-attendance";
 import type {
   AttendanceDisplayStatus,
+  AttendanceMonthDTO,
   AttendanceWindow,
-  Holiday,
   InternshipPeriod,
-} from "@/components/internship/dashboard/mock-data";
+} from "@/lib/internship-types";
 
-import {
-  WIB_TZ,
-  clampMonth,
-  expandHolidays,
-  getWibYmd,
-  periodMonthBounds,
-} from "./attendance-data";
+import { clampMonth, getWibYmd, periodMonthBounds } from "./attendance-data";
 import { AttendanceCalendar } from "./attendance-calendar";
 import { AttendanceGuideCard } from "./attendance-guide-card";
 import { CheckInCard } from "./check-in-card";
@@ -28,48 +21,60 @@ type Props = {
   serverNowISO: string;
   window: AttendanceWindow;
   period: InternshipPeriod;
-  holidays: Holiday[];
+  /** Initially displayed month (already clamped to the period) + its data. */
+  initialYear: number;
+  initialMonth: number;
+  initialData: AttendanceMonthDTO;
+  /** Today's resolved state (server) — drives the Check-In card. */
+  todayStatus: AttendanceDisplayStatus;
+  todayCheckInLabel: string | null;
+  todayCheckable: boolean;
 };
 
 /**
- * Client composer for `/internship/attendance`. Owns the demo check-in state so
- * a Check-In in the top card immediately recolors today's calendar cell, plus
- * the displayed-month state for calendar navigation. UI-only: Check-In sets
- * local state + a toast, no persistence (real endpoint is a later backend pass).
+ * Client composer for `/internship/attendance`. The calendar reads real data via
+ * TanStack Query (month navigation refetches, clamped to the period); Check-In
+ * is a server-gated mutation that invalidates the grid and refreshes server
+ * props on success.
  */
-export function AttendanceView({ serverNowISO, window, period, holidays }: Props) {
+export function AttendanceView({
+  serverNowISO,
+  window,
+  period,
+  initialYear,
+  initialMonth,
+  initialData,
+  todayStatus,
+  todayCheckInLabel,
+  todayCheckable,
+}: Props) {
   const todayYmd = getWibYmd(serverNowISO);
-
-  // Calendar navigation is bounded by the internship period (Batch start/end).
   const { first, last } = periodMonthBounds(period);
-  const holidayMap = useMemo(() => expandHolidays(holidays), [holidays]);
 
-  const [status, setStatus] = useState<AttendanceDisplayStatus>("BELUM");
-  const [checkedInAt, setCheckedInAt] = useState<string | null>(null);
-  const [displayed, setDisplayed] = useState<{ year: number; month: number }>(() =>
-    clampMonth({ year: todayYmd.year, month: todayYmd.month }, first, last),
+  const [displayed, setDisplayed] = useState<{ year: number; month: number }>({
+    year: initialYear,
+    month: initialMonth,
+  });
+
+  const isInitial = displayed.year === initialYear && displayed.month === initialMonth;
+  const monthQuery = useAttendanceMonthQuery(
+    displayed.year,
+    displayed.month,
+    isInitial ? initialData : undefined,
   );
+  const checkIn = useCheckInMutation();
 
   const ord = (m: { year: number; month: number }) => m.year * 12 + m.month;
   const canPrev = ord(displayed) > ord(first);
   const canNext = ord(displayed) < ord(last);
+  const isCurrentMonth =
+    displayed.year === todayYmd.year && displayed.month === todayYmd.month;
   const todayInPeriod =
     ord({ year: todayYmd.year, month: todayYmd.month }) >= ord(first) &&
     ord({ year: todayYmd.year, month: todayYmd.month }) <= ord(last);
 
-  function handleCheckIn() {
-    const nowISO = new Date().toISOString();
-    setStatus("HADIR");
-    setCheckedInAt(nowISO);
-    // Snap back to the current month so the freshly-green cell is visible.
+  function snapToToday() {
     setDisplayed(clampMonth({ year: todayYmd.year, month: todayYmd.month }, first, last));
-    toast.success("Berhasil check-in", {
-      description: `Kamu tercatat hadir pukul ${formatInTimeZone(
-        new Date(nowISO),
-        WIB_TZ,
-        "HH:mm",
-      )} WIB.`,
-    });
   }
 
   function shiftMonth(delta: number) {
@@ -80,9 +85,11 @@ export function AttendanceView({ serverNowISO, window, period, holidays }: Props
     });
   }
 
-  const todayCheckInTime = checkedInAt
-    ? formatInTimeZone(new Date(checkedInAt), WIB_TZ, "HH:mm")
-    : null;
+  function handleCheckIn() {
+    // Snap to today's month so the freshly-recorded cell is in view once the
+    // invalidated query refetches.
+    checkIn.mutate(undefined, { onSuccess: snapToToday });
+  }
 
   return (
     <StudentPageContainer>
@@ -96,8 +103,10 @@ export function AttendanceView({ serverNowISO, window, period, holidays }: Props
       <CheckInCard
         serverNowISO={serverNowISO}
         window={window}
-        status={status}
-        checkedInAt={checkedInAt}
+        status={todayStatus}
+        checkInLabel={todayCheckInLabel}
+        checkable={todayCheckable}
+        isPending={checkIn.isPending}
         onCheckIn={handleCheckIn}
       />
 
@@ -106,22 +115,15 @@ export function AttendanceView({ serverNowISO, window, period, holidays }: Props
           <AttendanceCalendar
             year={displayed.year}
             month={displayed.month}
-            todayISO={serverNowISO}
-            todayStatus={status}
-            todayCheckInTime={todayCheckInTime}
-            periodStartISO={period.startISO}
-            periodEndISO={period.endISO}
-            holidayMap={holidayMap}
+            data={monthQuery.data}
+            isFetching={monthQuery.isFetching}
+            isCurrentMonth={isCurrentMonth}
             canPrev={canPrev}
             canNext={canNext}
             canJumpToday={todayInPeriod}
             onPrev={() => shiftMonth(-1)}
             onNext={() => shiftMonth(1)}
-            onToday={() =>
-              setDisplayed(
-                clampMonth({ year: todayYmd.year, month: todayYmd.month }, first, last),
-              )
-            }
+            onToday={snapToToday}
           />
         </div>
         <div className="lg:col-span-1">

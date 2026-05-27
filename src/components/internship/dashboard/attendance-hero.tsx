@@ -9,6 +9,7 @@ import {
   Fingerprint,
   GraduationCap,
   Layers,
+  Loader2,
   UserRound,
 } from "lucide-react";
 
@@ -18,7 +19,7 @@ import type {
   AttendanceDisplayStatus,
   AttendanceWindow,
   MagangContext,
-} from "./mock-data";
+} from "@/lib/internship-types";
 
 const WIB_TZ = "Asia/Jakarta";
 
@@ -42,7 +43,10 @@ type Props = {
   context: MagangContext;
   window: AttendanceWindow;
   status: AttendanceDisplayStatus;
-  checkedInAt: string | null;
+  checkInLabel: string | null;
+  /** Server fact: today is an eligible working day (in period, not holiday). */
+  checkable: boolean;
+  isPending: boolean;
   onCheckIn: () => void;
 };
 
@@ -52,7 +56,9 @@ export function AttendanceHero({
   context,
   window,
   status,
-  checkedInAt,
+  checkInLabel,
+  checkable,
+  isPending,
   onCheckIn,
 }: Props) {
   // Initialise from the server timestamp so SSR and first hydration agree, then
@@ -86,9 +92,8 @@ export function AttendanceHero({
     nowMin < startMin ? "BEFORE" : nowMin > endMin ? "AFTER" : "OPEN";
 
   const checkedIn = status === "HADIR";
-  const checkInTime = checkedInAt
-    ? formatInTimeZone(new Date(checkedInAt), WIB_TZ, "HH:mm")
-    : null;
+  const checkInTime = checkInLabel;
+  const canCheckIn = checkable && windowState === "OPEN" && !checkedIn;
 
   const contextChips = [
     { icon: Layers, value: context.batchLabel },
@@ -197,15 +202,21 @@ export function AttendanceHero({
             <button
               type="button"
               onClick={onCheckIn}
+              disabled={!canCheckIn || isPending}
               className={cn(
                 "group inline-flex h-12 items-center justify-center gap-2 rounded-2xl px-5 text-sm font-bold transition",
                 "bg-[color:var(--color-brand-accent)] text-[color:var(--color-brand-950)]",
                 "shadow-[0_14px_30px_-12px_rgba(244,214,0,0.8)] hover:-translate-y-0.5 hover:shadow-[0_18px_36px_-12px_rgba(244,214,0,0.9)]",
                 "active:translate-y-0",
+                "disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none disabled:hover:translate-y-0",
               )}
             >
-              <Fingerprint className="size-5 transition group-hover:scale-110" strokeWidth={2.3} />
-              Check-In Sekarang
+              {isPending ? (
+                <Loader2 className="size-5 animate-spin" strokeWidth={2.3} />
+              ) : (
+                <Fingerprint className="size-5 transition group-hover:scale-110" strokeWidth={2.3} />
+              )}
+              {isPending ? "Memproses…" : "Check-In Sekarang"}
             </button>
           )}
         </div>

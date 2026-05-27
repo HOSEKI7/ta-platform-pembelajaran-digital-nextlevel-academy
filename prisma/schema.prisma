@@ -196,6 +196,10 @@ model Batch {
   id          String   @id @default(cuid())
   name        String   @unique
   description String
+  // Internship period (WIB calendar dates). Bounds the attendance calendar and
+  // defines when the program runs. Inherited by every Field/Class under it.
+  startDate   DateTime @db.Date
+  endDate     DateTime @db.Date
   createdAt   DateTime @default(now())
 
   fields Field[]
@@ -686,6 +690,24 @@ model Attendance {
   @@unique([userId, date])
   @@index([date])
   @@map("attendance")
+}
+
+// Global holiday calendar (PRD §9.6.1) — applies to every batch. Admin-configured
+// (UI pending). A span covers `days` consecutive days from `startDate`; `endDate`
+// is the materialized last day (startDate + days - 1) so "is date X a holiday?"
+// is a cheap range query. Days in a span render as LIBUR in the attendance grid.
+model Holiday {
+  id          String   @id @default(cuid())
+  startDate   DateTime @db.Date
+  days        Int      @default(1)
+  endDate     DateTime @db.Date
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([startDate])
+  @@index([endDate])
+  @@map("holiday")
 }
 
 // -----------------------------------------------------------------------------
