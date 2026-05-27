@@ -3,11 +3,11 @@
 import { Menu } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { NotificationsButton } from "@/components/dashboard/notifications-button";
 import { ProfileMenu } from "@/components/dashboard/profile-menu";
 import { ThemeToggle } from "@/components/dashboard/theme-toggle";
 
 import { InternshipClassChip } from "./internship-class-chip";
+import { InternshipNotificationsButton } from "./internship-notifications-button";
 
 type Props = {
   user: {
@@ -56,7 +56,7 @@ export function InternshipTopbar({ user, onOpenMobileNav }: Props) {
 
         <div className="flex items-center gap-2.5">
           <ThemeToggle />
-          <NotificationsButton />
+          <InternshipNotificationsButton />
         </div>
 
         <Separator />
