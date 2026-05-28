@@ -143,6 +143,15 @@ async function main() {
     role: "MENTOR",
     password: "MentorTest123",
   });
+  // Secondary MENTOR test account (shares the same class so the mentor
+  // dashboard surfaces real mentees / tasks / attendance out of the box).
+  const mentor2Id = await ensureUser({
+    email: "wibuforlife01@gmail.com",
+    name: "Syarif Hidayat Nainggolan",
+    username: "Syarif",
+    role: "MENTOR",
+    password: "SyarifTest123",
+  });
   await ensureUser({
     email: "admin@nextlevel.local",
     name: "Admin NextLevel",
@@ -178,6 +187,11 @@ async function main() {
     where: { userId: mentorId },
     update: { classId: klass.id },
     create: { userId: mentorId, classId: klass.id },
+  });
+  await db.mentorProfile.upsert({
+    where: { userId: mentor2Id },
+    update: { classId: klass.id },
+    create: { userId: mentor2Id, classId: klass.id },
   });
   await db.internshipProfile.upsert({
     where: { userId: magangId },
@@ -440,6 +454,7 @@ async function main() {
   console.log(`  Class     : ${klass.name}`);
   console.log(`  Magang    : ${MAGANG_EMAIL} / ${MAGANG_PASSWORD}`);
   console.log(`  Mentor    : mentor.web@nextlevel.local / MentorTest123`);
+  console.log(`  Mentor 2  : wibuforlife01@gmail.com / SyarifTest123`);
   console.log(`  Admin     : admin@nextlevel.local / AdminTest123 (dormant — no admin UI yet)`);
   console.log(`  Holidays  : ${HOLIDAYS.length} · PRESENT rows seeded: ${presentCount}`);
   console.log(`  Tasks     : ${tasks.length} (mix of BELUM / TERKUMPUL / DIKEMBALIKAN / TERLEWAT)`);
