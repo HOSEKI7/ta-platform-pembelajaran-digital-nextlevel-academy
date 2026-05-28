@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-import { isValidAvatarPath } from "@/lib/avatars";
-
 // PRD §6.1.4: username (unique), nama lengkap, email, foto profil.
 // Password complexity mirrors `validators/auth.ts` (PRD §6.1.1).
 
@@ -36,13 +34,18 @@ export const nameSchema = z
   .max(NAME_MAX, `Nama lengkap maksimal ${NAME_MAX} karakter.`);
 
 /**
- * Profile avatar — must be one of the registered preset paths (see
- * `@/lib/avatars`) or `null` to fall back to initials. This is an allowlist,
- * so arbitrary URLs can no longer be injected into `user.image`.
+ * Profile avatar — a preset path under `/avatars/`, or `null` for initials.
+ * This is a client-safe **shape** guard; the route handler additionally checks
+ * membership against the live preset list (`loadAvatarPaths()` in
+ * `@/lib/avatars`), so arbitrary URLs can't be injected into `user.image`.
  */
 export const imageAvatarSchema = z
   .string()
-  .refine((p) => isValidAvatarPath(p), "Avatar tidak valid.")
+  .regex(
+    /^\/avatars\/[\w.-]+\.(?:webp|png|jpe?g|svg)$/i,
+    "Avatar tidak valid.",
+  )
+  .max(256, "Path avatar terlalu panjang.")
   .nullable()
   .optional();
 

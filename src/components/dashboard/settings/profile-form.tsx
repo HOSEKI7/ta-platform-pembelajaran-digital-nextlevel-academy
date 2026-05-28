@@ -20,6 +20,7 @@ import {
   useChangeEmailMutation,
   useUpdateProfileMutation,
 } from "@/hooks/use-account";
+import type { AvatarOption } from "@/lib/avatars";
 import { cn } from "@/lib/utils";
 import {
   changeEmailSchema,
@@ -45,6 +46,8 @@ type Props = {
   initial: InitialUser;
   draft: Draft;
   onDraftChange: (next: Draft) => void;
+  /** Preset avatars resolved server-side from `public/avatars/`. */
+  avatarOptions: AvatarOption[];
   /** When true, render email as read-only and hide the change-email submit
    *  flow. Used for Peserta Magang whose email is admin-managed. */
   lockEmail?: boolean;
@@ -61,6 +64,7 @@ export function ProfileForm({
   initial,
   draft,
   onDraftChange,
+  avatarOptions,
   lockEmail = false,
 }: Props) {
   const router = useRouter();
@@ -164,6 +168,7 @@ export function ProfileForm({
     <div className="flex flex-col gap-6">
       {/* ============= Foto Profil ============= */}
       <AvatarPicker
+        options={avatarOptions}
         image={draft.image}
         onImageChange={(image) => onDraftChange({ ...draft, image })}
         name={draft.name}

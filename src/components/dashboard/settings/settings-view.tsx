@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { KeyRound, ShieldCheck, UserRound } from "lucide-react";
 
+import type { AvatarOption } from "@/lib/avatars";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/shared/page-header";
 
@@ -24,6 +25,8 @@ type Tab = "profil" | "keamanan";
 
 type Props = {
   initial: InitialUser;
+  /** Preset avatars resolved server-side from `public/avatars/`. */
+  avatarOptions: AvatarOption[];
   /** When true, email field is rendered read-only and the change-email
    *  section is suppressed. Used by the Peserta Magang surface, whose
    *  email is admin-managed at onboarding (PRD §6.1). */
@@ -51,6 +54,7 @@ const TABS: { value: Tab; label: string; helper: string; icon: typeof UserRound 
 
 export function SettingsView({
   initial,
+  avatarOptions,
   lockEmail = false,
   roleLabel = "Peserta Didik",
   headerDescription,
@@ -119,6 +123,7 @@ export function SettingsView({
               initial={initial}
               draft={draft}
               onDraftChange={setDraft}
+              avatarOptions={avatarOptions}
               lockEmail={lockEmail}
             />
           ) : (

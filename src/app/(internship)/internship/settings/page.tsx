@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { Role } from "@/generated/prisma";
 import { requireRole } from "@/lib/auth-server";
+import { loadAvatarOptions } from "@/lib/avatars";
 
 import { StudentPageContainer } from "@/components/dashboard/shared/student-page-container";
 import { SettingsView } from "@/components/dashboard/settings/settings-view";
@@ -21,12 +22,14 @@ export default async function InternshipSettingsPage() {
   });
 
   const user = session.user;
+  const avatarOptions = loadAvatarOptions();
 
   return (
     <StudentPageContainer>
       <SettingsView
         lockEmail
         roleLabel="Peserta Magang"
+        avatarOptions={avatarOptions}
         initial={{
           id: user.id,
           name: user.name,

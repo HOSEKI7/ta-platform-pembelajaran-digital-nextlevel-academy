@@ -21,7 +21,6 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { createClient } from "@supabase/supabase-js";
 
 import { PrismaClient } from "../src/generated/prisma";
-import { isValidAvatarPath } from "../src/lib/avatars";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const db = new PrismaClient({ adapter, log: ["error"] });
@@ -62,8 +61,8 @@ async function main() {
 
   for (const u of users) {
     const image = u.image!;
-    // Already on a valid preset — nothing to do (idempotent).
-    if (isValidAvatarPath(image)) {
+    // Already on a preset (served from /avatars/) — nothing to do (idempotent).
+    if (image.startsWith("/avatars/")) {
       skipped++;
       continue;
     }

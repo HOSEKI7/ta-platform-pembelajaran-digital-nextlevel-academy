@@ -5,6 +5,7 @@ import { APIError } from "better-auth/api";
 import { Role } from "@/generated/prisma";
 import { auth } from "@/lib/auth";
 import { requireRoleInRoute } from "@/lib/auth-server";
+import { loadAvatarPaths } from "@/lib/avatars";
 import { prisma } from "@/lib/prisma";
 import { updateProfileSchema } from "@/lib/validators/account";
 
@@ -38,6 +39,15 @@ export async function PATCH(req: Request) {
   }
 
   const data = parsed.data;
+
+  // Authoritative avatar allowlist check against the live preset list — the
+  // Zod schema only validated the path shape.
+  if (typeof data.image === "string" && !loadAvatarPaths().has(data.image)) {
+    return NextResponse.json(
+      { error: "Avatar tidak valid." },
+      { status: 400 },
+    );
+  }
 
   // Username uniqueness — Better Auth 1.6 enforces this too, but checking
   // here gives a friendly Indonesian error before the auth API throws.
