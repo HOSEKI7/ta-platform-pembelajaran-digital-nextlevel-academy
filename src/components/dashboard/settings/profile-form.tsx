@@ -1,12 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AtSign,
-  Camera,
   CheckCircle2,
-  ImagePlus,
   Loader2,
   Lock,
   MailCheck,
@@ -14,31 +12,26 @@ import {
   Save,
   Send,
   ShieldAlert,
-  Trash2,
   UserRound,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import {
   useChangeEmailMutation,
-  useRemoveAvatarMutation,
   useUpdateProfileMutation,
-  useUploadAvatarMutation,
 } from "@/hooks/use-account";
 import { cn } from "@/lib/utils";
 import {
-  AVATAR_ACCEPTED_MIME,
-  AVATAR_MAX_BYTES,
   changeEmailSchema,
   NAME_MAX,
   updateProfileSchema,
   USERNAME_MAX,
 } from "@/lib/validators/account";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+import { AvatarPicker } from "./avatar-picker";
 import type { InitialUser } from "./settings-view";
 
 type Draft = {
@@ -57,25 +50,12 @@ type Props = {
   lockEmail?: boolean;
 };
 
-function initialsOf(name: string) {
-  return (
-    name
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((p) => p[0]?.toUpperCase() ?? "")
-      .join("") || "NL"
-  );
-}
-
 function sanitizeUsername(value: string) {
   return value
     .toLowerCase()
     .replace(/[^a-z0-9_.]/g, "")
     .slice(0, USERNAME_MAX);
 }
-
-const ACCEPTED_MIME_LIST = AVATAR_ACCEPTED_MIME.join(",");
 
 export function ProfileForm({
   initial,
@@ -84,11 +64,8 @@ export function ProfileForm({
   lockEmail = false,
 }: Props) {
   const router = useRouter();
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const updateProfile = useUpdateProfileMutation();
-  const uploadAvatar = useUploadAvatarMutation();
-  const removeAvatar = useRemoveAvatarMutation();
   const changeEmail = useChangeEmailMutation();
 
   const [fieldErrors, setFieldErrors] = useState<{
@@ -106,7 +83,6 @@ export function ProfileForm({
     draft.email.trim().toLowerCase() !== initial.email.toLowerCase();
 
   const profileSaving = updateProfile.isPending;
-  const avatarBusy = uploadAvatar.isPending || removeAvatar.isPending;
   const emailSubmitting = changeEmail.isPending;
 
   function resetProfile() {
@@ -121,51 +97,6 @@ export function ProfileForm({
   function resetEmail() {
     onDraftChange({ ...draft, email: initial.email });
     setFieldErrors((e) => ({ ...e, email: undefined }));
-  }
-
-  function handleAvatarPick(file: File | null | undefined) {
-    if (!file) return;
-    if (!AVATAR_ACCEPTED_MIME.includes(file.type as (typeof AVATAR_ACCEPTED_MIME)[number])) {
-      toast.error("Format gambar harus PNG, JPG, atau WebP.");
-      return;
-    }
-    if (file.size > AVATAR_MAX_BYTES) {
-      toast.error("Ukuran maksimum 2 MB.");
-      return;
-    }
-    // Optimistic preview while the upload is in flight.
-    const reader = new FileReader();
-    reader.onload = () => {
-      onDraftChange({ ...draft, image: String(reader.result) });
-    };
-    reader.readAsDataURL(file);
-
-    uploadAvatar.mutate(file, {
-      onSuccess: (data) => {
-        onDraftChange({ ...draft, image: data.image });
-        toast.success("Foto profil diperbarui.");
-        router.refresh();
-      },
-      onError: (err) => {
-        onDraftChange({ ...draft, image: initial.image });
-        toast.error(err.message || "Gagal mengunggah foto.");
-      },
-    });
-  }
-
-  function handleAvatarRemove() {
-    if (!draft.image) return;
-    onDraftChange({ ...draft, image: null });
-    removeAvatar.mutate(undefined, {
-      onSuccess: () => {
-        toast.success("Foto profil dihapus.");
-        router.refresh();
-      },
-      onError: (err) => {
-        onDraftChange({ ...draft, image: initial.image });
-        toast.error(err.message || "Gagal menghapus foto.");
-      },
-    });
   }
 
   function handleProfileSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -232,102 +163,11 @@ export function ProfileForm({
   return (
     <div className="flex flex-col gap-6">
       {/* ============= Foto Profil ============= */}
-      <Section
-        eyebrow="01 · Visual"
-        title="Foto profil"
-        helper="Foto kotak 1:1 terlihat paling baik. Maks 2MB, format JPG/PNG/WebP."
-      >
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
-          <button
-            type="button"
-            onClick={() => fileRef.current?.click()}
-            disabled={avatarBusy}
-            className={cn(
-              "group relative grid size-24 shrink-0 place-items-center overflow-hidden rounded-2xl ring-1 ring-zinc-200 transition",
-              "hover:ring-[color:var(--color-brand-300)] disabled:cursor-not-allowed disabled:opacity-60",
-              "dark:ring-[color:var(--color-surface-border)] dark:hover:ring-[color:var(--color-brand-400)]/60",
-            )}
-            aria-label="Ubah foto profil"
-          >
-            <Avatar className="size-24 rounded-2xl">
-              {draft.image ? (
-                <AvatarImage src={draft.image} alt={draft.name} className="object-cover" />
-              ) : null}
-              <AvatarFallback className="rounded-2xl bg-gradient-to-br from-[color:var(--color-brand-600)] to-[color:var(--color-brand-400)] text-xl font-extrabold text-white">
-                {initialsOf(draft.name)}
-              </AvatarFallback>
-            </Avatar>
-            <span className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-zinc-900/65 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-white opacity-0 transition group-hover:opacity-100">
-              {uploadAvatar.isPending ? (
-                <Loader2 className="size-3 animate-spin" strokeWidth={2.4} />
-              ) : (
-                <Camera className="size-3" strokeWidth={2.4} />
-              )}
-              {uploadAvatar.isPending ? "Mengunggah" : "Ubah"}
-            </span>
-          </button>
-
-          <div
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => {
-              e.preventDefault();
-              if (avatarBusy) return;
-              handleAvatarPick(e.dataTransfer.files?.[0]);
-            }}
-            className={cn(
-              "flex flex-1 flex-col gap-3 rounded-2xl border-2 border-dashed border-[color:var(--color-brand-200)] bg-[color:var(--color-brand-50)]/40 p-4",
-              "dark:border-[color:var(--color-brand-500)]/25 dark:bg-[color:var(--color-brand-500)]/[0.06]",
-            )}
-          >
-            <div className="flex items-center gap-2 text-xs text-[color:var(--color-brand-800)] dark:text-[color:var(--color-brand-200)]">
-              <ImagePlus className="size-4" strokeWidth={2.4} />
-              <span className="font-semibold">
-                Tarik & lepas gambar di sini, atau pilih dari perangkat.
-              </span>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <input
-                ref={fileRef}
-                type="file"
-                accept={ACCEPTED_MIME_LIST}
-                className="hidden"
-                onChange={(e) => handleAvatarPick(e.target.files?.[0])}
-              />
-              <Button
-                type="button"
-                size="sm"
-                disabled={avatarBusy}
-                className="h-9 rounded-full bg-[color:var(--color-brand-500)] px-4 text-xs font-bold text-white shadow-[0_8px_18px_-10px_rgba(43,114,234,0.7)] hover:bg-[color:var(--color-brand-600)]"
-                onClick={() => fileRef.current?.click()}
-              >
-                {uploadAvatar.isPending ? (
-                  <Loader2 className="size-3.5 animate-spin" strokeWidth={2.4} />
-                ) : (
-                  <Camera className="size-3.5" strokeWidth={2.4} />
-                )}
-                {uploadAvatar.isPending ? "Mengunggah…" : "Unggah Foto"}
-              </Button>
-              {draft.image ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  disabled={avatarBusy}
-                  className="h-9 rounded-full px-3 text-xs font-bold text-[color:var(--color-error)] ring-1 ring-red-200 hover:bg-red-50 hover:text-[color:var(--color-error)] dark:ring-red-500/30 dark:hover:bg-red-500/10"
-                  onClick={handleAvatarRemove}
-                >
-                  {removeAvatar.isPending ? (
-                    <Loader2 className="size-3.5 animate-spin" strokeWidth={2.4} />
-                  ) : (
-                    <Trash2 className="size-3.5" strokeWidth={2.4} />
-                  )}
-                  Hapus
-                </Button>
-              ) : null}
-            </div>
-          </div>
-        </div>
-      </Section>
+      <AvatarPicker
+        image={draft.image}
+        onImageChange={(image) => onDraftChange({ ...draft, image })}
+        name={draft.name}
+      />
 
       {/* ============= Identitas ============= */}
       <form onSubmit={handleProfileSubmit} className="flex flex-col gap-6">

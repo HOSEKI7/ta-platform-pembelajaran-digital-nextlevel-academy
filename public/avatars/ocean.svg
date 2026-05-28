@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-label="Ocean">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#38BDF8"/>
+      <stop offset="1" stop-color="#2563EB"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" fill="url(#g)"/>
+  <path d="M0 150 Q64 120 128 150 T256 150 V256 H0 Z" fill="#ffffff" opacity="0.16"/>
+  <path d="M0 178 Q64 148 128 178 T256 178 V256 H0 Z" fill="#ffffff" opacity="0.12"/>
+  <circle cx="128" cy="104" r="36" fill="#ffffff" opacity="0.9"/>
+</svg>

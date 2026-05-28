@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { isValidAvatarPath } from "@/lib/avatars";
+
 // PRD §6.1.4: username (unique), nama lengkap, email, foto profil.
 // Password complexity mirrors `validators/auth.ts` (PRD §6.1.1).
 
@@ -8,12 +10,6 @@ export const NAME_MAX = 60;
 export const USERNAME_MIN = 3;
 export const USERNAME_MAX = 24;
 export const USERNAME_PATTERN = /^[a-z0-9._]+$/;
-export const AVATAR_MAX_BYTES = 2 * 1024 * 1024; // 2 MB
-export const AVATAR_ACCEPTED_MIME = [
-  "image/png",
-  "image/jpeg",
-  "image/webp",
-] as const;
 
 const passwordSchema = z
   .string()
@@ -39,23 +35,26 @@ export const nameSchema = z
   .min(NAME_MIN, `Nama lengkap minimal ${NAME_MIN} karakter.`)
   .max(NAME_MAX, `Nama lengkap maksimal ${NAME_MAX} karakter.`);
 
-/** Stored as a URL (Supabase public URL or external HTTPS). */
-export const imageUrlSchema = z
+/**
+ * Profile avatar — must be one of the registered preset paths (see
+ * `@/lib/avatars`) or `null` to fall back to initials. This is an allowlist,
+ * so arbitrary URLs can no longer be injected into `user.image`.
+ */
+export const imageAvatarSchema = z
   .string()
-  .url("URL gambar tidak valid.")
-  .max(2048, "URL gambar terlalu panjang.")
+  .refine((p) => isValidAvatarPath(p), "Avatar tidak valid.")
   .nullable()
   .optional();
 
 /**
  * Profile update — at least one field required. Image accepts `null` to mean
- * "remove avatar".
+ * "remove avatar" (use initials).
  */
 export const updateProfileSchema = z
   .object({
     name: nameSchema.optional(),
     username: usernameSchema.optional(),
-    image: imageUrlSchema,
+    image: imageAvatarSchema,
   })
   .refine(
     (v) =>

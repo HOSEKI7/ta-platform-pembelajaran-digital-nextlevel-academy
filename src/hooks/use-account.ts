@@ -34,19 +34,6 @@ async function patchJson<T>(path: string, body: unknown): Promise<T> {
   return json.data;
 }
 
-async function send<T>(method: "POST" | "DELETE", path: string, body?: FormData): Promise<T> {
-  const res = await fetch(path, {
-    method,
-    body,
-    cache: "no-store",
-  });
-  const json = (await res.json()) as ApiResult<T>;
-  if (!res.ok || "error" in json) {
-    throw new Error("error" in json ? json.error : `Request failed (${res.status})`);
-  }
-  return json.data;
-}
-
 export type UpdateProfilePayload = {
   name?: string;
   username?: string;
@@ -95,33 +82,5 @@ export function useChangePasswordMutation() {
   return useMutation<{ message: string }, Error, ChangePasswordPayload>({
     mutationFn: (payload) =>
       postJson<{ message: string }>("/api/account/password", payload),
-  });
-}
-
-export type AvatarResponse = { image: string | null };
-
-export function useUploadAvatarMutation() {
-  const qc = useQueryClient();
-  return useMutation<AvatarResponse, Error, File>({
-    mutationFn: (file) => {
-      const form = new FormData();
-      form.append("file", file);
-      return send<AvatarResponse>("POST", "/api/account/avatar", form);
-    },
-    onSuccess: () => {
-      authClient.getSession({ query: { disableCookieCache: true } });
-      qc.invalidateQueries({ queryKey: ["student"] });
-    },
-  });
-}
-
-export function useRemoveAvatarMutation() {
-  const qc = useQueryClient();
-  return useMutation<AvatarResponse, Error, void>({
-    mutationFn: () => send<AvatarResponse>("DELETE", "/api/account/avatar"),
-    onSuccess: () => {
-      authClient.getSession({ query: { disableCookieCache: true } });
-      qc.invalidateQueries({ queryKey: ["student"] });
-    },
   });
 }
