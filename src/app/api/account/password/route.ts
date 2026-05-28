@@ -11,7 +11,10 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
-  const guard = await requireRoleInRoute(Role.PESERTA_DIDIK);
+  const guard = await requireRoleInRoute([
+    Role.PESERTA_DIDIK,
+    Role.PESERTA_MAGANG,
+  ]);
   if (guard instanceof Response) return guard;
 
   let json: unknown;

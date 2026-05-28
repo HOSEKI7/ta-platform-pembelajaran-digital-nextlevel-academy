@@ -8,10 +8,12 @@ import {
   CheckCircle2,
   ImagePlus,
   Loader2,
+  Lock,
   MailCheck,
   RotateCcw,
   Save,
   Send,
+  ShieldAlert,
   Trash2,
   UserRound,
 } from "lucide-react";
@@ -50,6 +52,9 @@ type Props = {
   initial: InitialUser;
   draft: Draft;
   onDraftChange: (next: Draft) => void;
+  /** When true, render email as read-only and hide the change-email submit
+   *  flow. Used for Peserta Magang whose email is admin-managed. */
+  lockEmail?: boolean;
 };
 
 function initialsOf(name: string) {
@@ -72,7 +77,12 @@ function sanitizeUsername(value: string) {
 
 const ACCEPTED_MIME_LIST = AVATAR_ACCEPTED_MIME.join(",");
 
-export function ProfileForm({ initial, draft, onDraftChange }: Props) {
+export function ProfileForm({
+  initial,
+  draft,
+  onDraftChange,
+  lockEmail = false,
+}: Props) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -92,6 +102,7 @@ export function ProfileForm({ initial, draft, onDraftChange }: Props) {
     draft.username !== (initial.username ?? "");
 
   const isEmailDirty =
+    !lockEmail &&
     draft.email.trim().toLowerCase() !== initial.email.toLowerCase();
 
   const profileSaving = updateProfile.isPending;
@@ -388,61 +399,104 @@ export function ProfileForm({ initial, draft, onDraftChange }: Props) {
       </form>
 
       {/* ============= Email ============= */}
-      <form onSubmit={handleEmailSubmit} className="flex flex-col gap-6">
+      {lockEmail ? (
         <Section
           eyebrow="03 · Email"
           title="Alamat email"
-          helper="Mengubah email akan mengirim tautan verifikasi ke alamat baru — perubahan baru aktif setelah verifikasi."
+          helper="Email akun magang dikelola administrator dan tidak dapat diubah dari halaman ini."
         >
           <Field
             id="email"
             label="Email"
             icon={<MailCheck className="size-4" strokeWidth={2.4} />}
-            error={fieldErrors.email}
           >
-            <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              inputMode="email"
-              value={draft.email}
-              placeholder="nama@email.com"
-              onChange={(e) =>
-                onDraftChange({ ...draft, email: e.target.value })
-              }
-              className="h-11"
-            />
+            <div className="relative">
+              <Input
+                id="email"
+                type="email"
+                value={initial.email}
+                readOnly
+                aria-readonly
+                tabIndex={-1}
+                className="h-11 cursor-not-allowed bg-zinc-50 pr-10 text-zinc-700 ring-1 ring-zinc-200 dark:bg-white/[0.03] dark:text-zinc-200 dark:ring-[color:var(--color-surface-border)]"
+              />
+              <Lock
+                aria-hidden
+                className="pointer-events-none absolute right-3.5 top-1/2 size-4 -translate-y-1/2 text-zinc-400"
+                strokeWidth={2.4}
+              />
+            </div>
           </Field>
 
-          {isEmailDirty ? (
-            <div className="mt-3 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
-              <MailCheck className="mt-0.5 size-4 shrink-0" strokeWidth={2.4} />
-              <p className="leading-relaxed">
-                Setelah dikirim, buka tautan verifikasi di{" "}
-                <span className="font-mono font-bold">{draft.email}</span>.
-                Email lama (<span className="font-mono">{initial.email}</span>)
-                tetap aktif sampai verifikasi selesai.
-              </p>
-            </div>
-          ) : (
-            <div className="mt-3 flex items-center gap-2 text-xs text-emerald-700 dark:text-emerald-300">
-              <CheckCircle2 className="size-4" strokeWidth={2.4} />
-              Email saat ini sudah terverifikasi.
-            </div>
-          )}
+          <div className="mt-3 flex items-start gap-3 rounded-2xl border border-zinc-200 bg-zinc-50/80 px-4 py-3 text-xs text-zinc-700 dark:border-[color:var(--color-surface-border)] dark:bg-white/[0.03] dark:text-zinc-200">
+            <ShieldAlert
+              className="mt-0.5 size-4 shrink-0 text-[color:var(--color-brand-600)] dark:text-[color:var(--color-brand-300)]"
+              strokeWidth={2.4}
+            />
+            <p className="leading-relaxed">
+              Email peserta magang ditetapkan oleh administrator saat
+              onboarding batch. Bila kamu perlu mengubahnya, hubungi mentor
+              atau administrator program.
+            </p>
+          </div>
         </Section>
+      ) : (
+        <form onSubmit={handleEmailSubmit} className="flex flex-col gap-6">
+          <Section
+            eyebrow="03 · Email"
+            title="Alamat email"
+            helper="Mengubah email akan mengirim tautan verifikasi ke alamat baru — perubahan baru aktif setelah verifikasi."
+          >
+            <Field
+              id="email"
+              label="Email"
+              icon={<MailCheck className="size-4" strokeWidth={2.4} />}
+              error={fieldErrors.email}
+            >
+              <Input
+                id="email"
+                type="email"
+                autoComplete="email"
+                inputMode="email"
+                value={draft.email}
+                placeholder="nama@email.com"
+                onChange={(e) =>
+                  onDraftChange({ ...draft, email: e.target.value })
+                }
+                className="h-11"
+              />
+            </Field>
 
-        <ActionBar
-          dirty={isEmailDirty}
-          saving={emailSubmitting}
-          onReset={resetEmail}
-          submitLabel="Kirim Verifikasi"
-          icon={<Send className="size-3.5" strokeWidth={2.4} />}
-          loadingLabel="Mengirim…"
-          hintIdle="Email saat ini tidak berubah."
-          hintDirty="Klik untuk mengirim tautan verifikasi ke email baru."
-        />
-      </form>
+            {isEmailDirty ? (
+              <div className="mt-3 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+                <MailCheck className="mt-0.5 size-4 shrink-0" strokeWidth={2.4} />
+                <p className="leading-relaxed">
+                  Setelah dikirim, buka tautan verifikasi di{" "}
+                  <span className="font-mono font-bold">{draft.email}</span>.
+                  Email lama (<span className="font-mono">{initial.email}</span>)
+                  tetap aktif sampai verifikasi selesai.
+                </p>
+              </div>
+            ) : (
+              <div className="mt-3 flex items-center gap-2 text-xs text-emerald-700 dark:text-emerald-300">
+                <CheckCircle2 className="size-4" strokeWidth={2.4} />
+                Email saat ini sudah terverifikasi.
+              </div>
+            )}
+          </Section>
+
+          <ActionBar
+            dirty={isEmailDirty}
+            saving={emailSubmitting}
+            onReset={resetEmail}
+            submitLabel="Kirim Verifikasi"
+            icon={<Send className="size-3.5" strokeWidth={2.4} />}
+            loadingLabel="Mengirim…"
+            hintIdle="Email saat ini tidak berubah."
+            hintDirty="Klik untuk mengirim tautan verifikasi ke email baru."
+          />
+        </form>
+      )}
     </div>
   );
 }

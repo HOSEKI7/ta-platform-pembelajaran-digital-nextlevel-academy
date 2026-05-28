@@ -24,6 +24,14 @@ type Tab = "profil" | "keamanan";
 
 type Props = {
   initial: InitialUser;
+  /** When true, email field is rendered read-only and the change-email
+   *  section is suppressed. Used by the Peserta Magang surface, whose
+   *  email is admin-managed at onboarding (PRD §6.1). */
+  lockEmail?: boolean;
+  /** Badge text shown in the IdentityCard. Defaults to "Peserta Didik". */
+  roleLabel?: string;
+  /** Optional override for the PageHeader description copy. */
+  headerDescription?: string;
 };
 
 const TABS: { value: Tab; label: string; helper: string; icon: typeof UserRound }[] = [
@@ -41,7 +49,12 @@ const TABS: { value: Tab; label: string; helper: string; icon: typeof UserRound 
   },
 ];
 
-export function SettingsView({ initial }: Props) {
+export function SettingsView({
+  initial,
+  lockEmail = false,
+  roleLabel = "Peserta Didik",
+  headerDescription,
+}: Props) {
   const [tab, setTab] = useState<Tab>("profil");
 
   // Centralized form state so the IdentityCard preview reflects edits live.
@@ -52,7 +65,11 @@ export function SettingsView({ initial }: Props) {
     image: initial.image,
   });
 
-  const isEmailDirty = draft.email.trim().toLowerCase() !== initial.email.toLowerCase();
+  // When email is locked the draft can't drift, so the badge never has to
+  // flip into the "Perlu Verifikasi" state mid-edit.
+  const isEmailDirty =
+    !lockEmail &&
+    draft.email.trim().toLowerCase() !== initial.email.toLowerCase();
 
   const memberSince = useMemo(() => {
     try {
@@ -72,7 +89,12 @@ export function SettingsView({ initial }: Props) {
         eyebrow="Akun · Studio Identitas"
         title="Pengaturan"
         accent="akun"
-        description="Atur identitas yang tampil di kursus, sertifikat, dan komunitas. Setiap perubahan tersimpan terpisah — kamu bisa mengubah profil atau password kapan saja."
+        description={
+          headerDescription ??
+          (lockEmail
+            ? "Atur identitas, foto, dan keamanan akun magangmu di NextLevel Academy. Email magang dikelola administrator dan tidak dapat diubah dari halaman ini."
+            : "Atur identitas yang tampil di kursus, sertifikat, dan komunitas. Setiap perubahan tersimpan terpisah — kamu bisa mengubah profil atau password kapan saja.")
+        }
       />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)] lg:items-start lg:gap-8 xl:gap-10">
@@ -81,10 +103,11 @@ export function SettingsView({ initial }: Props) {
             id={initial.id}
             name={draft.name || initial.name}
             username={draft.username}
-            email={draft.email}
+            email={lockEmail ? initial.email : draft.email}
             image={draft.image}
             emailVerified={initial.emailVerified && !isEmailDirty}
             memberSince={memberSince}
+            roleLabel={roleLabel}
           />
         </div>
 
@@ -96,6 +119,7 @@ export function SettingsView({ initial }: Props) {
               initial={initial}
               draft={draft}
               onDraftChange={setDraft}
+              lockEmail={lockEmail}
             />
           ) : (
             <SecurityForm />

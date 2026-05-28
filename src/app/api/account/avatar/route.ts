@@ -30,7 +30,10 @@ function pathFromPublicUrl(url: string, bucket: string): string | null {
 }
 
 export async function POST(req: Request) {
-  const session = await requireRoleInRoute(Role.PESERTA_DIDIK);
+  const session = await requireRoleInRoute([
+    Role.PESERTA_DIDIK,
+    Role.PESERTA_MAGANG,
+  ]);
   if (session instanceof Response) return session;
 
   let form: FormData;
@@ -133,7 +136,10 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE() {
-  const session = await requireRoleInRoute(Role.PESERTA_DIDIK);
+  const session = await requireRoleInRoute([
+    Role.PESERTA_DIDIK,
+    Role.PESERTA_MAGANG,
+  ]);
   if (session instanceof Response) return session;
 
   const previousImage = session.user.image ?? null;

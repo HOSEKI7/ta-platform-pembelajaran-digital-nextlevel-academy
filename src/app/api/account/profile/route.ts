@@ -12,7 +12,10 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function PATCH(req: Request) {
-  const session = await requireRoleInRoute(Role.PESERTA_DIDIK);
+  const session = await requireRoleInRoute([
+    Role.PESERTA_DIDIK,
+    Role.PESERTA_MAGANG,
+  ]);
   if (session instanceof Response) return session;
 
   let json: unknown;

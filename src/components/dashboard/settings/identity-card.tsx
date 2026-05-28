@@ -13,6 +13,7 @@ type Props = {
   image: string | null;
   emailVerified: boolean;
   memberSince: string;
+  roleLabel?: string;
 };
 
 function initialsOf(name: string) {
@@ -32,6 +33,7 @@ export function IdentityCard({
   image,
   emailVerified,
   memberSince,
+  roleLabel = "Peserta Didik",
 }: Props) {
   const handle = (username || "username").trim() || "username";
   const shortId = id.slice(0, 8).toUpperCase();
@@ -97,7 +99,7 @@ export function IdentityCard({
           </div>
 
           <span className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-[color:var(--color-brand-accent)]/20 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[color:var(--color-brand-900)] ring-1 ring-[color:var(--color-brand-accent)]/40 dark:bg-[color:var(--color-brand-accent)]/15 dark:text-[color:var(--color-brand-accent)] dark:ring-[color:var(--color-brand-accent)]/30">
-            Peserta Didik
+            {roleLabel}
           </span>
         </div>
 
