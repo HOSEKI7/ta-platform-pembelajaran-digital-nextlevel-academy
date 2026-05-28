@@ -227,34 +227,212 @@ async function main() {
     presentCount += 1;
   }
 
-  // 6) Tasks for the class + the student's NOT_SUBMITTED submissions.
+  // 6) Tasks + the student's submissions — varied states so the UI tabs exercise
+  //    BELUM / TERKUMPUL / DIKEMBALIKAN / TERLEWAT end-to-end.
   const now = new Date();
   const hoursFromNow = (h: number) => new Date(now.getTime() + h * 3_600_000);
-  const tasks = [
-    { id: "seed_task_setup_db", title: "Setup Database & Prisma Schema", deadline: hoursFromNow(5) },
-    { id: "seed_task_landing", title: "Slicing Halaman Landing Page", deadline: hoursFromNow(28) },
-    { id: "seed_task_weekly", title: "Laporan Mingguan — Sprint 2", deadline: hoursFromNow(72) },
+
+  type SeedTask = {
+    id: string;
+    title: string;
+    description: string;
+    deadline: Date;
+    attachment?: { url: string; name: string; size: number };
+    submission:
+      | { state: "BELUM" }
+      | { state: "DIKEMBALIKAN"; feedback: string; reviewedHoursAgo: number }
+      | {
+          state: "TERKUMPUL";
+          fileName: string;
+          fileSize: number;
+          submittedHoursAgo: number;
+        };
+  };
+
+  const tasks: SeedTask[] = [
+    {
+      id: "seed_task_dashboard_resp",
+      title: "Implementasi Halaman Dashboard Responsif",
+      description:
+        "Implementasikan ulang halaman dashboard dari desain Figma yang sudah dibagikan.\n\nPerhatikan kerapian breakpoint mobile-first (sm → md → lg) dan konsistensi spacing. Tugas sebelumnya dikembalikan — silakan perbaiki sesuai catatan mentor lalu kumpulkan ulang sebelum tenggat.",
+      deadline: hoursFromNow(40),
+      attachment: {
+        url: "https://www.figma.com/file/example/dashboard-spec",
+        name: "Desain Dashboard (Figma)",
+        size: 0,
+      },
+      submission: {
+        state: "DIKEMBALIKAN",
+        feedback:
+          "Kerja bagus untuk versi desktop. Namun pada viewport mobile (≤ 640px) kartu statistik masih menimbulkan horizontal scroll dan padding antar-section terlalu rapat. Tolong perbaiki grid menjadi 1 kolom di mobile dan samakan jarak vertikal antar-kartu, lalu kumpulkan ulang ya. Sisanya sudah oke!",
+        reviewedHoursAgo: 14,
+      },
+    },
+    {
+      id: "seed_task_jwt_auth",
+      title: "Membangun REST API Autentikasi dengan JWT",
+      description:
+        "Bangun endpoint autentikasi untuk aplikasi magang menggunakan Node.js dan Express.\n\nGunakan JSON Web Token (JWT) untuk sesi, simpan password dengan hashing bcrypt, dan terapkan middleware proteksi route. Sertakan dokumentasi singkat (README) cara menjalankannya secara lokal.",
+      deadline: hoursFromNow(24 * 5 + 17),
+      attachment: {
+        url: "https://docs.google.com/document/d/example/auth-spec",
+        name: "Panduan REST API Auth (Google Docs)",
+        size: 0,
+      },
+      submission: { state: "BELUM" },
+    },
+    {
+      id: "seed_task_atomic_design",
+      title: "Refactor Komponen ke Pola Atomic Design",
+      description:
+        "Rapikan struktur komponen frontend mengikuti pola Atomic Design (atoms, molecules, organisms).\n\nFokus pada reusability dan penamaan yang konsisten. Tidak perlu mengubah tampilan akhir — cukup struktur dan organisasi kode.",
+      deadline: hoursFromNow(24 * 14),
+      submission: {
+        state: "TERKUMPUL",
+        fileName: "refactor-atomic-design.zip",
+        fileSize: 2_201_600,
+        submittedHoursAgo: 10,
+      },
+    },
+    {
+      id: "seed_task_midtrans",
+      title: "Integrasi Pembayaran Midtrans (Sandbox)",
+      description:
+        "Integrasikan gateway pembayaran Midtrans pada mode sandbox.\n\nGunakan Snap untuk menampilkan popup pembayaran, lalu tangani status transaksi melalui webhook. Pastikan alur idempoten — satu transaksi sukses tidak boleh diproses dua kali.",
+      deadline: hoursFromNow(24 * 20),
+      attachment: {
+        url: "https://docs.midtrans.com/docs/snap-overview",
+        name: "Dokumentasi Midtrans Snap",
+        size: 0,
+      },
+      submission: { state: "BELUM" },
+    },
+    {
+      id: "seed_task_setup_proyek",
+      title: "Setup Proyek & Konfigurasi ESLint + Prettier",
+      description:
+        "Inisialisasi repository proyek magang, konfigurasikan ESLint dan Prettier, serta siapkan struktur folder dasar.\n\nPastikan perintah lint dan format berjalan tanpa error.",
+      deadline: hoursFromNow(-24 * 24),
+      submission: {
+        state: "TERKUMPUL",
+        fileName: "setup-proyek-magang.zip",
+        fileSize: 901_120,
+        submittedHoursAgo: 24 * 25,
+      },
+    },
+    {
+      id: "seed_task_optimasi_query",
+      title: "Studi Kasus: Optimasi Query Database",
+      description:
+        "Analisis sebuah query lambat yang diberikan, lalu tulis laporan berisi penyebab dan strategi optimasi (indexing, denormalisasi, atau perbaikan query).\n\nSertakan perbandingan waktu eksekusi sebelum dan sesudah optimasi.",
+      deadline: hoursFromNow(-24 * 16),
+      submission: { state: "BELUM" }, // derived TERLEWAT (deadline past + not submitted)
+    },
   ];
+
+  // Idempotent cleanup of obsolete seed tasks (e.g. from earlier seed versions).
+  const expectedIds = tasks.map((t) => t.id);
+  await db.task.deleteMany({
+    where: {
+      AND: [
+        { id: { startsWith: "seed_task_" } },
+        { id: { notIn: expectedIds } },
+      ],
+    },
+  });
+
   for (const t of tasks) {
     await db.task.upsert({
       where: { id: t.id },
-      update: { deadline: t.deadline, classId: klass.id, fieldId: field.id, batchId: batch.id, mentorId },
+      update: {
+        title: t.title,
+        description: t.description,
+        deadline: t.deadline,
+        attachmentUrl: t.attachment?.url ?? null,
+        attachmentName: t.attachment?.name ?? null,
+        attachmentSize: t.attachment?.size ?? null,
+        classId: klass.id,
+        fieldId: field.id,
+        batchId: batch.id,
+        mentorId,
+      },
       create: {
         id: t.id,
         title: t.title,
-        description: "Tugas magang yang harus diselesaikan sebelum deadline. Lihat detail untuk instruksi lengkap.",
+        description: t.description,
         deadline: t.deadline,
+        attachmentUrl: t.attachment?.url ?? null,
+        attachmentName: t.attachment?.name ?? null,
+        attachmentSize: t.attachment?.size ?? null,
         mentorId,
         batchId: batch.id,
         fieldId: field.id,
         classId: klass.id,
       },
     });
-    await db.taskSubmission.upsert({
-      where: { taskId_studentId: { taskId: t.id, studentId: magangId } },
-      update: {},
-      create: { taskId: t.id, studentId: magangId, status: "NOT_SUBMITTED" },
-    });
+
+    const s = t.submission;
+    if (s.state === "BELUM") {
+      await db.taskSubmission.upsert({
+        where: { taskId_studentId: { taskId: t.id, studentId: magangId } },
+        update: {
+          status: "NOT_SUBMITTED",
+          submissionUrl: null,
+          submissionFileName: null,
+          submissionFileSize: null,
+          feedbackText: null,
+          reviewedAt: null,
+        },
+        create: { taskId: t.id, studentId: magangId, status: "NOT_SUBMITTED" },
+      });
+    } else if (s.state === "DIKEMBALIKAN") {
+      const reviewedAt = hoursFromNow(-s.reviewedHoursAgo);
+      await db.taskSubmission.upsert({
+        where: { taskId_studentId: { taskId: t.id, studentId: magangId } },
+        update: {
+          status: "NOT_SUBMITTED",
+          submissionUrl: null,
+          submissionFileName: null,
+          submissionFileSize: null,
+          feedbackText: s.feedback,
+          reviewedAt,
+        },
+        create: {
+          taskId: t.id,
+          studentId: magangId,
+          status: "NOT_SUBMITTED",
+          feedbackText: s.feedback,
+          reviewedAt,
+        },
+      });
+    } else {
+      // TERKUMPUL — submissionUrl points at a dummy Bunny path so the loader has
+      // something to sign; the file itself doesn't exist in storage for seed
+      // rows, so the download link will 404 until the student submits for real.
+      const submittedAt = hoursFromNow(-s.submittedHoursAgo);
+      const dummyPath = `submissions/${t.id}/${magangId}/seed-${s.fileName}`;
+      await db.taskSubmission.upsert({
+        where: { taskId_studentId: { taskId: t.id, studentId: magangId } },
+        update: {
+          status: "SUBMITTED",
+          submissionUrl: dummyPath,
+          submissionFileName: s.fileName,
+          submissionFileSize: s.fileSize,
+          submittedAt,
+          feedbackText: null,
+          reviewedAt: null,
+        },
+        create: {
+          taskId: t.id,
+          studentId: magangId,
+          status: "SUBMITTED",
+          submissionUrl: dummyPath,
+          submissionFileName: s.fileName,
+          submissionFileSize: s.fileSize,
+          submittedAt,
+        },
+      });
+    }
   }
 
   console.log("✓ Internship dataset seeded.");
@@ -264,7 +442,7 @@ async function main() {
   console.log(`  Mentor    : mentor.web@nextlevel.local / MentorTest123`);
   console.log(`  Admin     : admin@nextlevel.local / AdminTest123 (dormant — no admin UI yet)`);
   console.log(`  Holidays  : ${HOLIDAYS.length} · PRESENT rows seeded: ${presentCount}`);
-  console.log(`  Tasks     : ${tasks.length} (all NOT_SUBMITTED)`);
+  console.log(`  Tasks     : ${tasks.length} (mix of BELUM / TERKUMPUL / DIKEMBALIKAN / TERLEWAT)`);
 }
 
 main()

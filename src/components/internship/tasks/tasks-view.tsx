@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/dashboard/shared/page-header";
 import { StudentPageContainer } from "@/components/dashboard/shared/student-page-container";
 
 import { TaskCard } from "./task-card";
-import { resolveStatus, splitByDeadline, type MagangTask } from "./tasks-mock-data";
+import { resolveStatus, splitByDeadline, type MagangTask } from "./task-helpers";
 
 type Props = {
   tasks: MagangTask[];

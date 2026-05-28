@@ -10,7 +10,7 @@ import {
   urgencyFor,
   type MagangTask,
   type UrgencyTone,
-} from "./tasks-mock-data";
+} from "./task-helpers";
 
 const WIB_TZ = "Asia/Jakarta";
 

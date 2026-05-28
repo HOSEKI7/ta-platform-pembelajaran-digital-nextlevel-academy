@@ -26,19 +26,18 @@ import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
 import { StudentPageContainer } from "@/components/dashboard/shared/student-page-container";
+import { useTaskSubmitMutation } from "@/hooks/use-internship-task-submit";
 
 import { MentorFeedbackCard } from "./mentor-feedback-card";
 import { SubmissionCelebration } from "./submission-celebration";
 import { SubmissionDropzone } from "./submission-dropzone";
 import { TaskStatusBadge } from "./task-status-badge";
 import {
-  formatFileSize,
   resolveStatus,
   type AttachmentKind,
   type MagangTask,
-  type SubmittedFile,
   type TaskDisplayStatus,
-} from "./tasks-mock-data";
+} from "./task-helpers";
 
 const WIB_TZ = "Asia/Jakarta";
 
@@ -79,15 +78,16 @@ function formatCountdown(deadline: Date, now: Date): { label: string; overdue: b
 export function TaskDetailView({ task, serverNowISO }: Props) {
   const [now, setNow] = useState<Date>(() => new Date(serverNowISO));
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [submittedFile, setSubmittedFile] = useState<SubmittedFile | null>(
-    task.submittedFile ?? null,
-  );
   const [reuploadMode, setReuploadMode] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [celebrating, setCelebrating] = useState(false);
   const [flash, setFlash] = useState(false);
 
   const submissionRef = useRef<HTMLElement | null>(null);
+  const submitMutation = useTaskSubmitMutation(task.id);
+  const isSubmitting = submitMutation.isPending;
+  // submittedFile is server-truth: after a successful submit the hook calls
+  // router.refresh() and the parent re-renders this view with updated `task`.
+  const submittedFile = task.submittedFile ?? null;
 
   // Live-tick the countdown once per minute (post-hydration only).
   useEffect(() => {
@@ -135,22 +135,21 @@ export function TaskDetailView({ task, serverNowISO }: Props) {
 
   function handleSubmit() {
     if (!selectedFile) return;
-    setIsSubmitting(true);
-    // Simulate a brief upload round-trip for a realistic demo.
-    window.setTimeout(() => {
-      setSubmittedFile({
-        name: selectedFile.name,
-        sizeLabel: formatFileSize(selectedFile.size),
-        submittedAtISO: new Date().toISOString(),
-      });
-      setSelectedFile(null);
-      setReuploadMode(false);
-      setIsSubmitting(false);
-      setCelebrating(true);
-      toast.success("Tugas berhasil dikumpulkan.", {
-        description: "Mentor akan meninjau hasil pekerjaanmu.",
-      });
-    }, 900);
+    submitMutation.mutate(selectedFile, {
+      onSuccess: () => {
+        setSelectedFile(null);
+        setReuploadMode(false);
+        setCelebrating(true);
+        toast.success("Tugas berhasil dikumpulkan.", {
+          description: "Mentor akan meninjau hasil pekerjaanmu.",
+        });
+      },
+      onError: (err) => {
+        toast.error(
+          err instanceof Error ? err.message : "Gagal mengumpulkan tugas.",
+        );
+      },
+    });
   }
 
   function onPrimaryClick() {
@@ -348,31 +347,44 @@ export function TaskDetailView({ task, serverNowISO }: Props) {
                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-500 dark:text-zinc-400">
                   Lampiran dari Mentor
                 </p>
-                <button
-                  type="button"
-                  onClick={() =>
-                    toast.info("Berkas contoh", {
-                      description: "Unduhan lampiran aktif setelah integrasi penyimpanan.",
-                    })
-                  }
-                  className="group mt-2 flex w-full items-center gap-3 rounded-2xl border border-zinc-200 bg-white p-3.5 text-left transition hover:border-[color:var(--color-brand-200)] hover:bg-[color:var(--color-brand-50)]/40 dark:border-[color:var(--color-surface-border)] dark:bg-white/[0.02] dark:hover:border-[color:var(--color-brand-400)]/40 dark:hover:bg-white/[0.04]"
-                >
-                  <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-zinc-100 text-zinc-600 dark:bg-white/10 dark:text-zinc-300">
-                    <AttachmentIcon className="size-5" strokeWidth={2.1} />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                      {task.attachment.name}
-                    </p>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                      {task.attachment.sizeLabel}
-                    </p>
+                {task.attachment.url ? (
+                  <a
+                    href={task.attachment.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group mt-2 flex w-full items-center gap-3 rounded-2xl border border-zinc-200 bg-white p-3.5 text-left transition hover:border-[color:var(--color-brand-200)] hover:bg-[color:var(--color-brand-50)]/40 dark:border-[color:var(--color-surface-border)] dark:bg-white/[0.02] dark:hover:border-[color:var(--color-brand-400)]/40 dark:hover:bg-white/[0.04]"
+                  >
+                    <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-zinc-100 text-zinc-600 dark:bg-white/10 dark:text-zinc-300">
+                      <AttachmentIcon className="size-5" strokeWidth={2.1} />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                        {task.attachment.name}
+                      </p>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                        {task.attachment.sizeLabel}
+                      </p>
+                    </div>
+                    <Download
+                      className="size-4 shrink-0 text-zinc-400 transition group-hover:text-[color:var(--color-brand-600)]"
+                      strokeWidth={2.2}
+                    />
+                  </a>
+                ) : (
+                  <div className="mt-2 flex w-full items-center gap-3 rounded-2xl border border-zinc-200 bg-white p-3.5 opacity-70 dark:border-[color:var(--color-surface-border)] dark:bg-white/[0.02]">
+                    <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-zinc-100 text-zinc-500 dark:bg-white/10 dark:text-zinc-400">
+                      <AttachmentIcon className="size-5" strokeWidth={2.1} />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                        {task.attachment.name}
+                      </p>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                        Tautan unduh belum tersedia
+                      </p>
+                    </div>
                   </div>
-                  <Download
-                    className="size-4 shrink-0 text-zinc-400 transition group-hover:text-[color:var(--color-brand-600)]"
-                    strokeWidth={2.2}
-                  />
-                </button>
+                )}
               </div>
             ) : null}
           </section>
@@ -401,9 +413,24 @@ export function TaskDetailView({ task, serverNowISO }: Props) {
                   <FileText className="size-5" strokeWidth={2.2} />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                    {submittedFile.name}
-                  </p>
+                  {submittedFile.url ? (
+                    <a
+                      href={submittedFile.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group block truncate text-sm font-semibold text-zinc-900 hover:underline dark:text-zinc-100"
+                    >
+                      {submittedFile.name}
+                      <Download
+                        className="ml-1.5 inline size-3.5 -translate-y-0.5 text-zinc-400 transition group-hover:text-[color:var(--color-brand-600)]"
+                        strokeWidth={2.4}
+                      />
+                    </a>
+                  ) : (
+                    <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                      {submittedFile.name}
+                    </p>
+                  )}
                   <p className="text-xs text-emerald-700/90 dark:text-emerald-300/80">
                     {submittedFile.sizeLabel} · dikumpulkan{" "}
                     {formatInTimeZone(

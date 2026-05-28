@@ -5,7 +5,7 @@ import { FileText, Loader2, UploadCloud, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-import { formatFileSize } from "./tasks-mock-data";
+import { formatFileSize } from "./task-helpers";
 
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 const ALLOWED_EXT = [".pdf", ".docx", ".zip"] as const;

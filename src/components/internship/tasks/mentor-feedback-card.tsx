@@ -1,7 +1,7 @@
 import { formatInTimeZone } from "date-fns-tz";
 import { MessageSquareWarning } from "lucide-react";
 
-import type { MentorFeedback } from "./tasks-mock-data";
+import type { MentorFeedback } from "./task-helpers";
 
 const WIB_TZ = "Asia/Jakarta";
 

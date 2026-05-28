@@ -2,7 +2,7 @@ import { CheckCircle2, CircleDashed, RotateCcw, XCircle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-import { STATUS_META, type TaskDisplayStatus } from "./tasks-mock-data";
+import { STATUS_META, type TaskDisplayStatus } from "./task-helpers";
 
 const STATUS_ICON: Record<TaskDisplayStatus, typeof CheckCircle2> = {
   TERKUMPUL: CheckCircle2,

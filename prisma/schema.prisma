@@ -715,17 +715,22 @@ model Holiday {
 // -----------------------------------------------------------------------------
 
 model Task {
-  id            String   @id @default(cuid())
-  mentorId      String
-  batchId       String
-  fieldId       String
-  classId       String
-  title         String
-  description   String   @db.Text
-  attachmentUrl String?
-  deadline      DateTime
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id             String   @id @default(cuid())
+  mentorId       String
+  batchId        String
+  fieldId        String
+  classId        String
+  title          String
+  description    String   @db.Text
+  // Stored as a Bunny Storage object path (e.g. "task-attachments/...") OR an
+  // external URL (http/https) — per PRD §6.9.3 "file ATAU URL". The loader
+  // signs object paths via Bunny Storage and passes external URLs through.
+  attachmentUrl  String?
+  attachmentName String?
+  attachmentSize Int?
+  deadline       DateTime
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   mentor User  @relation("TaskMentor", fields: [mentorId], references: [id])
   batch  Batch @relation(fields: [batchId], references: [id])
@@ -740,16 +745,19 @@ model Task {
 }
 
 model TaskSubmission {
-  id            String           @id @default(cuid())
-  taskId        String
-  studentId     String
-  submissionUrl String?
-  notes         String?          @db.Text
-  status        SubmissionStatus @default(NOT_SUBMITTED)
-  feedbackText  String?          @db.Text
-  reviewedAt    DateTime?
-  submittedAt   DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  id                 String           @id @default(cuid())
+  taskId             String
+  studentId          String
+  // Bunny Storage object path; signed for download at read time. See `Task.attachmentUrl`.
+  submissionUrl      String?
+  submissionFileName String?
+  submissionFileSize Int?
+  notes              String?          @db.Text
+  status             SubmissionStatus @default(NOT_SUBMITTED)
+  feedbackText       String?          @db.Text
+  reviewedAt         DateTime?
+  submittedAt        DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
 
   task    Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
   student User @relation(fields: [studentId], references: [id], onDelete: Cascade)
