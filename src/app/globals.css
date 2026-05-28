@@ -650,3 +650,59 @@
     animation: none;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Internship — Nilai Akhir hero reveal
+   CSS-only entrance for the score hero. GPU-friendly (transform + opacity).
+   --------------------------------------------------------------------------- */
+
+@keyframes grade-rise {
+  0% {
+    transform: translateY(14px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes grade-empty-pulse {
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.grade-rise {
+  animation: grade-rise 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.grade-rise-delay-1 {
+  animation-delay: 80ms;
+}
+.grade-rise-delay-2 {
+  animation-delay: 160ms;
+}
+.grade-rise-delay-3 {
+  animation-delay: 240ms;
+}
+
+.grade-empty-pulse {
+  animation: grade-empty-pulse 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grade-rise,
+  .grade-rise-delay-1,
+  .grade-rise-delay-2,
+  .grade-rise-delay-3 {
+    animation: none;
+  }
+  .grade-empty-pulse {
+    animation: none;
+    opacity: 1;
+  }
+}
