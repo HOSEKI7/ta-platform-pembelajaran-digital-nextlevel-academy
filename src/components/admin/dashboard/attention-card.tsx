@@ -4,7 +4,7 @@ import { AlertTriangle, Clock } from "lucide-react";
 
 import { idr } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { AttentionItem } from "@/lib/admin-dashboard-mock";
+import type { AttentionItem } from "@/lib/admin-dashboard-types";
 
 import { ChartCard } from "./chart-card";
 

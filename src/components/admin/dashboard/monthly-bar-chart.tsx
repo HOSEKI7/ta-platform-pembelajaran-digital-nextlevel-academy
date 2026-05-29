@@ -12,7 +12,7 @@ import {
   YAxis,
 } from "recharts";
 
-import type { MonthlyPoint } from "@/lib/admin-dashboard-mock";
+import type { MonthlyPoint } from "@/lib/admin-dashboard-types";
 
 import { ChartCard } from "./chart-card";
 

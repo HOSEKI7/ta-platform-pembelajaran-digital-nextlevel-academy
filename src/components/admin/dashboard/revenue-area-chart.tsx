@@ -12,7 +12,7 @@ import {
 } from "recharts";
 
 import { idr } from "@/lib/format";
-import type { MonthlyPoint } from "@/lib/admin-dashboard-mock";
+import type { MonthlyPoint } from "@/lib/admin-dashboard-types";
 
 import { ChartCard } from "./chart-card";
 

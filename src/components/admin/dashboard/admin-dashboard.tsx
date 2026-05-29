@@ -12,7 +12,7 @@ import {
 
 import { idr } from "@/lib/format";
 import { StudentPageContainer } from "@/components/dashboard/shared/student-page-container";
-import { MOCK_NOW_ISO, type AdminDashboardData } from "@/lib/admin-dashboard-mock";
+import type { AdminDashboardData } from "@/lib/admin-dashboard-types";
 
 import { AdminHero } from "./admin-hero";
 import { AttentionCard } from "./attention-card";
@@ -134,7 +134,7 @@ export function AdminDashboard({ firstName, serverNowISO, data }: Props) {
       <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
         <RecentTransactionsCard
           transactions={data.recentTransactions}
-          nowISO={MOCK_NOW_ISO}
+          nowISO={serverNowISO}
         />
         <AttentionCard items={data.attention} />
       </div>

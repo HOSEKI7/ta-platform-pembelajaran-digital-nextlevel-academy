@@ -6,7 +6,7 @@ import { id as idLocale } from "date-fns/locale";
 import { Clock, ShoppingBag, UserPlus, Wallet } from "lucide-react";
 
 import { idr } from "@/lib/format";
-import type { AdminDashboardData } from "@/lib/admin-dashboard-mock";
+import type { AdminDashboardData } from "@/lib/admin-dashboard-types";
 
 const WIB_TZ = "Asia/Jakarta";
 

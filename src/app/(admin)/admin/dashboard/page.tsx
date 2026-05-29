@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { Role } from "@/generated/prisma";
 import { requireRole } from "@/lib/auth-server";
-import { ADMIN_DASHBOARD_MOCK } from "@/lib/admin-dashboard-mock";
+import { loadAdminDashboard } from "@/lib/admin-data-loader";
 
 import { AdminDashboard } from "@/components/admin/dashboard/admin-dashboard";
 
@@ -24,12 +24,13 @@ export default async function AdminDashboardPage() {
   // Capture "now" on the server so the live clock's first client render matches.
   const serverNowISO = new Date().toISOString();
 
-  // NOTE: frontend-only mock data — the live Prisma loader is a follow-up.
+  const data = await loadAdminDashboard();
+
   return (
     <AdminDashboard
       firstName={firstName}
       serverNowISO={serverNowISO}
-      data={ADMIN_DASHBOARD_MOCK}
+      data={data}
     />
   );
 }

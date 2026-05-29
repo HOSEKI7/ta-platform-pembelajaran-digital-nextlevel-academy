@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import type {
   OrderStatus,
   RecentTransaction,
-} from "@/lib/admin-dashboard-mock";
+} from "@/lib/admin-dashboard-types";
 
 import { ChartCard } from "./chart-card";
 
@@ -84,8 +84,8 @@ export function RecentTransactionsCard({ transactions, nowISO }: Props) {
                     <p className="font-medium text-zinc-800 dark:text-zinc-100">
                       {tx.user}
                     </p>
-                    <p className="text-[11px] text-zinc-400 dark:text-zinc-500">
-                      {tx.id}
+                    <p className="text-[11px] tabular-nums text-zinc-400 dark:text-zinc-500">
+                      #{tx.id.slice(-8).toUpperCase()}
                     </p>
                   </td>
                   <td className="hidden max-w-[14rem] truncate py-2.5 pr-3 text-zinc-600 dark:text-zinc-300 sm:table-cell">

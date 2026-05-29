@@ -4,7 +4,7 @@ import { Flame } from "lucide-react";
 
 import { idr } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { TopCourse } from "@/lib/admin-dashboard-mock";
+import type { TopCourse } from "@/lib/admin-dashboard-types";
 
 import { ChartCard } from "./chart-card";
 
