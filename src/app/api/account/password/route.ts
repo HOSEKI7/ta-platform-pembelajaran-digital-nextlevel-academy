@@ -14,6 +14,7 @@ export async function POST(req: Request) {
   const guard = await requireRoleInRoute([
     Role.PESERTA_DIDIK,
     Role.PESERTA_MAGANG,
+    Role.MENTOR,
   ]);
   if (guard instanceof Response) return guard;
 

@@ -51,7 +51,18 @@ type Props = {
   /** When true, render email as read-only and hide the change-email submit
    *  flow. Used for Peserta Magang whose email is admin-managed. */
   lockEmail?: boolean;
+  /** Helper copy under the locked email section title. Defaults to the
+   *  Peserta-Magang wording; other surfaces (e.g. Mentor) override it. */
+  lockEmailHelper?: string;
+  /** The explanatory note shown in the locked email callout. Defaults to the
+   *  Peserta-Magang wording. */
+  lockEmailNote?: string;
 };
+
+const DEFAULT_LOCK_EMAIL_HELPER =
+  "Email akun magang dikelola administrator dan tidak dapat diubah dari halaman ini.";
+const DEFAULT_LOCK_EMAIL_NOTE =
+  "Email peserta magang ditetapkan oleh administrator saat onboarding batch. Bila kamu perlu mengubahnya, hubungi mentor atau administrator program.";
 
 function sanitizeUsername(value: string) {
   return value
@@ -66,6 +77,8 @@ export function ProfileForm({
   onDraftChange,
   avatarOptions,
   lockEmail = false,
+  lockEmailHelper = DEFAULT_LOCK_EMAIL_HELPER,
+  lockEmailNote = DEFAULT_LOCK_EMAIL_NOTE,
 }: Props) {
   const router = useRouter();
 
@@ -248,7 +261,7 @@ export function ProfileForm({
         <Section
           eyebrow="03 · Email"
           title="Alamat email"
-          helper="Email akun magang dikelola administrator dan tidak dapat diubah dari halaman ini."
+          helper={lockEmailHelper}
         >
           <Field
             id="email"
@@ -278,11 +291,7 @@ export function ProfileForm({
               className="mt-0.5 size-4 shrink-0 text-[color:var(--color-brand-600)] dark:text-[color:var(--color-brand-300)]"
               strokeWidth={2.4}
             />
-            <p className="leading-relaxed">
-              Email peserta magang ditetapkan oleh administrator saat
-              onboarding batch. Bila kamu perlu mengubahnya, hubungi mentor
-              atau administrator program.
-            </p>
+            <p className="leading-relaxed">{lockEmailNote}</p>
           </div>
         </Section>
       ) : (

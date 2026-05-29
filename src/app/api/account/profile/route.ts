@@ -16,6 +16,7 @@ export async function PATCH(req: Request) {
   const session = await requireRoleInRoute([
     Role.PESERTA_DIDIK,
     Role.PESERTA_MAGANG,
+    Role.MENTOR,
   ]);
   if (session instanceof Response) return session;
 

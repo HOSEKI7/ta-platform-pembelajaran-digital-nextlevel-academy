@@ -35,6 +35,10 @@ type Props = {
   roleLabel?: string;
   /** Optional override for the PageHeader description copy. */
   headerDescription?: string;
+  /** Forwarded to ProfileForm when `lockEmail` is set — surface-specific
+   *  wording for the read-only email section. */
+  lockEmailHelper?: string;
+  lockEmailNote?: string;
 };
 
 const TABS: { value: Tab; label: string; helper: string; icon: typeof UserRound }[] = [
@@ -58,6 +62,8 @@ export function SettingsView({
   lockEmail = false,
   roleLabel = "Peserta Didik",
   headerDescription,
+  lockEmailHelper,
+  lockEmailNote,
 }: Props) {
   const [tab, setTab] = useState<Tab>("profil");
 
@@ -125,6 +131,8 @@ export function SettingsView({
               onDraftChange={setDraft}
               avatarOptions={avatarOptions}
               lockEmail={lockEmail}
+              lockEmailHelper={lockEmailHelper}
+              lockEmailNote={lockEmailNote}
             />
           ) : (
             <SecurityForm />
