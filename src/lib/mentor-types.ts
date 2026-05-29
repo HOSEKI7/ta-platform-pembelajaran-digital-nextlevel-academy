@@ -61,3 +61,58 @@ export type MentorContextBundle = {
   context: MentorContext;
   period: { startISO: string; endISO: string };
 };
+
+/** A single mentee in the mentor's class (Daftar Peserta). */
+export type MentorStudentRow = {
+  id: string; // InternshipProfile.id
+  name: string; // user.name
+  institution: string | null; // university (null = not filled in yet)
+  image: string | null; // user.image (preset avatar path) for avatar/initials
+};
+
+export type MentorStudentsData = {
+  context: MentorContext;
+  students: MentorStudentRow[];
+};
+
+/** Per-student attendance status for a single selected date (read-only). */
+export type MentorAttendanceRowStatus = "HADIR" | "BELUM" | "TIDAK_HADIR";
+
+/** One mentee's attendance on the selected date. */
+export type MentorAttendanceStudentRow = {
+  id: string; // InternshipProfile.id — stable key
+  name: string; // user.name
+  image: string | null; // user.image (preset avatar path) for avatar/initials
+  status: MentorAttendanceRowStatus;
+  /** Check-in time "HH:mm" WIB when HADIR, else null ("—"). */
+  checkInTime: string | null;
+};
+
+/**
+ * The nature of the selected date — decides whether the roster shows live
+ * attendance (WORKING) or a "no attendance expected" banner.
+ */
+export type MentorAttendanceDayKind = "WORKING" | "LIBUR" | "LUAR_PERIODE";
+
+/** Class-wide attendance for one selected date. */
+export type MentorAttendanceDay = {
+  dateISO: string; // selected date "yyyy-MM-dd" (WIB)
+  kind: MentorAttendanceDayKind;
+  /** Holiday description when kind is LIBUR due to an admin holiday. */
+  holidayLabel: string | null;
+  isToday: boolean;
+  /** Only meaningful when isToday — drives the live window badge. */
+  windowState: MentorWindowState;
+  /** Tallies (all 0 except total when kind !== WORKING). */
+  summary: { present: number; belum: number; tidakHadir: number; total: number };
+  /** Every mentee in the class, ordered by name. */
+  rows: MentorAttendanceStudentRow[];
+};
+
+export type MentorAttendanceData = {
+  context: MentorContext;
+  period: { startISO: string; endISO: string };
+  /** Server "now" (ISO) so the live badge's first client render matches SSR. */
+  serverNowISO: string;
+  day: MentorAttendanceDay;
+};

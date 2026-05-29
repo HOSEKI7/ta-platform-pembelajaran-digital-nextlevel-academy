@@ -1,17 +1,26 @@
 import "server-only";
 
+import { formatInTimeZone } from "date-fns-tz";
+
 import { prisma } from "@/lib/prisma";
 import { INTERNSHIP_CHECKIN_WINDOW } from "@/lib/internship-config";
 import {
   computeWindow,
   getWibYmd,
+  parseYmd,
+  WIB_TZ,
 } from "@/components/internship/attendance/attendance-data";
 import type {
   MentorActiveTask,
+  MentorAttendanceData,
+  MentorAttendanceDayKind,
+  MentorAttendanceRowStatus,
+  MentorAttendanceStudentRow,
   MentorAttendanceToday,
   MentorContext,
   MentorContextBundle,
   MentorDashboardData,
+  MentorStudentsData,
   MentorWindowState,
 } from "@/lib/mentor-types";
 
@@ -105,6 +114,36 @@ export async function loadMentorContext(
   return {
     context: toContext(p, studentCount),
     period: { startISO: dbDateToISO(p.startDate), endISO: dbDateToISO(p.endDate) },
+  };
+}
+
+// ---- daftar peserta (class-scoped mentee roster: name + university) ---------
+export async function loadMentorStudents(
+  userId: string,
+): Promise<MentorStudentsData | null> {
+  const p = await fetchMentorProfile(userId);
+  if (!p) return null;
+
+  // Single query (no N+1): pull every mentee in the class with the user fields
+  // the roster needs, ordered by name for a stable, readable list.
+  const rows = await prisma.internshipProfile.findMany({
+    where: { classId: p.classId },
+    select: {
+      id: true,
+      institution: true,
+      user: { select: { name: true, image: true } },
+    },
+    orderBy: { user: { name: "asc" } },
+  });
+
+  return {
+    context: toContext(p, rows.length),
+    students: rows.map((r) => ({
+      id: r.id,
+      name: r.user.name,
+      institution: r.institution,
+      image: r.user.image,
+    })),
   };
 }
 
@@ -210,5 +249,138 @@ export async function loadMentorDashboard(
     activeTasks,
     pendingReviewCount,
     period: { startISO: dbDateToISO(p.startDate), endISO: dbDateToISO(p.endDate) },
+  };
+}
+
+// ---- absensi peserta (class-scoped roster for ONE selected date, read-only) -
+/**
+ * Resolve the whole class's attendance for a single date. Mirrors the read-time
+ * derivation used elsewhere (only PRESENT rows exist; absence is computed):
+ *   PRESENT row → HADIR (+ check-in time) · else today before window close →
+ *   BELUM · else (past working day, or today after close) → TIDAK_HADIR.
+ * On weekends / holidays / out-of-period days no attendance is expected, so the
+ * roster carries every mentee with a neutral status and the UI shows a banner.
+ * Returns `null` when the mentor isn't assigned a class.
+ */
+export async function loadMentorAttendanceByDate(
+  userId: string,
+  dateISO: string,
+): Promise<MentorAttendanceData | null> {
+  const p = await fetchMentorProfile(userId);
+  if (!p) return null;
+
+  const now = new Date();
+  const today = getWibYmd(now.toISOString());
+  const sel = parseYmd(dateISO);
+  const selDate = utcDate(sel.year, sel.month, sel.day);
+
+  const periodStart: Ymd = {
+    year: p.startDate.getUTCFullYear(),
+    month: p.startDate.getUTCMonth(),
+    day: p.startDate.getUTCDate(),
+  };
+  const periodEnd: Ymd = {
+    year: p.endDate.getUTCFullYear(),
+    month: p.endDate.getUTCMonth(),
+    day: p.endDate.getUTCDate(),
+  };
+
+  const [students, attendance, holiday] = await Promise.all([
+    prisma.internshipProfile.findMany({
+      where: { classId: p.classId },
+      select: {
+        id: true,
+        user: { select: { id: true, name: true, image: true } },
+      },
+      orderBy: { user: { name: "asc" } },
+    }),
+    prisma.attendance.findMany({
+      where: {
+        status: "PRESENT",
+        date: selDate,
+        user: { internshipProfile: { classId: p.classId } },
+      },
+      select: { userId: true, checkedInAt: true },
+    }),
+    prisma.holiday.findFirst({
+      where: { startDate: { lte: selDate }, endDate: { gte: selDate } },
+      select: { description: true },
+    }),
+  ]);
+
+  // userId → check-in time "HH:mm" WIB.
+  const presentMap = new Map<string, string>();
+  for (const a of attendance) {
+    presentMap.set(
+      a.userId,
+      a.checkedInAt ? formatInTimeZone(a.checkedInAt, WIB_TZ, "HH:mm") : "—:—",
+    );
+  }
+
+  // Day classification (same precedence as the calendar engine).
+  const inPeriod =
+    compareYmd(sel, periodStart) >= 0 && compareYmd(sel, periodEnd) <= 0;
+  const dow = weekdayUtc(sel.year, sel.month, sel.day);
+  const isWeekend = dow === 0 || dow === 6;
+  const isHoliday = Boolean(holiday);
+  let kind: MentorAttendanceDayKind;
+  if (!inPeriod) kind = "LUAR_PERIODE";
+  else if (isWeekend || isHoliday) kind = "LIBUR";
+  else kind = "WORKING";
+
+  const isToday = compareYmd(sel, today) === 0;
+  const windowClosedToday = computeWindow(now, WINDOW).state === "AFTER";
+
+  // Window badge state — only meaningful when the selected date is today.
+  let windowState: MentorWindowState;
+  if (!inPeriod) windowState = "LUAR_PERIODE";
+  else if (isWeekend || isHoliday) windowState = "LIBUR";
+  else if (isToday) windowState = computeWindow(now, WINDOW).state;
+  else windowState = "AFTER"; // a settled past working day
+
+  let present = 0;
+  let belum = 0;
+  let tidakHadir = 0;
+
+  const rows: MentorAttendanceStudentRow[] = students.map((s) => {
+    const checkInTime = presentMap.get(s.user.id) ?? null;
+    let status: MentorAttendanceRowStatus;
+
+    if (kind !== "WORKING") {
+      // No attendance expected; only surface a real PRESENT row if one exists.
+      status = checkInTime ? "HADIR" : "BELUM";
+    } else if (checkInTime) {
+      status = "HADIR";
+      present += 1;
+    } else if (isToday && !windowClosedToday) {
+      status = "BELUM";
+      belum += 1;
+    } else {
+      status = "TIDAK_HADIR";
+      tidakHadir += 1;
+    }
+
+    return {
+      id: s.id,
+      name: s.user.name,
+      image: s.user.image,
+      status,
+      checkInTime: status === "HADIR" ? checkInTime : null,
+    };
+  });
+
+  return {
+    context: toContext(p, students.length),
+    period: { startISO: dbDateToISO(p.startDate), endISO: dbDateToISO(p.endDate) },
+    serverNowISO: now.toISOString(),
+    day: {
+      dateISO,
+      kind,
+      holidayLabel: holiday?.description ?? null,
+      isToday,
+      windowState,
+      summary: { present, belum, tidakHadir, total: students.length },
+      rows,
+    },
   };
 }
