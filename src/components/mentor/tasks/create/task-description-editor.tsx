@@ -51,6 +51,8 @@ function countImages(editor: Editor): number {
 type Props = {
   /** Emits the editor HTML on every change. */
   onChange: (html: string) => void;
+  /** Initial HTML content (edit mode). Images keep their `data-bunny-path`. */
+  initialHTML?: string;
   disabled?: boolean;
 };
 
@@ -60,7 +62,11 @@ type Props = {
  * Images upload to `/api/mentor/tasks/images`; the returned object path is kept
  * on the node so it can be normalized/validated server-side.
  */
-export function TaskDescriptionEditor({ onChange, disabled = false }: Props) {
+export function TaskDescriptionEditor({
+  onChange,
+  initialHTML,
+  disabled = false,
+}: Props) {
   const editorRef = useRef<Editor | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -108,6 +114,7 @@ export function TaskDescriptionEditor({ onChange, disabled = false }: Props) {
 
   const editor = useEditor({
     immediatelyRender: false,
+    content: initialHTML,
     extensions: [
       StarterKit,
       BunnyImage,

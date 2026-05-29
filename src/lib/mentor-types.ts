@@ -86,6 +86,66 @@ export type MentorTasksData = {
   serverNowISO: string;
 };
 
+// ---- Task detail (one task + its full class submission roster) --------------
+
+/** Display status for a student's submission row (reuses the intern vocab). */
+export type MentorSubmissionStatus =
+  | "TERKUMPUL"
+  | "DIKEMBALIKAN"
+  | "BELUM"
+  | "TERLEWAT";
+
+/** One student's row in the submission table. Every mentee appears. */
+export type MentorSubmissionRow = {
+  studentId: string; // user.id — stable key + return target
+  name: string;
+  image: string | null;
+  status: MentorSubmissionStatus;
+  submittedAtISO: string | null;
+  /** Uploaded submission file (signed Bunny URL) when present. */
+  file: { name: string; sizeLabel: string; url: string | null } | null;
+  /** Mentor's return note, when the task was sent back. */
+  feedbackText: string | null;
+};
+
+/** Mentor attachment summary (display name + pre-formatted size). */
+export type MentorTaskAttachment = {
+  name: string;
+  sizeLabel: string;
+  /** Signed download URL (null when storage/pull-zone not configured). */
+  url: string | null;
+};
+
+export type MentorTaskDetail = {
+  context: MentorContext;
+  task: {
+    id: string;
+    title: string;
+    /** Rich-text HTML with inline images already re-signed for reading. */
+    descriptionHtml: string;
+    deadlineISO: string;
+    attachment: MentorTaskAttachment | null;
+  };
+  rows: MentorSubmissionRow[];
+  summary: { terkumpul: number; total: number };
+  /** Server "now" (ISO) for deterministic deadline-derived status on hydration. */
+  serverNowISO: string;
+};
+
+/** Prefill payload for the edit form page. */
+export type MentorTaskEditData = {
+  context: MentorContext;
+  period: { startISO: string; endISO: string };
+  task: {
+    id: string;
+    title: string;
+    descriptionHtml: string;
+    /** Wall-clock WIB "yyyy-MM-ddTHH:mm" for the date+time picker. */
+    deadlineWib: string;
+    attachment: { name: string; sizeLabel: string } | null;
+  };
+};
+
 /** A single mentee in the mentor's class (Daftar Peserta). */
 export type MentorStudentRow = {
   id: string; // InternshipProfile.id

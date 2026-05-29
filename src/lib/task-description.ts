@@ -59,6 +59,20 @@ export function normalizeTaskDescriptionImages(html: string): NormalizeResult {
 }
 
 /**
+ * Collect the Bunny object paths of every inline image in stored description
+ * HTML. Used on task delete to best-effort clean up the image blobs.
+ */
+export function extractTaskImagePaths(html: string): string[] {
+  if (!html) return [];
+  const paths: string[] = [];
+  for (const tag of html.match(IMG_TAG_RE) ?? []) {
+    const path = tag.match(DATA_PATH_RE)?.[1];
+    if (path && isValidImagePath(path)) paths.push(path);
+  }
+  return paths;
+}
+
+/**
  * Rewrite stored description HTML for reading: sign every Bunny image path into
  * a fresh, time-limited URL. No-op (leaves the path) when the pull zone isn't
  * configured, so dev without Bunny degrades to a broken-image rather than a 500.

@@ -3,6 +3,9 @@ import "server-only";
 import { formatInTimeZone } from "date-fns-tz";
 
 import { prisma } from "@/lib/prisma";
+import { resolveTaskFileUrl } from "@/lib/bunny-storage";
+import { signTaskDescriptionImages } from "@/lib/task-description";
+import { formatFileSize } from "@/components/internship/tasks/task-helpers";
 import { INTERNSHIP_CHECKIN_WINDOW } from "@/lib/internship-config";
 import {
   computeWindow,
@@ -21,6 +24,10 @@ import type {
   MentorContextBundle,
   MentorDashboardData,
   MentorStudentsData,
+  MentorSubmissionRow,
+  MentorSubmissionStatus,
+  MentorTaskDetail,
+  MentorTaskEditData,
   MentorTaskRow,
   MentorTasksData,
   MentorWindowState,
@@ -190,6 +197,158 @@ export async function loadMentorTasks(
     context: toContext(p, totalStudents),
     tasks,
     serverNowISO: new Date().toISOString(),
+  };
+}
+
+// ---- task detail (one task + full class submission roster) ------------------
+type TaskRowForDetail = {
+  attachmentUrl: string | null;
+  attachmentName: string | null;
+  attachmentSize: number | null;
+};
+function resolveAttachment(row: TaskRowForDetail) {
+  if (!row.attachmentUrl) return null;
+  return {
+    name: row.attachmentName ?? "Lampiran",
+    sizeLabel: row.attachmentSize ? formatFileSize(row.attachmentSize) : "—",
+    url: resolveTaskFileUrl(row.attachmentUrl),
+  };
+}
+
+/**
+ * One task plus every mentee's submission row (class-scoped). Status is derived
+ * at read time: SUBMITTED→TERKUMPUL · NOT_SUBMITTED+feedback→DIKEMBALIKAN ·
+ * else past-deadline→TERLEWAT / BELUM. `null` when the task isn't in the
+ * mentor's class (page renders 404).
+ */
+export async function loadMentorTaskDetail(
+  userId: string,
+  taskId: string,
+): Promise<MentorTaskDetail | null> {
+  const p = await fetchMentorProfile(userId);
+  if (!p) return null;
+
+  const [task, students] = await Promise.all([
+    prisma.task.findFirst({
+      where: { id: taskId, classId: p.classId },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        deadline: true,
+        attachmentUrl: true,
+        attachmentName: true,
+        attachmentSize: true,
+        submissions: {
+          select: {
+            studentId: true,
+            status: true,
+            submissionUrl: true,
+            submissionFileName: true,
+            submissionFileSize: true,
+            submittedAt: true,
+            feedbackText: true,
+          },
+        },
+      },
+    }),
+    prisma.internshipProfile.findMany({
+      where: { classId: p.classId },
+      select: { user: { select: { id: true, name: true, image: true } } },
+      orderBy: { user: { name: "asc" } },
+    }),
+  ]);
+  if (!task) return null;
+
+  const now = new Date();
+  const overdue = task.deadline.getTime() < now.getTime();
+  const byStudent = new Map(task.submissions.map((s) => [s.studentId, s]));
+
+  let terkumpul = 0;
+  const rows: MentorSubmissionRow[] = students.map(({ user }) => {
+    const sub = byStudent.get(user.id) ?? null;
+
+    let status: MentorSubmissionStatus;
+    if (sub?.status === "SUBMITTED") status = "TERKUMPUL";
+    else if (sub?.feedbackText) status = "DIKEMBALIKAN";
+    else status = overdue ? "TERLEWAT" : "BELUM";
+    if (status === "TERKUMPUL") terkumpul += 1;
+
+    const file = sub?.submissionUrl
+      ? {
+          name: sub.submissionFileName ?? "Berkas",
+          sizeLabel: sub.submissionFileSize
+            ? formatFileSize(sub.submissionFileSize)
+            : "—",
+          url: resolveTaskFileUrl(sub.submissionUrl),
+        }
+      : null;
+
+    return {
+      studentId: user.id,
+      name: user.name,
+      image: user.image,
+      status,
+      submittedAtISO: sub?.submittedAt ? sub.submittedAt.toISOString() : null,
+      file,
+      feedbackText: sub?.feedbackText ?? null,
+    };
+  });
+
+  return {
+    context: toContext(p, students.length),
+    task: {
+      id: task.id,
+      title: task.title,
+      descriptionHtml: signTaskDescriptionImages(task.description),
+      deadlineISO: task.deadline.toISOString(),
+      attachment: resolveAttachment(task),
+    },
+    rows,
+    summary: { terkumpul, total: students.length },
+    serverNowISO: now.toISOString(),
+  };
+}
+
+/** Task fields prefilled for the edit form. `null` when not in mentor's class. */
+export async function loadMentorTaskForEdit(
+  userId: string,
+  taskId: string,
+): Promise<MentorTaskEditData | null> {
+  const p = await fetchMentorProfile(userId);
+  if (!p) return null;
+
+  const task = await prisma.task.findFirst({
+    where: { id: taskId, classId: p.classId },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      deadline: true,
+      attachmentUrl: true,
+      attachmentName: true,
+      attachmentSize: true,
+    },
+  });
+  if (!task) return null;
+
+  return {
+    context: toContext(p, 0),
+    period: { startISO: dbDateToISO(p.startDate), endISO: dbDateToISO(p.endDate) },
+    task: {
+      id: task.id,
+      title: task.title,
+      descriptionHtml: signTaskDescriptionImages(task.description),
+      deadlineWib: formatInTimeZone(task.deadline, WIB_TZ, "yyyy-MM-dd'T'HH:mm"),
+      attachment: task.attachmentUrl
+        ? {
+            name: task.attachmentName ?? "Lampiran",
+            sizeLabel: task.attachmentSize
+              ? formatFileSize(task.attachmentSize)
+              : "—",
+          }
+        : null,
+    },
   };
 }
 
