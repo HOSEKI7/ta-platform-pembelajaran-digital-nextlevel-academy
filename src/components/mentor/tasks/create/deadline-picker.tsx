@@ -14,7 +14,7 @@ import {
   formatLongID,
   isoToLocalDate,
   localDateToISO,
-} from "@/components/mentor/attendance/attendance-format";
+} from "@/components/mentor/student-attendance/attendance-format";
 
 type Props = {
   /** Selected date "yyyy-MM-dd" ("" when none chosen yet). */

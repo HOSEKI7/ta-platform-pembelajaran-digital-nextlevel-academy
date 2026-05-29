@@ -17,7 +17,7 @@ function wibTodayISO(): string {
   return `${t.year}-${String(t.month + 1).padStart(2, "0")}-${String(t.day).padStart(2, "0")}`;
 }
 
-/** GET /api/mentor/attendance?date=YYYY-MM-DD → class roster for that date. */
+/** GET /api/mentor/student-attendance?date=YYYY-MM-DD → class roster for that date. */
 export async function GET(req: Request) {
   try {
     const auth = await requireRoleInRoute(Role.MENTOR);

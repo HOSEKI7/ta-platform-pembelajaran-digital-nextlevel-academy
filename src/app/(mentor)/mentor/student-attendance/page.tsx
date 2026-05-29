@@ -6,7 +6,7 @@ import { loadMentorAttendanceByDate } from "@/lib/mentor-data-loader";
 import { getWibYmd } from "@/components/internship/attendance/attendance-data";
 
 import { MentorEmptyState } from "@/components/mentor/mentor-empty-state";
-import { MentorAttendanceView } from "@/components/mentor/attendance/mentor-attendance-view";
+import { MentorAttendanceView } from "@/components/mentor/student-attendance/mentor-attendance-view";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +27,7 @@ export default async function MentorAttendancePage({
   searchParams: SearchParams;
 }) {
   const session = await requireRole(Role.MENTOR, {
-    redirectTo: "/mentor/attendance",
+    redirectTo: "/mentor/student-attendance",
   });
 
   // Default to today (WIB); clamp the upper bound so a future ?date= can't slip

@@ -7,6 +7,8 @@
  * figure here is scoped to the mentor's own class.
  */
 
+import type { AttendanceDisplayStatus } from "@/lib/internship-types";
+
 /** Topbar chip / hero identity context, derived from MentorProfile → Class. */
 export type MentorContext = {
   batchLabel: string; // e.g. "Batch 1 2026"
@@ -38,6 +40,18 @@ export type MentorAttendanceToday = {
   holidayLabel: string | null;
 };
 
+/**
+ * The mentor's OWN attendance status for today — drives the dashboard hero's
+ * check-in CTA. HADIR/BELUM/TIDAK_HADIR mirror the Peserta-Magang tri-state;
+ * `checkable` is true only on an eligible working day (in period, not a
+ * weekend/holiday).
+ */
+export type MentorSelfAttendance = {
+  status: AttendanceDisplayStatus;
+  checkInLabel: string | null;
+  checkable: boolean;
+};
+
 /** A task whose deadline has not yet passed, with submission progress. */
 export type MentorActiveTask = {
   id: string;
@@ -51,6 +65,8 @@ export type MentorDashboardData = {
   context: MentorContext;
   menteeCount: number;
   attendance: MentorAttendanceToday;
+  /** The mentor's own attendance today (dashboard hero check-in CTA). */
+  selfAttendance: MentorSelfAttendance;
   activeTasks: MentorActiveTask[];
   /** Submissions awaiting mentor review (SUBMITTED) across all class tasks. */
   pendingReviewCount: number;
@@ -157,6 +173,24 @@ export type MentorStudentRow = {
 export type MentorStudentsData = {
   context: MentorContext;
   students: MentorStudentRow[];
+};
+
+// ---- Nilai Akhir (final grade per mentee) -----------------------------------
+
+/** One mentee's final-grade row in the Nilai Akhir table. */
+export type MentorGradeRow = {
+  studentId: string; // user.id — stable key + mutation target
+  name: string; // user.name
+  image: string | null; // user.image (preset avatar path) for avatar/initials
+  institution: string | null; // university (null = not filled in yet)
+  grade: number | null; // 0–100, or null when not graded yet
+  note: string | null; // optional mentor note
+  gradedAt: string | null; // ISO timestamp of first grading (null = ungraded)
+};
+
+export type MentorGradesData = {
+  context: MentorContext;
+  grades: MentorGradeRow[];
 };
 
 /** Per-student attendance status for a single selected date (read-only). */

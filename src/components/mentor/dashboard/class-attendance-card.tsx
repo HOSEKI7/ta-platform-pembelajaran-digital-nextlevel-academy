@@ -202,10 +202,10 @@ export function ClassAttendanceCard({ attendance }: Props) {
       </span>
 
       <Link
-        href="/mentor/attendance"
+        href="/mentor/student-attendance"
         className="group mt-auto inline-flex items-center gap-1 text-xs font-semibold text-[color:var(--color-brand-700)] transition hover:gap-1.5 dark:text-[color:var(--color-brand-300)]"
       >
-        Lihat manajemen absensi
+        Lihat absensi peserta
         <ArrowUpRight className="size-3.5 transition group-hover:translate-x-0.5" strokeWidth={2.4} />
       </Link>
     </section>

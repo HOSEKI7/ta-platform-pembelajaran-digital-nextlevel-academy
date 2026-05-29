@@ -8,11 +8,18 @@ import { signTaskDescriptionImages } from "@/lib/task-description";
 import { formatFileSize } from "@/components/internship/tasks/task-helpers";
 import { INTERNSHIP_CHECKIN_WINDOW } from "@/lib/internship-config";
 import {
+  buildMonthFromData,
   computeWindow,
+  expandHolidays,
   getWibYmd,
   parseYmd,
   WIB_TZ,
 } from "@/components/internship/attendance/attendance-data";
+import type { CheckInResult } from "@/lib/internship-data-loader";
+import type {
+  AttendanceDisplayStatus,
+  AttendanceMonthDTO,
+} from "@/lib/internship-types";
 import type {
   MentorActiveTask,
   MentorAttendanceData,
@@ -23,7 +30,9 @@ import type {
   MentorContext,
   MentorContextBundle,
   MentorDashboardData,
+  MentorGradesData,
   MentorStudentsData,
+  MentorSelfAttendance,
   MentorSubmissionRow,
   MentorSubmissionStatus,
   MentorTaskDetail,
@@ -126,6 +135,131 @@ export async function loadMentorContext(
   };
 }
 
+// ---- absensi mentor (the mentor's OWN attendance — calendar grid + check-in) -
+/**
+ * The mentor's own attendance for a month, as a calendar grid. Mirrors the
+ * Peserta-Magang `loadAttendanceMonth`: only PRESENT rows exist (absence is
+ * derived), the period comes from the mentor's batch, and holidays are global.
+ * Returns `null` when the mentor isn't assigned a class.
+ */
+export async function loadMentorAttendanceMonth(
+  userId: string,
+  year: number,
+  month: number,
+): Promise<AttendanceMonthDTO | null> {
+  const p = await fetchMentorProfile(userId);
+  if (!p) return null;
+
+  const monthStart = utcDate(year, month, 1);
+  const monthEnd = utcDate(year, month + 1, 0);
+
+  const [attendance, holidays] = await Promise.all([
+    prisma.attendance.findMany({
+      where: { userId, status: "PRESENT", date: { gte: monthStart, lte: monthEnd } },
+      select: { date: true, checkedInAt: true },
+    }),
+    prisma.holiday.findMany({
+      where: { startDate: { lte: monthEnd }, endDate: { gte: monthStart } },
+      select: { startDate: true, days: true, description: true },
+    }),
+  ]);
+
+  const presentMap = new Map<string, string>();
+  for (const a of attendance) {
+    presentMap.set(
+      dbDateToISO(a.date),
+      a.checkedInAt ? formatInTimeZone(a.checkedInAt, WIB_TZ, "HH:mm") : "—:—",
+    );
+  }
+  const holidayMap = expandHolidays(
+    holidays.map((h) => ({
+      startISO: dbDateToISO(h.startDate),
+      days: h.days,
+      description: h.description,
+    })),
+  );
+
+  const now = new Date();
+  const windowClosedToday = computeWindow(now, WINDOW).state === "AFTER";
+
+  return buildMonthFromData(year, month, now.toISOString(), {
+    periodStartISO: dbDateToISO(p.startDate),
+    periodEndISO: dbDateToISO(p.endDate),
+    holidayMap,
+    presentMap,
+    windowClosedToday,
+  });
+}
+
+/**
+ * Record the mentor's own check-in for today. All gating is server-side
+ * (period, working day, holiday, WIB window, idempotency) — the client's clock
+ * is never trusted. Reuses the shared `Attendance` table (mentor's userId);
+ * since mentors have no `internshipProfile`, these rows never appear in any
+ * student roster. Mirrors `performCheckIn` from the Peserta-Magang loader.
+ */
+export async function performMentorCheckIn(userId: string): Promise<CheckInResult> {
+  const p = await fetchMentorProfile(userId);
+  if (!p) {
+    return { ok: false, status: 403, error: "Kamu belum ditugaskan ke kelas mana pun." };
+  }
+
+  const now = new Date();
+  const today = getWibYmd(now.toISOString());
+  const todayDate = utcDate(today.year, today.month, today.day);
+  const periodStart: Ymd = {
+    year: p.startDate.getUTCFullYear(),
+    month: p.startDate.getUTCMonth(),
+    day: p.startDate.getUTCDate(),
+  };
+  const periodEnd: Ymd = {
+    year: p.endDate.getUTCFullYear(),
+    month: p.endDate.getUTCMonth(),
+    day: p.endDate.getUTCDate(),
+  };
+
+  if (compareYmd(today, periodStart) < 0 || compareYmd(today, periodEnd) > 0) {
+    return { ok: false, status: 400, error: "Hari ini di luar periode magang." };
+  }
+  const dow = weekdayUtc(today.year, today.month, today.day);
+  if (dow === 0 || dow === 6) {
+    return { ok: false, status: 400, error: "Hari ini bukan hari kerja." };
+  }
+  const holiday = await prisma.holiday.findFirst({
+    where: { startDate: { lte: todayDate }, endDate: { gte: todayDate } },
+    select: { description: true },
+  });
+  if (holiday) {
+    return { ok: false, status: 400, error: `Hari ini libur (${holiday.description}).` };
+  }
+  if (computeWindow(now, WINDOW).state !== "OPEN") {
+    return {
+      ok: false,
+      status: 400,
+      error: `Di luar jendela absen (${WINDOW.start}–${WINDOW.end} WIB).`,
+    };
+  }
+
+  try {
+    await prisma.attendance.create({
+      data: { userId, date: todayDate, status: "PRESENT", checkedInAt: now },
+    });
+  } catch (err) {
+    // Unique (userId, date) — already checked in. Duck-type the code (see the
+    // CLAUDE.md gotcha on instanceof across bundle copies).
+    if (typeof err === "object" && err !== null && "code" in err && err.code === "P2002") {
+      return { ok: false, status: 409, error: "Kamu sudah absen hari ini." };
+    }
+    throw err;
+  }
+
+  return {
+    ok: true,
+    dateISO: isoKey(today.year, today.month, today.day),
+    checkInTime: formatInTimeZone(now, WIB_TZ, "HH:mm"),
+  };
+}
+
 // ---- daftar peserta (class-scoped mentee roster: name + university) ---------
 export async function loadMentorStudents(
   userId: string,
@@ -152,6 +286,51 @@ export async function loadMentorStudents(
       name: r.user.name,
       institution: r.institution,
       image: r.user.image,
+    })),
+  };
+}
+
+// ---- nilai akhir (class-scoped final grades, one row per mentee) ------------
+/**
+ * Every mentee in the mentor's class with their final grade (null = not graded
+ * yet). Single query (no N+1): the roster left-joins `FinalGrade` through the
+ * user relation, so ungraded students still appear. Returns `null` when the
+ * mentor isn't assigned a class.
+ */
+export async function loadMentorGrades(
+  userId: string,
+): Promise<MentorGradesData | null> {
+  const p = await fetchMentorProfile(userId);
+  if (!p) return null;
+
+  const rows = await prisma.internshipProfile.findMany({
+    where: { classId: p.classId },
+    select: {
+      institution: true,
+      user: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+          finalGradeAsStudent: {
+            select: { grade: true, note: true, gradedAt: true },
+          },
+        },
+      },
+    },
+    orderBy: { user: { name: "asc" } },
+  });
+
+  return {
+    context: toContext(p, rows.length),
+    grades: rows.map((r) => ({
+      studentId: r.user.id,
+      name: r.user.name,
+      image: r.user.image,
+      institution: r.institution,
+      grade: r.user.finalGradeAsStudent?.grade ?? null,
+      note: r.user.finalGradeAsStudent?.note ?? null,
+      gradedAt: r.user.finalGradeAsStudent?.gradedAt?.toISOString() ?? null,
     })),
   };
 }
@@ -373,7 +552,7 @@ export async function loadMentorDashboard(
     day: p.endDate.getUTCDate(),
   };
 
-  const [menteeCount, presentToday, holiday, taskRows] = await Promise.all([
+  const [menteeCount, presentToday, holiday, selfToday, taskRows] = await Promise.all([
     prisma.internshipProfile.count({ where: { classId: p.classId } }),
     prisma.attendance.count({
       where: {
@@ -385,6 +564,11 @@ export async function loadMentorDashboard(
     prisma.holiday.findFirst({
       where: { startDate: { lte: todayDate }, endDate: { gte: todayDate } },
       select: { description: true },
+    }),
+    // The mentor's OWN attendance row for today (drives the dashboard check-in).
+    prisma.attendance.findUnique({
+      where: { userId_date: { userId, date: todayDate } },
+      select: { status: true, checkedInAt: true },
     }),
     prisma.task.findMany({
       where: { classId: p.classId },
@@ -428,6 +612,22 @@ export async function loadMentorDashboard(
     holidayLabel: holiday?.description ?? null,
   };
 
+  // ---- mentor's OWN attendance today (drives the dashboard check-in CTA) ----
+  const selfPresent = selfToday?.status === "PRESENT";
+  const selfCheckInLabel =
+    selfPresent && selfToday?.checkedInAt
+      ? formatInTimeZone(selfToday.checkedInAt, WIB_TZ, "HH:mm")
+      : null;
+  let selfStatus: AttendanceDisplayStatus;
+  if (selfPresent) selfStatus = "HADIR";
+  else if (isWorkingDay && win === "AFTER") selfStatus = "TIDAK_HADIR";
+  else selfStatus = "BELUM";
+  const selfAttendance: MentorSelfAttendance = {
+    status: selfStatus,
+    checkInLabel: selfCheckInLabel,
+    checkable: isWorkingDay,
+  };
+
   // ---- active tasks (deadline not yet passed) + review backlog ----
   const activeTasks: MentorActiveTask[] = [];
   let pendingReviewCount = 0;
@@ -451,6 +651,7 @@ export async function loadMentorDashboard(
     context: toContext(p, menteeCount),
     menteeCount,
     attendance,
+    selfAttendance,
     activeTasks,
     pendingReviewCount,
     period: { startISO: dbDateToISO(p.startDate), endISO: dbDateToISO(p.endDate) },

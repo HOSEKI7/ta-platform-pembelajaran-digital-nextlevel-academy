@@ -42,8 +42,9 @@ export function DashboardShell({ user, initialCollapsed, children }: Props) {
 
   return (
     <div className="relative flex min-h-screen bg-[color:var(--color-surface-app)] text-zinc-900 dark:text-zinc-100">
-      {/* Desktop rail */}
-      <div className="hidden md:block">
+      {/* Desktop rail — pinned to the viewport so it stays put while the main
+          column scrolls (sticky + self-start prevents flex-stretch). */}
+      <div className="sticky top-0 hidden h-screen self-start md:block">
         <StudentSidebar collapsed={collapsed} />
       </div>
 
@@ -57,7 +58,7 @@ export function DashboardShell({ user, initialCollapsed, children }: Props) {
         onClick={() => setCollapsed((v) => !v)}
         style={{ left: collapsed ? 80 : 260 }}
         className={cn(
-          "absolute top-16 z-40 hidden -translate-x-1/2 -translate-y-1/2 md:grid",
+          "fixed top-16 z-40 hidden -translate-x-1/2 -translate-y-1/2 md:grid",
           "size-7 place-items-center rounded-full bg-white ring-1 ring-zinc-200 text-[color:var(--color-brand-600)]",
           "shadow-[0_4px_12px_-4px_rgba(35,65,137,0.25)] transition-[left,transform,box-shadow] duration-300",
           "hover:scale-[1.08] hover:ring-[color:var(--color-brand-300)] hover:shadow-[0_8px_20px_-6px_rgba(71,142,244,0.45)]",

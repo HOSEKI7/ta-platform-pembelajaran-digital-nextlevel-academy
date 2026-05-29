@@ -3,11 +3,22 @@
 import { useEffect, useMemo, useState } from "react";
 import { formatInTimeZone } from "date-fns-tz";
 import { id as idLocale } from "date-fns/locale";
-import { Clock, GraduationCap, Layers, Users } from "lucide-react";
+import {
+  CheckCircle2,
+  Clock,
+  Fingerprint,
+  GraduationCap,
+  Layers,
+  Loader2,
+  Users,
+} from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import type { AttendanceWindow } from "@/lib/internship-types";
-import type { MentorAttendanceToday, MentorContext } from "@/lib/mentor-types";
+import type {
+  AttendanceDisplayStatus,
+  AttendanceWindow,
+} from "@/lib/internship-types";
+import type { MentorContext } from "@/lib/mentor-types";
 
 const WIB_TZ = "Asia/Jakarta";
 
@@ -29,21 +40,31 @@ type Props = {
   serverNowISO: string;
   context: MentorContext;
   window: AttendanceWindow;
-  attendance: MentorAttendanceToday;
+  /** The mentor's OWN attendance today — drives the check-in CTA. */
+  status: AttendanceDisplayStatus;
+  checkInLabel: string | null;
+  /** Server fact: today is an eligible working day (in period, not holiday). */
+  checkable: boolean;
+  isPending: boolean;
+  onCheckIn: () => void;
 };
 
 /**
  * Mentor dashboard hero — a class command-center header. Reuses the visual
  * language of the Peserta-Magang AttendanceHero (gradient + grid pattern + live
- * WIB clock + window timeline) but, since mentors don't check in, the right
- * panel surfaces the class's live attendance pulse instead of a check-in CTA.
+ * WIB clock + window timeline). Mentors now check in themselves, so the right
+ * panel surfaces the mentor's own check-in CTA.
  */
 export function MentorHero({
   firstName,
   serverNowISO,
   context,
   window,
-  attendance,
+  status,
+  checkInLabel,
+  checkable,
+  isPending,
+  onCheckIn,
 }: Props) {
   const [now, setNow] = useState<Date>(() => new Date(serverNowISO));
 
@@ -69,6 +90,13 @@ export function MentorHero({
     const pct = ((nowMin - startMin) / (endMin - startMin)) * 100;
     return Math.min(100, Math.max(0, pct));
   }, [nowMin, startMin, endMin]);
+
+  const windowState: "BEFORE" | "OPEN" | "AFTER" =
+    nowMin < startMin ? "BEFORE" : nowMin > endMin ? "AFTER" : "OPEN";
+
+  const checkedIn = status === "HADIR";
+  const checkInTime = checkInLabel;
+  const canCheckIn = checkable && windowState === "OPEN" && !checkedIn;
 
   const contextChips = [
     { icon: Layers, value: context.batchLabel },
@@ -107,7 +135,8 @@ export function MentorHero({
             </span>
           </h1>
           <p className="mt-2 max-w-md text-sm leading-relaxed text-white/75">
-            Pantau denyut kelas <span className="font-semibold text-white">{context.classFullName}</span> hari ini —
+            Mulai harimu dengan absen, lalu pantau denyut kelas{" "}
+            <span className="font-semibold text-white">{context.classFullName}</span> —
             kehadiran peserta dan tugas yang sedang berjalan.
           </p>
 
@@ -124,7 +153,7 @@ export function MentorHero({
           </div>
         </div>
 
-        {/* Right: live clock, window timeline, class attendance pulse */}
+        {/* Right: live clock, window timeline, mentor check-in CTA */}
         <div className="flex flex-col gap-5 rounded-3xl bg-white/[0.08] p-5 ring-1 ring-white/15 backdrop-blur-md sm:p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -135,7 +164,7 @@ export function MentorHero({
                 {clock}
               </p>
             </div>
-            <WindowBadge state={attendance.windowState} />
+            <WindowBadge state={windowState} checkedIn={checkedIn} />
           </div>
 
           {/* Window timeline */}
@@ -160,28 +189,40 @@ export function MentorHero({
             </div>
           </div>
 
-          {/* Attendance pulse */}
-          <div className="flex items-center justify-between gap-4 rounded-2xl bg-white/10 px-4 py-3 ring-1 ring-white/15">
-            <div className="flex items-center gap-2.5">
-              <span className="grid size-9 place-items-center rounded-xl bg-emerald-400/20 text-emerald-200 ring-1 ring-emerald-300/30">
-                <Users className="size-5" strokeWidth={2.2} />
-              </span>
+          {/* CTA */}
+          {checkedIn ? (
+            <div className="flex items-center gap-3 rounded-2xl bg-emerald-400/15 px-4 py-3 ring-1 ring-emerald-300/30">
+              <CheckCircle2 className="size-6 shrink-0 text-emerald-300" strokeWidth={2.2} />
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/55">
-                  Kehadiran hari ini
+                <p className="text-sm font-bold text-white">
+                  Sudah absen hari ini
                 </p>
-                <p className="text-xs text-white/75">
-                  {attendance.isWorkingDay ? "Peserta sudah check-in" : "Hari libur — tidak ada absen"}
+                <p className="text-xs text-white/70">
+                  Check-in pukul {checkInTime} WIB · Hadir
                 </p>
               </div>
             </div>
-            <p className="font-heading text-2xl font-extrabold tabular-nums leading-none">
-              {attendance.present}
-              <span className="text-base font-bold text-white/55">
-                /{attendance.total}
-              </span>
-            </p>
-          </div>
+          ) : (
+            <button
+              type="button"
+              onClick={onCheckIn}
+              disabled={!canCheckIn || isPending}
+              className={cn(
+                "group inline-flex h-12 items-center justify-center gap-2 rounded-2xl px-5 text-sm font-bold transition",
+                "bg-[color:var(--color-brand-accent)] text-[color:var(--color-brand-950)]",
+                "shadow-[0_14px_30px_-12px_rgba(244,214,0,0.8)] hover:-translate-y-0.5 hover:shadow-[0_18px_36px_-12px_rgba(244,214,0,0.9)]",
+                "active:translate-y-0",
+                "disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none disabled:hover:translate-y-0",
+              )}
+            >
+              {isPending ? (
+                <Loader2 className="size-5 animate-spin" strokeWidth={2.3} />
+              ) : (
+                <Fingerprint className="size-5 transition group-hover:scale-110" strokeWidth={2.3} />
+              )}
+              {isPending ? "Memproses…" : "Check-In Sekarang"}
+            </button>
+          )}
         </div>
       </div>
     </section>
@@ -190,19 +231,18 @@ export function MentorHero({
 
 function WindowBadge({
   state,
+  checkedIn,
 }: {
-  state: MentorAttendanceToday["windowState"];
+  state: "BEFORE" | "OPEN" | "AFTER";
+  checkedIn: boolean;
 }) {
-  const { label, dot } =
-    state === "OPEN"
+  const { label, dot } = checkedIn
+    ? { label: "Selesai", dot: "bg-emerald-300" }
+    : state === "OPEN"
       ? { label: "Sedang dibuka", dot: "bg-[color:var(--color-brand-accent)]" }
       : state === "BEFORE"
         ? { label: "Belum dibuka", dot: "bg-white/60" }
-        : state === "AFTER"
-          ? { label: "Sudah ditutup", dot: "bg-red-300" }
-          : state === "LIBUR"
-            ? { label: "Libur", dot: "bg-white/40" }
-            : { label: "Di luar periode", dot: "bg-white/40" };
+        : { label: "Sudah ditutup", dot: "bg-red-300" };
 
   return (
     <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/12 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white/85 ring-1 ring-white/20">

@@ -217,8 +217,9 @@ Platform ini dirancang sebagai produk SaaS internal yang dikelola sepenuhnya ole
 ```
 /mentor
 ├── /mentor/dashboard
+├── /mentor/attendance (Absensi — check-in harian mentor)
 ├── /mentor/students (Daftar Peserta)
-├── /mentor/attendance (Manajemen Absensi)
+├── /mentor/student-attendance (Absensi Peserta — pantau kehadiran kelas, read-only)
 ├── /mentor/tasks (Manajemen Tugas — Daftar Tugas)
 │   ├── /mentor/tasks/create (Buat Tugas)
 │   └── /mentor/tasks/:taskId (Detail Tugas)
@@ -226,6 +227,8 @@ Platform ini dirancang sebagai produk SaaS internal yang dikelola sepenuhnya ole
 ├── /mentor/grades (Nilai Akhir)
 └── /mentor/settings (Pengaturan)
 ```
+
+> **Catatan urutan navigasi sidebar:** Dashboard → **Absensi** (absensi pribadi mentor) → Daftar Peserta → **Absensi Peserta** (monitor kelas) → Tugas → Nilai Akhir → Pengaturan.
 
 ---
 
@@ -784,7 +787,7 @@ Jika tidak valid → tampilkan pesan error yang deskriptif.
 **Tampilan Rekap Absensi:**
 
 - Peserta Magang: melihat rekap absensi pribadi (kalender per bulan, status hadir/tidak hadir, ditandai dengan warna sesuai status).
-- Mentor: melihat rekap absensi seluruh peserta di bawah bimbingannya per hari (tabel per hari, menampilkan nama, jam check-ind dan status, terdapat filter untuk memilih tanggal data rekapan sebelumnya).
+- Mentor: melihat rekap absensi seluruh peserta di bawah bimbingannya per hari pada halaman **Absensi Peserta** (`/mentor/student-attendance`) — tabel per hari menampilkan nama, jam check-in, dan status, dengan filter tanggal untuk meninjau data sebelumnya (read-only; mentor tidak dapat mengubah). Halaman ini sebelumnya berada di `/mentor/attendance`, dipindah agar URL tersebut dipakai untuk absensi pribadi mentor (lihat §6.9.2.1).
 - Admin: melihat dan dapat mengedit seluruh data absensi.
 
 **Periode Magang (rentang kalender):**
@@ -801,6 +804,32 @@ Jika tidak valid → tampilkan pesan error yang deskriptif.
 - Timezone: WIB (UTC+7) — hardcoded karena target pasar Indonesia.
 - Jendela jam ini **global** (satu nilai untuk semua batch, bukan per-batch). Saat ini disimpan sebagai konstanta platform (`src/lib/internship-config.ts`); dipromosikan ke tabel `Setting` ketika halaman admin settings dibangun.
 - **Gating server-side:** endpoint Check-In menghitung waktu WIB sendiri dan menolak absen di luar jendela, di hari libur/akhir pekan, di luar periode batch, atau jika sudah absen (idempoten via unique `(userId, date)`). Hari kerja lampau tanpa baris `Attendance` PRESENT diturunkan sebagai **Tidak Hadir** saat dibaca (tanpa job materialisasi ABSENT).
+
+#### 6.9.2.1 Absensi Mentor (Check-In Pribadi)
+
+> **Enhancement (di luar PRD awal).** Mentor kini **juga melakukan absensi pribadi** dengan alur check-in yang sama persis seperti Peserta Magang. Halaman: `/mentor/attendance` (label sidebar **"Absensi"**). Halaman pemantauan kehadiran peserta dipindah ke `/mentor/student-attendance` (label **"Absensi Peserta"**).
+
+**Tujuan:** Mentor merekam kehadiran hariannya sendiri sepanjang periode batch yang ia bimbing, sejajar dengan kewajiban absensi peserta.
+
+**Alur:**
+
+1. Mentor membuka `/mentor/attendance` atau menekan tombol **Check-In** pada hero dashboard `/mentor/dashboard`.
+2. Tombol Check-In aktif hanya dalam **jendela waktu global WIB** (sama dengan peserta, `INTERNSHIP_CHECKIN_WINDOW`, contoh 09.00–12.00) pada hari kerja dalam periode batch.
+3. Saat ditekan, server merekam kehadiran hari ini; status berubah menjadi **Hadir** dan jam check-in ditampilkan.
+4. Kalender riwayat menampilkan rekap kehadiran mentor per bulan (Hadir/Tidak Hadir/Belum/Libur/Di luar periode), identik dengan tampilan kalender peserta.
+
+**Business Rules:**
+
+- **Periode** mentor diturunkan dari batch kelas yang ia bimbing (`MentorProfile → Class → Field → Batch.startDate/endDate`).
+- **Jendela jam global** dan timezone WIB sama persis dengan absensi peserta (§6.9.2).
+- **Hanya hari kerja:** Sabtu/Minggu dan `Holiday` (§9.6.1) tidak dapat di-check-in; tanggal di luar periode ditolak.
+- **Idempoten:** maksimum satu check-in per hari (unique `(userId, date)`; percobaan kedua → 409).
+- **Server-authoritative:** endpoint `POST /api/mentor/attendance/check-in` menghitung waktu WIB sendiri dan memvalidasi seluruh gating; jam klien tidak dipercaya. Pembacaan kalender via `GET /api/mentor/attendance?year=&month=`.
+- **Penyimpanan:** memakai ulang tabel `Attendance` dengan `userId` mentor (tanpa perubahan skema). Karena mentor tidak memiliki `InternshipProfile`, baris absensi mentor **tidak** muncul atau terhitung pada roster/rekap **Absensi Peserta** mana pun.
+- **Modifikasi:** hanya Admin yang dapat mengoreksi absensi (konsisten dengan §6.9.2); mentor tidak dapat mengubah absensinya sendiri setelah tercatat.
+- **Status absensi** (Hadir/Tidak Hadir/Belum) dan derivasi "hari kerja lampau tanpa baris = Tidak Hadir" mengikuti aturan yang sama dengan peserta.
+
+**Dashboard:** Kartu informasi "Kehadiran hari ini" pada hero dashboard mentor diganti menjadi **tombol Check-In pribadi** (meniru hero Peserta Magang). Kartu donut **Kehadiran Kelas** (ringkasan kehadiran peserta) tetap ditampilkan di bawah hero.
 
 #### 6.9.3 Fitur Tugas
 

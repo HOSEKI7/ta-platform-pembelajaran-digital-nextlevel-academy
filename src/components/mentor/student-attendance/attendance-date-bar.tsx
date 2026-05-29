@@ -16,7 +16,7 @@ import {
   formatLongID,
   isoToLocalDate,
   localDateToISO,
-} from "@/components/mentor/attendance/attendance-format";
+} from "@/components/mentor/student-attendance/attendance-format";
 
 type Props = {
   /** Currently selected date "yyyy-MM-dd". */

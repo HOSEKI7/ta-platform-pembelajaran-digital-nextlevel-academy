@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { Role } from "@/generated/prisma";
 import { requireRole } from "@/lib/auth-server";
 import { loadMentorContext } from "@/lib/mentor-data-loader";
-import { wibTodayISO } from "@/components/mentor/attendance/attendance-format";
+import { wibTodayISO } from "@/components/mentor/student-attendance/attendance-format";
 
 import { MentorEmptyState } from "@/components/mentor/mentor-empty-state";
 import { CreateTaskView } from "@/components/mentor/tasks/create/create-task-view";

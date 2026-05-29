@@ -82,7 +82,7 @@ export function InternshipSidebar({
       {/* Nav */}
       <nav
         aria-label="Menu peserta magang"
-        className="flex-1 overflow-y-auto px-3 pb-4 pt-2"
+        className="flex-1 overflow-hidden px-3 pb-4 pt-2"
       >
         <ul className="space-y-1">
           {INTERNSHIP_NAV_ITEMS.map((item) => (
@@ -104,7 +104,7 @@ export function InternshipSidebar({
       {!isCollapsed ? (
         <div className="border-t border-zinc-200 px-5 py-4 text-[11px] text-zinc-500 dark:border-[color:var(--color-surface-border)] dark:text-zinc-400">
           <p className="font-semibold uppercase tracking-[0.18em] text-zinc-400 dark:text-zinc-500">
-            NextLevel · WIB
+            NextLevel Academy
           </p>
           <p className="mt-1 leading-relaxed">
             Disiplin absen, tuntaskan tugas tepat waktu.

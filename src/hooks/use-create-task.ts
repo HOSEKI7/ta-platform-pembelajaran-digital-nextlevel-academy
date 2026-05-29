@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { mentorKeys } from "@/hooks/use-mentor-attendance";
+import { mentorKeys } from "@/lib/mentor-query-keys";
 
 export type CreateTaskPayload = {
   title: string;

@@ -7,11 +7,11 @@ import { toast } from "sonner";
 import type { MentorAttendanceData } from "@/lib/mentor-types";
 import { StudentPageContainer } from "@/components/dashboard/shared/student-page-container";
 import { PageHeader } from "@/components/dashboard/shared/page-header";
-import { useMentorAttendanceQuery } from "@/hooks/use-mentor-attendance";
-import { AttendanceDateBar } from "@/components/mentor/attendance/attendance-date-bar";
-import { AttendanceSummaryCard } from "@/components/mentor/attendance/attendance-summary-card";
-import { AttendanceRoster } from "@/components/mentor/attendance/attendance-roster";
-import { minISO, wibTodayISO } from "@/components/mentor/attendance/attendance-format";
+import { useMentorStudentAttendanceQuery } from "@/hooks/use-mentor-student-attendance";
+import { AttendanceDateBar } from "@/components/mentor/student-attendance/attendance-date-bar";
+import { AttendanceSummaryCard } from "@/components/mentor/student-attendance/attendance-summary-card";
+import { AttendanceRoster } from "@/components/mentor/student-attendance/attendance-roster";
+import { minISO, wibTodayISO } from "@/components/mentor/student-attendance/attendance-format";
 
 type Props = {
   initialData: MentorAttendanceData;
@@ -35,7 +35,7 @@ export function MentorAttendanceView({ initialData, initialDateISO }: Props) {
   const candidate = urlDate && DATE_RE.test(urlDate) ? urlDate : initialDateISO;
   const dateISO = candidate > maxISO ? maxISO : candidate;
 
-  const query = useMentorAttendanceQuery(
+  const query = useMentorStudentAttendanceQuery(
     dateISO,
     dateISO === initialDateISO ? initialData : undefined,
   );

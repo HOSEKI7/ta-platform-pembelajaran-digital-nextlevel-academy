@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { mentorKeys } from "@/hooks/use-mentor-attendance";
+import { mentorKeys } from "@/lib/mentor-query-keys";
 import type { CreateTaskPayload } from "@/hooks/use-create-task";
 
 export type AttachmentAction = "keep" | "remove" | "replace";

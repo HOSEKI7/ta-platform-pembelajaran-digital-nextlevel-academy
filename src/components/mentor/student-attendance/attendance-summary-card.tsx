@@ -4,7 +4,7 @@ import { CalendarCheck, CalendarOff } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { MentorAttendanceDay, MentorWindowState } from "@/lib/mentor-types";
-import { formatLongID } from "@/components/mentor/attendance/attendance-format";
+import { formatLongID } from "@/components/mentor/student-attendance/attendance-format";
 
 type Props = {
   day: MentorAttendanceDay;

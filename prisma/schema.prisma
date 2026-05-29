@@ -776,6 +776,7 @@ model FinalGrade {
   studentId      String    @unique
   mentorId       String
   grade          Int?
+  note           String?
   gradedAt       DateTime?
   lastEditedById String?
   updatedAt      DateTime  @updatedAt

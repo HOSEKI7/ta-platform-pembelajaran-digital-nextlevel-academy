@@ -8,7 +8,7 @@ import type {
   MentorAttendanceDay,
   MentorAttendanceStudentRow,
 } from "@/lib/mentor-types";
-import { AttendanceStatusPill } from "@/components/mentor/attendance/attendance-status-pill";
+import { AttendanceStatusPill } from "@/components/mentor/student-attendance/attendance-status-pill";
 
 type Props = {
   day: MentorAttendanceDay;

@@ -9,6 +9,7 @@ import {
 
 import { cn } from "@/lib/utils";
 import { StudentPageContainer } from "@/components/dashboard/shared/student-page-container";
+import { useMentorCheckInMutation } from "@/hooks/use-mentor-attendance";
 import type { AttendanceWindow } from "@/lib/internship-types";
 import type { MentorDashboardData } from "@/lib/mentor-types";
 
@@ -35,6 +36,8 @@ export function MentorDashboard({
   window,
   data,
 }: Props) {
+  const checkIn = useMentorCheckInMutation();
+
   const stats: ReadonlyArray<{
     icon: LucideIcon;
     label: string;
@@ -75,7 +78,11 @@ export function MentorDashboard({
         serverNowISO={serverNowISO}
         context={data.context}
         window={window}
-        attendance={data.attendance}
+        status={data.selfAttendance.status}
+        checkInLabel={data.selfAttendance.checkInLabel}
+        checkable={data.selfAttendance.checkable}
+        isPending={checkIn.isPending}
+        onCheckIn={() => checkIn.mutate()}
       />
 
       <div className="grid gap-4 sm:grid-cols-3">

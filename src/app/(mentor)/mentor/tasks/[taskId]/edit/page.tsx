@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { Role } from "@/generated/prisma";
 import { requireRole } from "@/lib/auth-server";
 import { loadMentorTaskForEdit } from "@/lib/mentor-data-loader";
-import { wibTodayISO } from "@/components/mentor/attendance/attendance-format";
+import { wibTodayISO } from "@/components/mentor/student-attendance/attendance-format";
 
 import { EditTaskView } from "@/components/mentor/tasks/edit/edit-task-view";
 

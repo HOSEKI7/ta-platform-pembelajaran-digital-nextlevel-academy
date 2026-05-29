@@ -2,17 +2,11 @@
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
+import { mentorKeys } from "@/lib/mentor-query-keys";
 import type { MentorAttendanceData } from "@/lib/mentor-types";
 
-/** Query-key factory for all mentor-scoped client queries. */
-export const mentorKeys = {
-  all: ["mentor"] as const,
-  attendanceByDate: (dateISO: string) =>
-    [...mentorKeys.all, "attendance", dateISO] as const,
-};
-
 async function fetchAttendance(dateISO: string): Promise<MentorAttendanceData> {
-  const res = await fetch(`/api/mentor/attendance?date=${dateISO}`, {
+  const res = await fetch(`/api/mentor/student-attendance?date=${dateISO}`, {
     headers: { Accept: "application/json" },
   });
   if (!res.ok) {
@@ -28,12 +22,12 @@ async function fetchAttendance(dateISO: string): Promise<MentorAttendanceData> {
  * other dates fetch on demand and stay cached (staleTime) so re-visiting a date
  * doesn't re-hit the server.
  */
-export function useMentorAttendanceQuery(
+export function useMentorStudentAttendanceQuery(
   dateISO: string,
   initialData?: MentorAttendanceData,
 ) {
   return useQuery({
-    queryKey: mentorKeys.attendanceByDate(dateISO),
+    queryKey: mentorKeys.studentAttendanceByDate(dateISO),
     queryFn: () => fetchAttendance(dateISO),
     initialData,
     placeholderData: keepPreviousData,
