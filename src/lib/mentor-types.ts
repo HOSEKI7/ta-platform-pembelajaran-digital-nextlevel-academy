@@ -62,6 +62,30 @@ export type MentorContextBundle = {
   period: { startISO: string; endISO: string };
 };
 
+/**
+ * One class task in the mentor's "Kelola Tugas" list. Unlike `MentorActiveTask`
+ * (dashboard, active only), this covers every task — upcoming and past — with
+ * its submission progress so the list can show "x/total siswa".
+ */
+export type MentorTaskRow = {
+  id: string;
+  title: string;
+  deadlineISO: string;
+  /** Submissions with status SUBMITTED (matches dashboard convention). */
+  submittedCount: number;
+  /** Peserta Magang in the class (cap 10). */
+  totalStudents: number;
+  /** Whether a mentor attachment is set (drives the footer label). */
+  hasAttachment: boolean;
+};
+
+export type MentorTasksData = {
+  context: MentorContext;
+  tasks: MentorTaskRow[];
+  /** Server "now" (ISO) so urgency / split math is deterministic on hydration. */
+  serverNowISO: string;
+};
+
 /** A single mentee in the mentor's class (Daftar Peserta). */
 export type MentorStudentRow = {
   id: string; // InternshipProfile.id

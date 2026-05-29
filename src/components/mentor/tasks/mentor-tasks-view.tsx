@@ -4,38 +4,72 @@ import { useMemo, useState } from "react";
 import {
   CheckCircle2,
   ClipboardList,
+  History,
   Inbox,
   ListTodo,
+  Plus,
   Search,
   SearchX,
+  Send,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
+import type { MentorTaskRow, MentorTasksData } from "@/lib/mentor-types";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/dashboard/shared/page-header";
 import { StudentPageContainer } from "@/components/dashboard/shared/student-page-container";
 
-import { TaskCard } from "./task-card";
-import { resolveStatus, splitByDeadline, type MagangTask } from "./task-helpers";
+import { MentorTaskCard } from "./mentor-task-card";
 
 type Props = {
-  tasks: MagangTask[];
-  /** Server-captured "now" for deterministic deadline math across hydration. */
-  serverNowISO: string;
+  data: MentorTasksData;
 };
 
 type TabKey = "akan-datang" | "telah-lewat";
 
+/** Split tasks into upcoming (deadline ≥ now) / past (deadline < now). */
+function splitByDeadline(
+  tasks: MentorTaskRow[],
+  now: Date,
+): { upcoming: MentorTaskRow[]; past: MentorTaskRow[] } {
+  const upcoming: MentorTaskRow[] = [];
+  const past: MentorTaskRow[] = [];
+  for (const t of tasks) {
+    if (new Date(t.deadlineISO).getTime() >= now.getTime()) upcoming.push(t);
+    else past.push(t);
+  }
+  upcoming.sort((a, b) => +new Date(a.deadlineISO) - +new Date(b.deadlineISO));
+  past.sort((a, b) => +new Date(b.deadlineISO) - +new Date(a.deadlineISO));
+  return { upcoming, past };
+}
+
 /**
- * Client composer for `/internship/tasks`. Splits the mock tasks into upcoming
- * vs. past by deadline (PRD §6.9.3 "Riwayat Tugas") and shows a quick recap
- * strip above the tabbed grid.
+ * Client composer for `/mentor/tasks` (Kelola Tugas). Mirrors the intern
+ * `TasksView` layout — recap strip + Akan Datang/Telah Lewat tabs — but each
+ * card shows class-wide submission progress, and the toolbar adds a name search
+ * plus a (placeholder) "Buat Tugas Baru" CTA.
  */
-export function TasksView({ tasks, serverNowISO }: Props) {
+export function MentorTasksView({ data }: Props) {
+  const { context, tasks, serverNowISO } = data;
   const now = useMemo(() => new Date(serverNowISO), [serverNowISO]);
+
   const [tab, setTab] = useState<TabKey>("akan-datang");
   const [query, setQuery] = useState("");
   const q = query.trim().toLowerCase();
+
+  // Recap is computed from the full set, independent of search / tab.
+  const recap = useMemo(() => {
+    const { upcoming, past } = splitByDeadline(tasks, now);
+    const totalSubmissions = tasks.reduce((sum, t) => sum + t.submittedCount, 0);
+    return {
+      total: tasks.length,
+      active: upcoming.length,
+      past: past.length,
+      totalSubmissions,
+    };
+  }, [tasks, now]);
 
   // Search first, then split — tab counts + grid reflect the search.
   const filtered = useMemo(
@@ -46,41 +80,43 @@ export function TasksView({ tasks, serverNowISO }: Props) {
     () => splitByDeadline(filtered, now),
     [filtered, now],
   );
-
-  const recap = useMemo(() => {
-    let terkumpul = 0;
-    let menunggu = 0;
-    let terlewat = 0;
-    for (const t of tasks) {
-      const s = resolveStatus(t, now);
-      if (s === "TERKUMPUL") terkumpul += 1;
-      else if (s === "TERLEWAT") terlewat += 1;
-      else menunggu += 1; // BELUM | DIKEMBALIKAN
-    }
-    return { total: tasks.length, terkumpul, menunggu, terlewat };
-  }, [tasks, now]);
-
   const active = tab === "akan-datang" ? upcoming : past;
+
+  const onCreate = () =>
+    toast.info("Segera hadir", {
+      description: "Fitur buat tugas baru sedang disiapkan.",
+    });
 
   return (
     <StudentPageContainer>
-      <PageHeader
-        eyebrow="Magang · Tugas"
-        title="Daftar"
-        accent="Tugas"
-        description="Pantau tugas dari mentor, perhatikan tenggat waktunya, dan kumpulkan hasil kerjamu tepat waktu."
-      />
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <PageHeader
+          eyebrow="Mentor · Tugas"
+          title="Kelola"
+          accent="Tugas"
+          description={`Pantau progres pengumpulan tugas peserta di kelas bimbinganmu — ${context.classFullName}.`}
+        />
+        <Button
+          type="button"
+          size="lg"
+          onClick={onCreate}
+          className="shrink-0 self-start bg-[color:var(--color-brand-600)] px-4 text-white shadow-[0_14px_30px_-14px_rgba(34,91,215,0.7)] hover:bg-[color:var(--color-brand-700)] lg:self-auto"
+        >
+          <Plus className="size-4" strokeWidth={2.4} />
+          Buat Tugas Baru
+        </Button>
+      </div>
 
       {/* Recap strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <RecapStat icon={ListTodo} label="Total Tugas" value={recap.total} tone="brand" />
-        <RecapStat icon={CheckCircle2} label="Terkumpul" value={recap.terkumpul} tone="success" />
-        <RecapStat icon={ClipboardList} label="Perlu Dikerjakan" value={recap.menunggu} tone="warning" />
-        <RecapStat icon={Inbox} label="Tidak Dikumpulkan" value={recap.terlewat} tone="danger" />
+        <RecapStat icon={ClipboardList} label="Tugas Aktif" value={recap.active} tone="warning" />
+        <RecapStat icon={History} label="Telah Lewat" value={recap.past} tone="muted" />
+        <RecapStat icon={Send} label="Total Pengumpulan" value={recap.totalSubmissions} tone="success" />
       </div>
 
-      {/* Toolbar: tabs + search */}
       <div className="flex flex-col gap-6">
+        {/* Toolbar: tabs + search */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div
             role="tablist"
@@ -124,7 +160,7 @@ export function TasksView({ tasks, serverNowISO }: Props) {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {active.map((task) => (
-              <TaskCard key={task.id} task={task} now={now} />
+              <MentorTaskCard key={task.id} task={task} now={now} />
             ))}
           </div>
         )}
@@ -135,7 +171,7 @@ export function TasksView({ tasks, serverNowISO }: Props) {
 
 // ---- Sub-components ----------------------------------------------------------
 
-type RecapTone = "brand" | "success" | "warning" | "danger";
+type RecapTone = "brand" | "success" | "warning" | "muted";
 
 const RECAP_ICON_TONE: Record<RecapTone, string> = {
   brand:
@@ -144,8 +180,8 @@ const RECAP_ICON_TONE: Record<RecapTone, string> = {
     "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30",
   warning:
     "bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30",
-  danger:
-    "bg-red-50 text-red-700 ring-red-200 dark:bg-red-500/15 dark:text-red-300 dark:ring-red-500/30",
+  muted:
+    "bg-zinc-100 text-zinc-600 ring-zinc-200 dark:bg-white/10 dark:text-zinc-300 dark:ring-white/15",
 };
 
 function RecapStat({
@@ -225,13 +261,13 @@ function EmptyTab({ tab, searching }: { tab: TabKey; searching: boolean }) {
   const title = searching
     ? "Tidak ada tugas yang cocok"
     : tab === "akan-datang"
-      ? "Tidak ada tugas yang akan datang"
+      ? "Belum ada tugas yang akan datang"
       : "Belum ada riwayat tugas";
 
   const body = searching
     ? "Coba kata kunci lain atau periksa tab satunya."
     : tab === "akan-datang"
-      ? "Semua tugas dengan tenggat mendatang sudah beres. Mantap!"
+      ? "Buat tugas baru untuk peserta di kelas ini."
       : "Tugas yang sudah melewati tenggat akan muncul di sini.";
 
   return (

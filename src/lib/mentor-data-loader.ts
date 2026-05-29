@@ -21,6 +21,8 @@ import type {
   MentorContextBundle,
   MentorDashboardData,
   MentorStudentsData,
+  MentorTaskRow,
+  MentorTasksData,
   MentorWindowState,
 } from "@/lib/mentor-types";
 
@@ -144,6 +146,50 @@ export async function loadMentorStudents(
       institution: r.institution,
       image: r.user.image,
     })),
+  };
+}
+
+// ---- kelola tugas (class-scoped task list with submission progress) ---------
+/**
+ * Every task in the mentor's class (upcoming + past) with its submission
+ * progress, for the "Kelola Tugas" list. One task query (submissions included →
+ * no N+1) plus a mentee count run in parallel. Returns `null` when the mentor
+ * isn't assigned a class.
+ */
+export async function loadMentorTasks(
+  userId: string,
+): Promise<MentorTasksData | null> {
+  const p = await fetchMentorProfile(userId);
+  if (!p) return null;
+
+  const [totalStudents, taskRows] = await Promise.all([
+    prisma.internshipProfile.count({ where: { classId: p.classId } }),
+    prisma.task.findMany({
+      where: { classId: p.classId },
+      select: {
+        id: true,
+        title: true,
+        deadline: true,
+        attachmentUrl: true,
+        submissions: { select: { status: true } },
+      },
+      orderBy: { deadline: "asc" },
+    }),
+  ]);
+
+  const tasks: MentorTaskRow[] = taskRows.map((t) => ({
+    id: t.id,
+    title: t.title,
+    deadlineISO: t.deadline.toISOString(),
+    submittedCount: t.submissions.filter((s) => s.status === "SUBMITTED").length,
+    totalStudents,
+    hasAttachment: Boolean(t.attachmentUrl),
+  }));
+
+  return {
+    context: toContext(p, totalStudents),
+    tasks,
+    serverNowISO: new Date().toISOString(),
   };
 }
 
