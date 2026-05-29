@@ -29,6 +29,7 @@ import { StudentPageContainer } from "@/components/dashboard/shared/student-page
 import { useTaskSubmitMutation } from "@/hooks/use-internship-task-submit";
 
 import { MentorFeedbackCard } from "./mentor-feedback-card";
+import { RichTextContent } from "./rich-text-content";
 import { SubmissionCelebration } from "./submission-celebration";
 import { SubmissionDropzone } from "./submission-dropzone";
 import { TaskStatusBadge } from "./task-status-badge";
@@ -157,7 +158,6 @@ export function TaskDetailView({ task, serverNowISO }: Props) {
     else scrollToDropzone();
   }
 
-  const paragraphs = task.description.split(/\n\n+/).filter(Boolean);
   const AttachmentIcon = task.attachment ? ATTACHMENT_ICON[task.attachment.kind] : null;
 
   return (
@@ -315,11 +315,10 @@ export function TaskDetailView({ task, serverNowISO }: Props) {
             <h2 className="font-heading text-lg font-bold text-zinc-900 dark:text-zinc-100">
               Instruksi Tugas
             </h2>
-            <div className="mt-3 flex flex-col gap-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
-              {paragraphs.map((p, i) => (
-                <p key={i}>{p}</p>
-              ))}
-            </div>
+            <RichTextContent
+              html={task.description}
+              className="mt-3 text-zinc-600 dark:text-zinc-300"
+            />
 
             {task.requirements && task.requirements.length > 0 ? (
               <div className="mt-5 rounded-2xl bg-zinc-50 p-4 ring-1 ring-zinc-100 dark:bg-white/[0.03] dark:ring-[color:var(--color-surface-border)]">

@@ -1,9 +1,32 @@
-# Task: Kelola Tugas Mentor + Pencarian Tugas — SELESAI ✅
+# Task: Halaman Buat Tugas Baru (Mentor) — /mentor/tasks/new — SELESAI ✅
 
-- [x] 1. Tipe `MentorTaskRow` / `MentorTasksData` di `src/lib/mentor-types.ts`
-- [x] 2. Loader `loadMentorTasks()` di `src/lib/mentor-data-loader.ts` (anti-N+1)
-- [x] 3. Halaman `src/app/(mentor)/mentor/tasks/page.tsx`
-- [x] 4. View `src/components/mentor/tasks/mentor-tasks-view.tsx` (header + tombol Buat Tugas + recap + search + tab)
-- [x] 5. Kartu `src/components/mentor/tasks/mentor-task-card.tsx` (Progres Pengumpulan)
-- [x] 6. Tambah search ke `src/components/internship/tasks/tasks-view.tsx`
-- [x] 7. Verifikasi: `npx tsc --noEmit` + `npm run lint` bersih; Playwright (mentor Syarif): 6 tugas, recap 4/2/2, progress bar, search filter OK, tombol Buat Tugas = toast (tanpa navigasi), 0 console error.
+## A. Dependency
+- [x] Install `@tiptap/extension-image` + `@tiptap/extension-placeholder` (pin 3.23.2 agar peer cocok core)
+- [x] Context7 cek API Tiptap v3 (extend Image addAttributes)
+
+## B. Storage + rendering deskripsi
+- [x] `bunny-storage.ts`: `uploadTaskImage`, `uploadTaskAttachment` + konstanta gambar
+- [x] `src/lib/task-description.ts` (normalize+count + sign, server-only)
+- [x] `rich-text-content.tsx` + `.task-prose` di globals.css
+- [x] `internship-task-loader.ts`: sign deskripsi di detail
+- [x] `task-detail-view.tsx`: render RichTextContent
+- [x] seed: deskripsi → HTML `<p>`
+
+## C. Editor + upload gambar
+- [x] `task-description-editor.tsx` (maks 1 gambar, paste/drop/tombol)
+- [x] `POST /api/mentor/tasks/images`
+
+## D. Form + halaman + API create
+- [x] `validators/mentor-tasks.ts`
+- [x] `deadline-picker.tsx`
+- [x] `create-task-view.tsx`
+- [x] `(mentor)/mentor/tasks/new/page.tsx`
+- [x] `use-create-task.ts`
+- [x] `POST /api/mentor/tasks` (create + notif TASK_ASSIGNED, maks 1 gambar, WIB→UTC)
+
+## E. Sambungkan tombol
+- [x] `mentor-tasks-view.tsx`: Buat Tugas Baru → /mentor/tasks/new
+
+## Verifikasi
+- [x] tsc + lint bersih
+- [x] Playwright: buat tugas teks (deadline 05/06 17:00 WIB), redirect ke list (Total 7), kalender disable tanggal lampau, deskripsi rich-text tampil di detail siswa (akun magang sekelas). Gambar/lampiran perlu env BUNNY_STORAGE_* (belum diuji unggah).

@@ -706,3 +706,106 @@
     opacity: 1;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Rich-text task description (Tiptap HTML). Shared by the mentor editor preview
+   and the read-only renderer (RichTextContent) on the task detail pages.
+   No typography plugin is installed, so styles are defined explicitly.
+--------------------------------------------------------------------------- */
+.task-prose {
+  font-size: 0.875rem;
+  line-height: 1.7;
+  color: inherit;
+  word-break: break-word;
+}
+.task-prose > :first-child {
+  margin-top: 0;
+}
+.task-prose > :last-child {
+  margin-bottom: 0;
+}
+.task-prose p {
+  margin: 0.75rem 0;
+}
+.task-prose h2 {
+  font-family: var(--font-heading);
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.4;
+  margin: 1.25rem 0 0.5rem;
+}
+.task-prose h3 {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.4;
+  margin: 1rem 0 0.4rem;
+}
+.task-prose ul,
+.task-prose ol {
+  margin: 0.75rem 0;
+  padding-left: 1.4rem;
+}
+.task-prose ul {
+  list-style: disc;
+}
+.task-prose ol {
+  list-style: decimal;
+}
+.task-prose li {
+  margin: 0.25rem 0;
+}
+.task-prose a {
+  color: var(--color-brand-700);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-weight: 500;
+}
+.dark .task-prose a {
+  color: var(--color-brand-300);
+}
+.task-prose strong {
+  font-weight: 700;
+}
+.task-prose blockquote {
+  margin: 0.9rem 0;
+  padding: 0.25rem 0 0.25rem 1rem;
+  border-left: 3px solid var(--color-brand-300);
+  color: #52525b;
+  font-style: italic;
+}
+.dark .task-prose blockquote {
+  border-left-color: var(--color-brand-500);
+  color: #a1a1aa;
+}
+.task-prose code {
+  font-family: var(--font-mono);
+  font-size: 0.8em;
+  background: rgba(0, 0, 0, 0.06);
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.35rem;
+}
+.dark .task-prose code {
+  background: rgba(255, 255, 255, 0.1);
+}
+.task-prose img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1rem 0;
+  border-radius: 0.75rem;
+}
+.task-prose hr {
+  margin: 1.25rem 0;
+  border: 0;
+  border-top: 1px solid var(--color-surface-border, rgba(0, 0, 0, 0.1));
+}
+/* In-editor placeholder (Tiptap Placeholder extension). */
+.task-prose p.is-editor-empty:first-child::before,
+.task-prose p.is-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: #a1a1aa;
+}

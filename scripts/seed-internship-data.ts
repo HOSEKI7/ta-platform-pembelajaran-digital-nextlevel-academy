@@ -355,12 +355,21 @@ async function main() {
     },
   });
 
+  // Task descriptions are now rich-text HTML (rendered via RichTextContent on
+  // the detail page). Convert the plain-text seed copy into simple paragraphs.
+  const toDescriptionHtml = (text: string): string =>
+    text
+      .split(/\n\n+/)
+      .map((p) => `<p>${p.replace(/\n/g, "<br>").trim()}</p>`)
+      .filter((p) => p !== "<p></p>")
+      .join("");
+
   for (const t of tasks) {
     await db.task.upsert({
       where: { id: t.id },
       update: {
         title: t.title,
-        description: t.description,
+        description: toDescriptionHtml(t.description),
         deadline: t.deadline,
         attachmentUrl: t.attachment?.url ?? null,
         attachmentName: t.attachment?.name ?? null,
@@ -373,7 +382,7 @@ async function main() {
       create: {
         id: t.id,
         title: t.title,
-        description: t.description,
+        description: toDescriptionHtml(t.description),
         deadline: t.deadline,
         attachmentUrl: t.attachment?.url ?? null,
         attachmentName: t.attachment?.name ?? null,

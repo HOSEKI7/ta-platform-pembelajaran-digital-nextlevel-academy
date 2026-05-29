@@ -2,6 +2,7 @@ import "server-only";
 
 import { prisma } from "@/lib/prisma";
 import { isExternalUrl, resolveTaskFileUrl } from "@/lib/bunny-storage";
+import { signTaskDescriptionImages } from "@/lib/task-description";
 import { formatFileSize } from "@/components/internship/tasks/task-helpers";
 import type {
   AttachmentKind,
@@ -185,5 +186,9 @@ export async function loadTaskDetail(
     },
   });
 
-  return row ? mapToMagangTask(row as TaskRow) : null;
+  if (!row) return null;
+  const task = mapToMagangTask(row as TaskRow);
+  // Detail renders the description as rich text — sign inline image paths now
+  // (the list view never shows the body, so signing is detail-only).
+  return { ...task, description: signTaskDescriptionImages(task.description) };
 }

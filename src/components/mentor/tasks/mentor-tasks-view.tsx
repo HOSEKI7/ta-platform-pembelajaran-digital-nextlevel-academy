@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   CheckCircle2,
   ClipboardList,
@@ -12,7 +13,6 @@ import {
   SearchX,
   Send,
 } from "lucide-react";
-import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
 import type { MentorTaskRow, MentorTasksData } from "@/lib/mentor-types";
@@ -52,6 +52,7 @@ function splitByDeadline(
  * plus a (placeholder) "Buat Tugas Baru" CTA.
  */
 export function MentorTasksView({ data }: Props) {
+  const router = useRouter();
   const { context, tasks, serverNowISO } = data;
   const now = useMemo(() => new Date(serverNowISO), [serverNowISO]);
 
@@ -82,10 +83,7 @@ export function MentorTasksView({ data }: Props) {
   );
   const active = tab === "akan-datang" ? upcoming : past;
 
-  const onCreate = () =>
-    toast.info("Segera hadir", {
-      description: "Fitur buat tugas baru sedang disiapkan.",
-    });
+  const onCreate = () => router.push("/mentor/tasks/new");
 
   return (
     <StudentPageContainer>

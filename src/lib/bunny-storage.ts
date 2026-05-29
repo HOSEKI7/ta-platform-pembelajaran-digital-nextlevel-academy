@@ -122,6 +122,52 @@ export async function uploadMentorAttachment(opts: {
   };
 }
 
+// ---- Mentor task creation uploads (mentor-scoped paths) ---------------------
+// The task doesn't exist yet when these run (id chicken-and-egg), so they key
+// by mentorId — same as submissions key by studentId. The stored object path
+// goes into the DB and is signed on read; the folder name is incidental.
+
+/** Allowed inline-image types for the rich-text description editor. */
+export const TASK_IMAGE_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+export const TASK_IMAGE_ALLOWED_TYPES = [
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/gif",
+] as const;
+
+/** Upload a single inline image pasted/dropped in the description editor. */
+export async function uploadTaskImage(opts: {
+  mentorId: string;
+  file: File;
+}): Promise<UploadResult> {
+  const sanitized = sanitizeFileName(opts.file.name);
+  const objectPath = `task-images/${opts.mentorId}/${Date.now()}-${sanitized}`;
+  await putToBunny(objectPath, opts.file);
+  return {
+    objectPath,
+    fileName: sanitized,
+    fileSize: opts.file.size,
+    contentType: opts.file.type || "application/octet-stream",
+  };
+}
+
+/** Upload the mentor's supporting attachment (PDF/DOCX/ZIP) for a new task. */
+export async function uploadTaskAttachment(opts: {
+  mentorId: string;
+  file: File;
+}): Promise<UploadResult> {
+  const sanitized = sanitizeFileName(opts.file.name);
+  const objectPath = `task-attachments/${opts.mentorId}/${Date.now()}-${sanitized}`;
+  await putToBunny(objectPath, opts.file);
+  return {
+    objectPath,
+    fileName: sanitized,
+    fileSize: opts.file.size,
+    contentType: opts.file.type || "application/octet-stream",
+  };
+}
+
 /** Best-effort delete; never throws (used for rollback / replacement). */
 export async function removeBunnyFile(objectPath: string): Promise<void> {
   if (!isBunnyStorageConfigured() || !objectPath) return;
