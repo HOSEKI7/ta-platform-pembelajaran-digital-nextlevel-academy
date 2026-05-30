@@ -942,10 +942,13 @@ Dikirim via **Resend + React Email**.
 
 #### 6.11.3 Manajemen Kursus
 
-**Daftar Kursus:**
+**Daftar Kursus:** _(diimplementasikan di `/admin/courses`)_
 
-- Tabel: thumbnail, judul, kategori, harga, jumlah peserta, tanggal dibuat, status (Published/Draft/Archived).
-- Aksi: Tambah, Edit.
+- Tabel: thumbnail, judul (+ slug), kategori, instruktur, harga, jumlah peserta, tanggal dibuat, **tanggal publish**, status (Published/Draft/Archived).
+- Filter: pencarian judul (debounce), dropdown kategori, dropdown status. Pagination 10/halaman. State filter disimpan di query-param URL (DB-backed, mirror pola katalog).
+- Aksi: **Tambah** (→ `/admin/courses/new`), **Edit** (→ `/admin/courses/[id]/edit`), **Hapus**.
+- **Hapus** dilindungi: kursus yang sudah punya peserta (enrollment) atau transaksi (order) **tidak dapat dihapus** (HTTP 409) — arahkan ke Archive (lihat §6.11.3.2) agar data terjaga. Hanya kursus tanpa peserta/transaksi yang boleh dihapus permanen.
+- `Course.publishedAt` (nullable) di-stamp saat transisi pertama ke Published; Draft/Archived yang belum pernah Published bernilai kosong ("—").
 
 **Detail Kursus:**
 
@@ -1395,8 +1398,10 @@ Course {
   instructorBio String
   instructorImg String
   status        Enum: DRAFT | PUBLISHED | ARCHIVED   ← ganti isPublished
+  isFeatured    Boolean (default false)
   createdAt     DateTime
   updatedAt     DateTime
+  publishedAt   DateTime (nullable — di-stamp saat transisi pertama ke PUBLISHED; kolom "Tanggal Publish" di admin §6.11.3)
 }
 ```
 
