@@ -1137,11 +1137,20 @@ Jika ada yang tidak lolos validasi, sistem menampilkan pesan error spesifik dan 
   (`VOUCHER_CREATE` / `VOUCHER_UPDATE` / `VOUCHER_ACTIVATE` / `VOUCHER_DEACTIVATE` /
   `VOUCHER_DELETE`, beserta admin pelaku). Halaman Edit menampilkan jumlah pemakaian voucher.
 
-#### 6.11.7 Manajemen Sertifikat
+#### 6.11.7 Manajemen Sertifikat _(implemented)_
 
-- Tabel seluruh sertifikat yang diterbitkan: penerima, kursus, tanggal terbit, nomor sertifikat.
-- Konfigurasi global expiration date (input jumlah tahun, atau kosong untuk no expiry).
-- Admin tidak dapat mencabut sertifikat yang sudah diterbitkan (read-only untuk admin).
+- Halaman `/admin/certificates` — **read-only monitoring + lookup**. Tabel seluruh sertifikat yang
+  diterbitkan: penerima (nama + email + avatar), kursus, tanggal terbit, nomor sertifikat, dan **status
+  validitas** (Valid / Kedaluwarsa, diturunkan dari `expiresAt`). Dilengkapi pencarian (nomor / nama /
+  email / kursus), filter status + kursus, urut tanggal terbit, dan pagination (10/halaman).
+- **Aksi per-baris (non-destruktif):** unduh ulang PDF + buka halaman verifikasi publik (`/cert/:id`).
+- **Konfigurasi global expiration** (panel "Pengaturan Sertifikat" di halaman ini): input jumlah tahun
+  (kosong = no expiry), tersimpan di `platform_setting` key `CERTIFICATE_EXPIRY_YEARS` (dibaca
+  `computeCertExpiry` saat klaim). **Non-retroaktif** — hanya memengaruhi sertifikat yang diterbitkan
+  setelahnya; sertifikat lama tetap memakai `expiresAt` yang sudah ter-stamp. Disimpan lewat dialog
+  konfirmasi + dicatat ke `AuditLog` (`CERT_EXPIRY_UPDATE`). _(Keputusan: ditempatkan di sini, bukan di
+  §6.13 Pengaturan yang belum dibangun.)_
+- Admin **tidak dapat mencabut/mengedit** sertifikat yang sudah diterbitkan (read-only untuk admin).
 
 #### 6.11.8 Manajemen Gamifikasi
 
