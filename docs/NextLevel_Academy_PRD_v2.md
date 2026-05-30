@@ -1082,10 +1082,29 @@ Jika ada yang tidak lolos validasi, sistem menampilkan pesan error spesifik dan 
 
 #### 6.11.5 Manajemen Transaksi
 
-- Tabel seluruh transaksi: user, kursus, jumlah, metode, status, tanggal.
-- Filter: status, rentang tanggal, kursus, user.
-- Detail transaksi: seluruh informasi order + webhook log dari payment gateway (Midtrans).
-- Admin dapat menambahkan catatan manual pada transaksi (untuk keperluan dispute handling).
+- Tabel seluruh transaksi **Peserta Didik** (`/admin/transactions`): kolom ID,
+  Tanggal (WIB), Pengguna (nama+email), Kursus, Jumlah (IDR), Status, dan aksi
+  **Detail**. Semua status ditampilkan (PENDING/SUCCESS/FAILED/EXPIRED).
+- **Search** by ID transaksi, nama/email pengguna, atau judul kursus (insensitive,
+  satu kotak), **sort** berdasarkan tanggal (Terbaru/Terlama), dan **filter status**.
+  State filter/sort/search/halaman tersimpan di URL.
+- **Detail transaksi** identik dengan kartu invoice Peserta Didik (komponen `InvoiceCard`
+  yang sama). CTA berbeda untuk admin:
+  - **Terima Pembayaran** (hanya order PENDING) → menjalankan jalur fulfillment penuh
+    (`fulfillOrderPaid`): status → SUCCESS + `paidAt`, buat `Enrollment`, kirim email
+    konfirmasi. SUCCESS bersifat immutable (guard 409 untuk order non-PENDING).
+  - **Batalkan Pembayaran** (hanya order PENDING) → status → **FAILED** (tanpa enrollment).
+  - **Unduh** bukti transaksi sebagai gambar PNG (hanya order SUCCESS).
+  - **Hapus (soft delete)** → set `Order.deletedAt`; transaksi hilang dari daftar admin
+    tetapi baris tetap disimpan untuk audit dan tidak menghapus enrollment yang sudah aktif.
+    Riwayat Peserta Didik tidak terpengaruh (loader Peserta Didik tidak memfilter `deletedAt`).
+- Semua aksi Terima/Batalkan/Hapus dikonfirmasi via dialog dan dicatat di `AuditLog`
+  (`ORDER_ACCEPT` / `ORDER_CANCEL` / `ORDER_DELETE`, beserta admin pelaku).
+- **Notifikasi peserta**: aksi Terima/Batalkan menulis `Notification` ke peserta
+  (`NotificationType.PAYMENT_ACCEPTED` / `PAYMENT_REJECTED`).
+- **Log Transaksi** pada halaman detail: timeline gabungan event lifecycle order
+  (dibuat / dibayar / kedaluwarsa, diturunkan dari timestamp order) + aksi admin dari
+  `AuditLog`, terurut terbaru lebih dulu.
 
 #### 6.11.6 Manajemen Voucher
 
