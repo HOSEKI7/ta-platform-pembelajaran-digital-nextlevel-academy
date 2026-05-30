@@ -63,6 +63,11 @@ enum VoucherAudience {
   ALL
 }
 
+enum VoucherDiscountType {
+  PERCENTAGE
+  FIXED
+}
+
 enum BadgeTrigger {
   LEVEL_REACHED
   COURSES_COMPLETED
@@ -591,7 +596,12 @@ model Voucher {
   id                String          @id @default(cuid())
   code              String          @unique
   description       String?
+  // Discount semantics: PERCENTAGE reads `discountPct` (1–100); FIXED reads
+  // `discountAmount` (whole rupiah). System-generated reward vouchers are always
+  // PERCENTAGE, so they are unaffected by the FIXED path.
+  discountType      VoucherDiscountType @default(PERCENTAGE)
   discountPct       Int
+  discountAmount    Int?
   startDate         DateTime
   endDate           DateTime
   maxUsage          Int?

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Loader2, Sparkles, Tag, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { formatVoucherDiscount } from "@/lib/voucher-discount";
 import type { AppliedVoucher } from "@/hooks/use-checkout";
 
 type Props = {
@@ -48,7 +49,7 @@ export function PromoCodeInput({
               Promo {applied.code} aktif
             </p>
             <p className="text-xs text-zinc-600">
-              Hemat {applied.discountPct}%
+              Hemat {formatVoucherDiscount(applied)}
               {applied.description ? ` — ${applied.description}` : ""}
             </p>
           </div>

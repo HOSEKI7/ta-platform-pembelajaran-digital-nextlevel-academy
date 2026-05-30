@@ -1108,10 +1108,34 @@ Jika ada yang tidak lolos validasi, sistem menampilkan pesan error spesifik dan 
 
 #### 6.11.6 Manajemen Voucher
 
-- Tabel seluruh voucher: kode, diskon, berlaku, sisa penggunaan, status.
-- Aksi: Tambah, Edit, Nonaktifkan, Hapus.
-- Form pembuatan/edit voucher: seluruh field sesuai bagian 6.8.2.
-- Tampilkan statistik penggunaan per voucher (berapa kali digunakan, oleh siapa).
+- Tiga halaman: **daftar** (`/admin/vouchers`), **buat** (`/admin/vouchers/new`),
+  dan **edit** (`/admin/vouchers/[voucherId]/edit`).
+- **Daftar** menampilkan **hanya voucher buatan admin** (`isSystemGenerated = false`);
+  voucher hadiah gamifikasi (`NLA-LV…`) dikelola oleh mesin EXP dan **disembunyikan** di sini.
+  Kolom: ID (8 char terakhir), Kode, Deskripsi (opsional), Diskon, Pemakaian
+  (`usageCount / maxUsage`, ∞ bila tak terbatas), Berlaku s/d (endDate, DD/MM/YYYY WIB),
+  Status, dan aksi **Edit** (satu-satunya aksi di tabel).
+- **Search** by kode (insensitive), **sort** by pemakaian (terbanyak/tersedikit) atau
+  tanggal berlaku (terdekat/terlama), dan **filter status**. State tersimpan di URL.
+- **Status diturunkan** (badge & filter): **Terjadwal** (startDate masih di masa depan),
+  **Aktif**, **Nonaktif** (`isActive=false`), **Kedaluwarsa** (lewat endDate),
+  **Habis** (`usageCount ≥ maxUsage`). Presedensi: nonaktif → terjadwal → kedaluwarsa →
+  habis → aktif.
+- **Tipe diskon: persen ATAU nominal rupiah** (`Voucher.discountType` = `PERCENTAGE | FIXED`).
+  PERCENTAGE menyimpan `discountPct` (1–100); FIXED menyimpan `discountAmount` (rupiah).
+  Diskon dihitung oleh helper bersama `computeVoucherDiscount` dan dihormati penuh di checkout
+  (preview + saat order dibuat). Voucher hadiah gamifikasi selalu PERCENTAGE.
+- **Form Buat/Edit**: Kode (unik, case-sensitive, charset `[A-Za-z0-9_-]`), Deskripsi
+  (opsional), Tipe + nilai diskon, Batas pemakaian (opsional; kosong = tak terbatas),
+  Tanggal & waktu mulai (**opsional** — kosong → aktif seketika saat dibuat) dan berakhir
+  (wajib, harus di masa depan saat membuat). Waktu diinput dalam WIB lalu dikonversi ke UTC.
+- **Nonaktifkan/Aktifkan** dan **Hapus** berada di **halaman Edit** (bukan aksi tabel).
+  Nonaktifkan menyetel `isActive=false`. **Hapus diblokir (409)** bila voucher sudah pernah
+  dipakai (ada `VoucherUsage`/`Order`) → admin diarahkan untuk menonaktifkan; hanya voucher
+  yang belum pernah dipakai yang bisa dihapus permanen.
+- Semua aksi tulis dikonfirmasi via dialog dan dicatat di `AuditLog`
+  (`VOUCHER_CREATE` / `VOUCHER_UPDATE` / `VOUCHER_ACTIVATE` / `VOUCHER_DEACTIVATE` /
+  `VOUCHER_DELETE`, beserta admin pelaku). Halaman Edit menampilkan jumlah pemakaian voucher.
 
 #### 6.11.7 Manajemen Sertifikat
 

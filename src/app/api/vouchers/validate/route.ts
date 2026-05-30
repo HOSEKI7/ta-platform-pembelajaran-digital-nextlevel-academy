@@ -64,6 +64,7 @@ export async function POST(request: NextRequest) {
       data: {
         code: result.voucher.code,
         description: result.voucher.description,
+        discountType: result.voucher.discountType,
         discountPct: result.voucher.discountPct,
         discountAmount: result.discountAmount,
         finalPrice: result.finalPrice,

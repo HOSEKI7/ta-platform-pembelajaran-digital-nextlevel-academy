@@ -1,6 +1,8 @@
 import "server-only";
 
 import { prisma } from "@/lib/prisma";
+import type { VoucherDiscountType } from "@/generated/prisma";
+import { computeVoucherDiscount } from "@/lib/voucher-discount";
 
 /**
  * Server-side data assembly for the checkout page (`/checkout/[slug]`).
@@ -106,6 +108,7 @@ export type VoucherValidationOk = {
   voucher: {
     id: string;
     code: string;
+    discountType: VoucherDiscountType;
     discountPct: number;
     description: string | null;
   };
@@ -193,7 +196,7 @@ export async function validateVoucher(args: {
     };
   }
 
-  const discountAmount = Math.floor((course.price * voucher.discountPct) / 100);
+  const discountAmount = computeVoucherDiscount(voucher, course.price);
   const finalPrice = Math.max(0, course.price - discountAmount);
 
   return {
@@ -201,6 +204,7 @@ export async function validateVoucher(args: {
     voucher: {
       id: voucher.id,
       code: voucher.code,
+      discountType: voucher.discountType,
       discountPct: voucher.discountPct,
       description: voucher.description,
     },

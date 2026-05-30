@@ -2,12 +2,15 @@
 
 import { useMutation } from "@tanstack/react-query";
 
+import type { VoucherDiscountType } from "@/generated/prisma";
 import type { CreateOrderInput, ValidateVoucherInput } from "@/lib/validators/checkout";
 
 export type AppliedVoucher = {
   code: string;
   description: string | null;
+  discountType: VoucherDiscountType;
   discountPct: number;
+  /** Computed rupiah discount applied to this course. */
   discountAmount: number;
   finalPrice: number;
 };
