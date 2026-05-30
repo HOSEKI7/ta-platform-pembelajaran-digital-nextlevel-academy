@@ -11,9 +11,10 @@ export const dynamic = "force-dynamic";
 
 /**
  * PATCH /api/admin/steps/[stepId] — edit a VIDEO or QUIZ step (PRD §6.11.3).
- * Replacing a video file (new `bunnyVideoId`) archives the old asset for the
- * 7-day rollback window (VideoArchive) before the new one takes over. Quiz
- * questions are replaced wholesale.
+ * Replacing a video file (new `bunnyVideoId`) points the step at the new asset
+ * and **immediately deletes the old Bunny video** to reclaim storage (user
+ * decision — overrides the PRD's 7-day VideoArchive buffer; no rollback kept).
+ * Quiz questions are replaced wholesale.
  */
 export async function PATCH(req: Request, ctx: { params: Promise<{ stepId: string }> }) {
   const auth = await requireRoleInRoute(Role.ADMINISTRATOR);
@@ -57,10 +58,8 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ stepId: strin
       await prisma.$transaction(async (tx) => {
         await tx.step.update({ where: { id: stepId }, data: { title, description } });
         if (replacing) {
-          // Archive the old asset (7-day rollback window) then point at the new.
-          await tx.videoArchive.create({
-            data: { videoId: replacing.id, bunnyVideoId: replacing.bunnyVideoId },
-          });
+          // Point the step at the freshly uploaded asset (re-enters PROCESSING
+          // until the Bunny webhook reports the new encoding as READY).
           await tx.video.update({
             where: { id: replacing.id },
             data: {
@@ -72,6 +71,13 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ stepId: strin
           });
         }
       });
+
+      // After the swap is committed, delete the old Bunny asset to reclaim
+      // storage automatically (best-effort; never blocks the response).
+      if (replacing) {
+        deleteBunnyVideo(replacing.bunnyVideoId).catch(() => {});
+      }
+
       return NextResponse.json({ data: { id: stepId } });
     }
 

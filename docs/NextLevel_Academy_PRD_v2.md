@@ -1012,9 +1012,9 @@ Ketika admin mengubah status kursus menjadi **Archived**:
 **Penggantian File Video:**
 Jika admin mengganti file video pada step yang sudah ada:
 
-- File baru diupload ke Bunny.net dan mendapat asset_id baru.
-- Database step di-update dengan asset_id yang baru.
-- File video lama **tidak langsung dihapus**, melainkan ditandai **deleted_at = now()**. Sistem akan menghapus file lama secara otomatis setelah **7 hari** untuk memberikan buffer jika terjadi rollback atau kebutuhan pemulihan.
+- File baru diupload ke Bunny.net (via TUS) dan mendapat `bunnyVideoId` baru.
+- Database step di-update dengan `bunnyVideoId` baru (status kembali `PROCESSING` sampai webhook Bunny melaporkan `READY`).
+- **File video lama langsung dihapus dari Bunny** (best-effort, setelah swap DB tersimpan) untuk otomatis menghemat storage — keputusan user, menggantikan buffer rollback 7-hari (`VideoArchive`) sebelumnya. Tidak ada rollback yang dipertahankan.
 
 **Validasi Sebelum Publish:**
 Sebelum status course dapat diubah menjadi Published, sistem memvalidasi:
