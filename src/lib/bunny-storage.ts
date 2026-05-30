@@ -168,6 +168,44 @@ export async function uploadTaskAttachment(opts: {
   };
 }
 
+// ---- Admin course-creation uploads (admin-scoped paths) ---------------------
+// The course doesn't exist yet on the /new submit (id chicken-and-egg), so these
+// key by adminId + timestamp — same rationale as the mentor task uploads above.
+// The stored object path goes into the DB and is signed on read.
+
+/** Upload a course thumbnail or instructor photo (PRD §6.11.3 Form Kursus). */
+export async function uploadCourseAsset(opts: {
+  adminId: string;
+  kind: "thumbnail" | "instructor";
+  file: File;
+}): Promise<UploadResult> {
+  const sanitized = sanitizeFileName(opts.file.name);
+  const objectPath = `course-assets/${opts.kind}/${opts.adminId}/${Date.now()}-${sanitized}`;
+  await putToBunny(objectPath, opts.file);
+  return {
+    objectPath,
+    fileName: sanitized,
+    fileSize: opts.file.size,
+    contentType: opts.file.type || "application/octet-stream",
+  };
+}
+
+/** Upload a single quiz-question image (PRD §6.11.3 Form Tahap Quiz). */
+export async function uploadQuizImage(opts: {
+  adminId: string;
+  file: File;
+}): Promise<UploadResult> {
+  const sanitized = sanitizeFileName(opts.file.name);
+  const objectPath = `quiz-images/${opts.adminId}/${Date.now()}-${sanitized}`;
+  await putToBunny(objectPath, opts.file);
+  return {
+    objectPath,
+    fileName: sanitized,
+    fileSize: opts.file.size,
+    contentType: opts.file.type || "application/octet-stream",
+  };
+}
+
 /** Best-effort delete; never throws (used for rollback / replacement). */
 export async function removeBunnyFile(objectPath: string): Promise<void> {
   if (!isBunnyStorageConfigured() || !objectPath) return;
@@ -213,4 +251,21 @@ export function resolveTaskFileUrl(stored: string | null | undefined): string | 
   if (isExternalUrl(stored)) return stored;
   if (!isBunnyPullZoneConfigured()) return null;
   return signBunnyFileUrl(stored);
+}
+
+/**
+ * Resolve a course image field (thumbnail / instructor photo / quiz image) for
+ * rendering. Polymorphic like `resolveTaskFileUrl`: legacy seed rows store an
+ * external http(s) URL (passthrough), admin-uploaded rows store a Bunny object
+ * path (signed on read). Falls back to the raw value if the pull zone isn't
+ * configured so dev still shows *something*. Empty input → "" (callers default).
+ *
+ * Longer TTL (24h) than task downloads: thumbnails render on public catalog
+ * pages and a fresh signed URL is minted on every SSR render anyway.
+ */
+export function resolveCourseImageUrl(stored: string | null | undefined): string {
+  if (!stored) return "";
+  if (isExternalUrl(stored)) return stored;
+  if (!isBunnyPullZoneConfigured()) return stored;
+  return signBunnyFileUrl(stored, { expiresInSec: 60 * 60 * 24 });
 }

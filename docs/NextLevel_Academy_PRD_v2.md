@@ -1440,9 +1440,14 @@ Step {
 Video {
   id          UUID (PK)
   stepId      UUID (FK → Step, unique)
-  bunnyVideoId String
-  duration    Integer (detik)
+  bunnyVideoId String                  // identitas utama untuk kelola/hapus via Bunny API
+  duration    Integer (detik, default 0)  // terisi dari webhook Bunny saat encoding selesai
+  status      Enum: PROCESSING | READY | FAILED (default PROCESSING)
+  videoUrl    String (nullable)        // CDN HLS playback URL (metadata; player pakai signed iframe embed)
 }
+// Alur upload (admin §6.11.3): file diunggah LANGSUNG dari browser ke Bunny via TUS
+// (server hanya membuat objek video + menandatangani upload), Video disimpan status
+// PROCESSING, lalu webhook Bunny (`/api/webhooks/bunny`) men-set READY + duration + videoUrl.
 
 Quiz {
   id          UUID (PK)

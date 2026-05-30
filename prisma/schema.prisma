@@ -43,6 +43,15 @@ enum StepType {
   QUIZ
 }
 
+// Encoding lifecycle for a Bunny Stream video (PRD §6.11.3). A freshly created
+// video is PROCESSING until Bunny's webhook reports encoding finished → READY,
+// or signals an error → FAILED. Only READY videos are playable by students.
+enum VideoStatus {
+  PROCESSING
+  READY
+  FAILED
+}
+
 enum OrderStatus {
   PENDING
   SUCCESS
@@ -382,10 +391,12 @@ model Step {
 // Active video for a step. Replaced files are kept in VideoArchive (see below)
 // for the 7-day rollback window described in PRD §6.11.3.
 model Video {
-  id           String @id @default(cuid())
-  stepId       String @unique
+  id           String      @id @default(cuid())
+  stepId       String      @unique
   bunnyVideoId String
-  duration     Int // seconds
+  duration     Int         @default(0) // seconds — unknown until Bunny webhook reports it
+  status       VideoStatus @default(PROCESSING)
+  videoUrl     String? // CDN HLS playback URL (metadata; player uses signed iframe embed)
 
   step     Step           @relation(fields: [stepId], references: [id], onDelete: Cascade)
   archives VideoArchive[]
