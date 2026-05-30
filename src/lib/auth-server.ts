@@ -17,6 +17,7 @@ export type AuthUser = {
   username?: string | null;
   bio?: string | null;
   isActive: boolean;
+  mustChangePassword: boolean;
   createdAt: Date;
   updatedAt: Date;
 };

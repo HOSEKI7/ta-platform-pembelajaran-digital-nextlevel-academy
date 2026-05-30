@@ -51,6 +51,15 @@ export const auth = betterAuth({
         defaultValue: true,
         input: false,
       },
+      // Surfaced on session.user so the student layout can force a password
+      // change (set by admin's "Set Password Sementara" action — PRD §6.11.4)
+      // without an extra DB lookup. Server-managed only.
+      mustChangePassword: {
+        type: "boolean",
+        required: false,
+        defaultValue: false,
+        input: false,
+      },
     },
     // PRD §6.1.4: changing email triggers a verification flow before the
     // new address takes effect. We intentionally OMIT

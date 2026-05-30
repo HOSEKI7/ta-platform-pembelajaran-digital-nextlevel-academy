@@ -111,6 +111,13 @@ model User {
   username String? @unique
   bio      String?
   isActive Boolean @default(true)
+  // Soft delete for audit (PRD §6.11.4 "Hapus"): a deleted user is hidden from
+  // the admin list and blocked from login (isActive is also flipped false), but
+  // the row is retained for audit/referential integrity.
+  deletedAt DateTime?
+  // When true, the user must change their password at next login before they can
+  // access any page (set by admin's "Set Password Sementara" action — §6.11.4).
+  mustChangePassword Boolean @default(false)
 
   // ---- Better Auth relations --------------------------------------------
   sessions Session[]
@@ -142,6 +149,7 @@ model User {
 
   @@index([role])
   @@index([isActive])
+  @@index([deletedAt])
   @@map("user")
 }
 

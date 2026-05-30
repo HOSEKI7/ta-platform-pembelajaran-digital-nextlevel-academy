@@ -1070,6 +1070,16 @@ Jika ada yang tidak lolos validasi, sistem menampilkan pesan error spesifik dan 
 - Nonaktifkan: akun tidak bisa login namun data tetap tersimpan.
 - Hapus: soft delete (data tetap ada di database untuk keperluan audit).
 
+**Implementasi (v1.0) — `/admin/users`, `/admin/users/new`, `/admin/users/:id/edit`:**
+
+- Halaman daftar DB-backed meniru pola Manajemen Kursus (loader → API → hook → view ber-URL): pencarian nama/email, filter role & status (Aktif/Nonaktif; akun terhapus selalu disembunyikan), urut tanggal daftar (terbaru/terlama), pagination. Kolom: pengguna (avatar+nama+email), role, kelas (magang/mentor), tanggal daftar, status, aksi (Edit, Nonaktifkan/Aktifkan, Hapus). "Lihat Detail" digabung ke halaman Edit.
+- **Role dikunci** setelah akun dibuat — halaman Edit menampilkan role read-only (tanpa migrasi profil/gamifikasi). Role yang bisa dibuat lewat UI: Peserta Didik, Peserta Magang, Mentor (**bukan** Administrator).
+- **Hapus = soft delete** via kolom baru `User.deletedAt` (sekaligus `isActive=false` + cabut sesi). Admin tidak bisa menghapus akun sendiri maupun akun Administrator. Nonaktifkan = toggle `isActive` (login diblok oleh `databaseHooks.session.create.before` di `auth.ts`).
+- **Password (keputusan keamanan):**
+  - **Mentor / Peserta Magang** — admin men-set password langsung lewat field "Password Baru" opsional di Edit (dikelola penuh oleh admin sesuai aturan di atas).
+  - **Peserta Didik** — admin **tidak** menyimpan password aktif. Aksi **"Set Password Sementara"** (dialog dua-langkah) men-set password sementara + flag baru `User.mustChangePassword=true`. Saat user login, ia diarahkan ke halaman **`/ganti-password`** dan tidak bisa mengakses halaman manapun sampai password diganti; setelah diganti, flag dibersihkan, seluruh sesi dicabut, dan user login ulang dengan password barunya. Peserta Didik & Administrator lain tetap mengandalkan alur reset password mandiri (lupa password).
+- Pembuatan akun memakai hasher resmi Better Auth (`hashPassword` dari `better-auth/crypto`, scrypt default) — membuat baris `User` + `Account` (`providerId:"credential"`, `emailVerified:true`) + profil/kelas (magang/mentor) + `UserGameProfile` (Peserta Didik) dalam satu transaksi. Kelas magang divalidasi terhadap kuota `Class.maxStudents`.
+
 #### 6.11.5 Manajemen Transaksi
 
 - Tabel seluruh transaksi: user, kursus, jumlah, metode, status, tanggal.
