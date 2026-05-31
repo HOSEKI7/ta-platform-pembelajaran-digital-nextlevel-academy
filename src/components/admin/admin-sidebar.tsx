@@ -1,12 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 import { SidebarNavItem } from "@/components/dashboard/sidebar-nav-item";
 
-import { ADMIN_NAV_ITEMS } from "./admin-sidebar-config";
+import { ADMIN_NAV_ITEMS, findActiveGroupLabel } from "./admin-sidebar-config";
+import { AdminNavGroupItem } from "./admin-nav-group";
 
 type Props = {
   collapsed: boolean;
@@ -18,6 +21,21 @@ type Props = {
 export function AdminSidebar({ collapsed, variant = "rail", onNavigate }: Props) {
   const isDrawer = variant === "drawer";
   const isCollapsed = !isDrawer && collapsed;
+
+  // Accordion state: at most one group open. Auto-opens the group containing the
+  // active route, and re-syncs whenever navigation lands inside another group.
+  // Synced during render (React's "adjust state on prop change" pattern) rather
+  // than in an effect, so the open group never lags a frame behind navigation.
+  const pathname = usePathname();
+  const [openGroup, setOpenGroup] = useState<string | null>(() =>
+    findActiveGroupLabel(pathname),
+  );
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname);
+    const active = findActiveGroupLabel(pathname);
+    if (active) setOpenGroup(active);
+  }
 
   return (
     <aside
@@ -78,18 +96,32 @@ export function AdminSidebar({ collapsed, variant = "rail", onNavigate }: Props)
       {/* Nav */}
       <nav aria-label="Menu admin" className="flex-1 overflow-hidden px-3 pb-4 pt-2">
         <ul className="space-y-1">
-          {ADMIN_NAV_ITEMS.map((item) => (
-            <li key={item.href}>
-              <SidebarNavItem
-                href={item.href}
-                label={item.label}
-                icon={item.icon}
-                exact={item.exact}
-                collapsed={isCollapsed}
-                onNavigate={onNavigate}
-              />
-            </li>
-          ))}
+          {ADMIN_NAV_ITEMS.map((item) =>
+            item.kind === "leaf" ? (
+              <li key={item.href}>
+                <SidebarNavItem
+                  href={item.href}
+                  label={item.label}
+                  icon={item.icon}
+                  exact={item.exact}
+                  collapsed={isCollapsed}
+                  onNavigate={onNavigate}
+                />
+              </li>
+            ) : (
+              <li key={item.label}>
+                <AdminNavGroupItem
+                  group={item}
+                  collapsed={isCollapsed}
+                  open={openGroup === item.label}
+                  onToggle={() =>
+                    setOpenGroup((cur) => (cur === item.label ? null : item.label))
+                  }
+                  onNavigate={onNavigate}
+                />
+              </li>
+            ),
+          )}
         </ul>
       </nav>
 

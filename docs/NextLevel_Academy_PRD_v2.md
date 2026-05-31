@@ -190,27 +190,38 @@ Platform ini dirancang sebagai produk SaaS internal yang dikelola sepenuhnya ole
 
 ### 5.3 Struktur Halaman — Admin Panel
 
+Sidebar admin dikelompokkan menjadi item tunggal + **grup dropdown** (accordion — satu
+grup terbuka, otomatis terbuka pada rute aktif; saat sidebar di-collapse, child
+menumpuk vertikal tepat di bawah parent dalam satu blok background menyatu, dengan
+ikon panah pada parent sebagai indikator). Urutan & pengelompokan:
+Dashboard · **Course** (Daftar Course, Kategori Course) · Pengguna · Sertifikat ·
+**Keuangan** (Transaksi, Voucher) · **Gamifikasi** (Aturan EXP, Badge) ·
+**Program Magang** (Absensi, Tugas, Nilai Akhir, Konfigurasi Magang) · Pengaturan.
+
 ```
 /admin
 ├── /admin/dashboard (Analytics)
-├── /admin/courses (Manajemen Kursus)
-│   └── /admin/courses/:id/edit
+├── /admin/courses (Daftar Course)
+│   ├── /admin/courses/:id/edit
+│   └── /admin/courses/categories (Kategori Course)
 ├── /admin/users (Manajemen Pengguna)
 │   └── /admin/users/:id/edit
+├── /admin/certificates (Sertifikat)
 ├── /admin/transactions (Transaksi)
 ├── /admin/vouchers (Voucher)
-├── /admin/certificates (Sertifikat)
-├── /admin/gamification (Gamifikasi)
-│   ├── /admin/gamification/exp-level
-│   ├── /admin/gamification/badges
-│   │   ├── /admin/gamification/badges/create
-│   │   └── /admin/gamification/badges/:id/edit
+├── /admin/gamification → redirect ke /admin/gamification/exp-rules
+│   ├── /admin/gamification/exp-rules (Aturan EXP — read-only)
+│   └── /admin/gamification/badges (Manajemen Badge — CRUD)
 ├── /admin/internship (Magang)
 │   ├── /admin/internship/attendance
 │   ├── /admin/internship/tasks
-│   └── /admin/internship/tasks/:taskId/submissions/:submissionId (Detail Submisi Peserta)
+│   ├── /admin/internship/grades
+│   └── /admin/internship/config
 └── /admin/settings (Konfigurasi Platform)
 ```
+
+> Catatan: Kategori Course, modul Program Magang, dan Pengaturan masih 404 sampai
+> halamannya dibangun (pola inkremental) — item sidebar sudah disiapkan.
 
 ### 5.4 Struktur Halaman — Mentor (Auth Required)
 
@@ -1153,6 +1164,11 @@ Jika ada yang tidak lolos validasi, sistem menampilkan pesan error spesifik dan 
 - Admin **tidak dapat mencabut/mengedit** sertifikat yang sudah diterbitkan (read-only untuk admin).
 
 #### 6.11.8 Manajemen Gamifikasi
+
+Dipisah menjadi **dua halaman/URL tersendiri** (bukan tab dalam satu halaman), masing-masing
+di bawah dropdown "Gamifikasi" sidebar: **Aturan EXP** (`/admin/gamification/exp-rules`,
+read-only) dan **Manajemen Badge** (`/admin/gamification/badges`, CRUD).
+`/admin/gamification` melakukan redirect ke `/admin/gamification/exp-rules`.
 
 - Lihat daftar nilai EXP per aktivitas (read-only; nilai EXP dikonfigurasi di level backend).
 - Lihat daftar dan konfigurasi badge (tambah, edit, hapus).
