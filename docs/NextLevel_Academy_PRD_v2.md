@@ -987,6 +987,19 @@ Dikirim via **Resend + React Email**.
 | FAQ                 | List of Q&A                  | Pertanyaan dan jawaban                   |
 | Status              | Draft / Published / Archived | —                                        |
 
+#### 6.11.3.1 Manajemen Kategori Course
+
+_(diimplementasikan di `/admin/courses/categories`)_
+
+Kategori adalah kelompok untuk mengorganisasi kursus di katalog. Halaman ini menyediakan CRUD kategori mengikuti pola list admin standar (loader → API → hook → view ber-URL, 10/halaman).
+
+- **Daftar Kategori:** tabel berisi nama, deskripsi, **jumlah kursus** yang memakai kategori, **jumlah voucher** yang dibatasi ke kategori, dan tanggal dibuat. Pencarian nama (debounce) + sort (Nama A–Z / Z–A / Kursus terbanyak / Terbaru). State disimpan di query-param URL.
+- **Tambah / Edit:** lewat **modal dialog** (bukan halaman terpisah) — entity sederhana. Field: **Nama** (wajib, 2–60 karakter, unik) dan **Deskripsi** (opsional, maks 300 karakter). Nama duplikat ditolak dengan pesan ramah (HTTP 409), bukan error 500.
+- **Hapus** dilindungi: kategori yang masih dipakai oleh kursus **atau** voucher **tidak dapat dihapus** (HTTP 409) — admin harus memindahkan kursus/voucher ke kategori lain dulu. Hanya kategori kosong yang boleh dihapus permanen.
+- Setiap aksi Create/Update/Delete dikonfirmasi dan dicatat di `AuditLog` (`entityType: "Category"`).
+
+> Catatan model: `Category` punya `description String?` (opsional). Kategori dipakai juga oleh form Kursus (field "Kategori") dan pembatasan cakupan Voucher.
+
 #### 6.11.3.2 Mengarsipkan Kursus
 
 Ketika admin mengubah status kursus menjadi **Archived**:
