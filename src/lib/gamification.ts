@@ -14,6 +14,7 @@ import {
   type VoucherStatus,
 } from "@/lib/gamification-types";
 import { prisma } from "@/lib/prisma";
+import { resolveBadgeIconUrl } from "@/lib/bunny-storage";
 import { generateVoucherCode } from "@/lib/voucher-code";
 
 /**
@@ -395,6 +396,7 @@ export async function loadBadges(userId: string): Promise<BadgeItemDTO[]> {
         description: true,
         trigger: true,
         threshold: true,
+        logoUrl: true,
       },
       orderBy: [{ trigger: "asc" }, { threshold: "asc" }],
     }),
@@ -418,6 +420,7 @@ export async function loadBadges(userId: string): Promise<BadgeItemDTO[]> {
       trigger,
       threshold: b.threshold,
       ...badgeVisual({ trigger, threshold: b.threshold }),
+      logoUrl: resolveBadgeIconUrl(b.logoUrl),
       earnedAt: earnedMap.get(b.id) ?? null,
     };
   });

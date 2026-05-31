@@ -35,6 +35,8 @@ export type BadgeItemDTO = {
   gradientFrom: string;
   gradientTo: string;
   glowColor: string;
+  /** Custom/preset icon (resolved URL) set by admin, or null → icon fallback. */
+  logoUrl: string | null;
   earnedAt: Date | null;
 };
 

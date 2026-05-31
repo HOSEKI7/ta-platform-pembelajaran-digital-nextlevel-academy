@@ -1163,7 +1163,7 @@ Jika ada yang tidak lolos validasi, sistem menampilkan pesan error spesifik dan 
 Admin dapat melakukan CRUD badge dengan ketentuan:
 
 - Tambah badge baru: isi Nama, Deskripsi, Trigger (pilih dari dropdown enum),
-  Threshold (angka), EXP Minimum, dan upload Logo Badge (PNG/JPG).
+  Threshold (angka), EXP Minimum, dan upload Logo Badge.
 - Edit badge: hanya Nama, Deskripsi, Threshold, EXP Minimum, dan Logo yang dapat
   diubah. Jenis trigger tidak dapat diubah setelah dibuat.
 - Hapus badge: badge dapat dihapus; badge yang sudah diperoleh user tetap
@@ -1176,6 +1176,25 @@ Admin dapat melakukan CRUD badge dengan ketentuan:
 | LEVEL_REACHED | User mencapai level tertentu |
 | COURSES_COMPLETED | User menyelesaikan sejumlah kursus |
 | COURSE_SPECIFIC | User menyelesaikan kursus tertentu |
+
+**Status implementasi (`/admin/gamification`):**
+
+- Halaman memakai **2 tab**: (1) **Aturan EXP** (read-only) menampilkan perolehan EXP
+  per aksi (+15 video / +90 lulus kuis / +600 selesai kursus), progresi level
+  `REQ(L)=744+124×(L-1)` + gelar (Beginner/Explorer/Scholar/Master), dan reward
+  voucher (20/35/50% di level 5/10/15, berlaku 180 hari); (2) **Manajemen Badge**
+  (CRUD penuh: tambah/edit/hapus).
+- **Tambah/Edit badge** memakai **modal dialog**; trigger dikunci saat edit.
+  COURSE_SPECIFIC memilih kursus (bukan threshold).
+- **Kolom "EXP" = `Badge.expMinimum`** bersifat **informasi saja** — ditampilkan &
+  dapat di-set admin, tetapi **tidak** memengaruhi engine pemberian EXP/badge.
+- **Ikon badge**: picker bergaya pemilihan avatar — pilih preset (`public/badges/`),
+  unggah ikon kustom (Bunny Storage, di-sign saat baca), atau tanpa ikon (memakai
+  lambang default berbasis trigger). Ikon juga dirender di koleksi badge peserta didik.
+- **Hapus badge** = hard delete; `UserBadge.badgeSnapshot` mempertahankan riwayat
+  (`badgeId` di-`SetNull`). Aksi CRUD ditulis ke `AuditLog`.
+- **Belum dibangun (ditunda):** monitor data EXP/level seluruh pengguna & log
+  pemberian voucher reward — di luar 2 tab saat ini.
 
 #### 6.11.9 Konfigurasi Magang
 

@@ -206,6 +206,22 @@ export async function uploadQuizImage(opts: {
   };
 }
 
+/** Upload a single badge icon (PRD §6.11.8). Admin-scoped path; signed on read. */
+export async function uploadBadgeIcon(opts: {
+  adminId: string;
+  file: File;
+}): Promise<UploadResult> {
+  const sanitized = sanitizeFileName(opts.file.name);
+  const objectPath = `badge-icons/${opts.adminId}/${Date.now()}-${sanitized}`;
+  await putToBunny(objectPath, opts.file);
+  return {
+    objectPath,
+    fileName: sanitized,
+    fileSize: opts.file.size,
+    contentType: opts.file.type || "application/octet-stream",
+  };
+}
+
 /** Best-effort delete; never throws (used for rollback / replacement). */
 export async function removeBunnyFile(objectPath: string): Promise<void> {
   if (!isBunnyStorageConfigured() || !objectPath) return;
@@ -267,5 +283,21 @@ export function resolveCourseImageUrl(stored: string | null | undefined): string
   if (!stored) return "";
   if (isExternalUrl(stored)) return stored;
   if (!isBunnyPullZoneConfigured()) return stored;
+  return signBunnyFileUrl(stored, { expiresInSec: 60 * 60 * 24 });
+}
+
+/**
+ * Resolve a badge icon (`Badge.logoUrl`) for rendering (PRD §6.11.8).
+ * Polymorphic: a preset path under `/badges/...` is a public same-origin asset
+ * (passthrough); an external http(s) URL is passthrough too; otherwise it's a
+ * Bunny object path (signed on read, 24h TTL like course images). Returns
+ * `null` for an empty/unconfigured value so the UI falls back to the text-based
+ * trigger medallion.
+ */
+export function resolveBadgeIconUrl(stored: string | null | undefined): string | null {
+  if (!stored) return null;
+  if (stored.startsWith("/badges/")) return stored;
+  if (isExternalUrl(stored)) return stored;
+  if (!isBunnyPullZoneConfigured()) return null;
   return signBunnyFileUrl(stored, { expiresInSec: 60 * 60 * 24 });
 }

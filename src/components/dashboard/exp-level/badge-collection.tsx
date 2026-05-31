@@ -149,12 +149,30 @@ function BadgeCard({ badge }: { badge: BadgeItemDTO }) {
                   "transition-transform duration-500 group-hover:scale-105",
                 )}
               >
-                <Icon className="size-9" strokeWidth={2.2} />
+                {badge.logoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={badge.logoUrl}
+                    alt={badge.name}
+                    className="size-full rounded-full object-cover"
+                  />
+                ) : (
+                  <Icon className="size-9" strokeWidth={2.2} />
+                )}
               </div>
             </>
           ) : (
             <div className="relative grid size-20 place-items-center rounded-full bg-zinc-200/80 text-zinc-400 ring-[6px] ring-white dark:bg-zinc-800/50 dark:text-zinc-500 dark:ring-[color:var(--color-surface-card)]">
-              <Icon className="size-9 opacity-40 grayscale" strokeWidth={2.2} />
+              {badge.logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={badge.logoUrl}
+                  alt={badge.name}
+                  className="size-full rounded-full object-cover opacity-40 grayscale"
+                />
+              ) : (
+                <Icon className="size-9 opacity-40 grayscale" strokeWidth={2.2} />
+              )}
               <span className="absolute -bottom-1 -right-1 grid size-7 place-items-center rounded-full bg-white text-zinc-500 ring-2 ring-zinc-200 dark:bg-zinc-900 dark:text-zinc-400 dark:ring-zinc-700">
                 <Lock className="size-3.5" strokeWidth={2.6} />
               </span>
