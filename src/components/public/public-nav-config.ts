@@ -19,11 +19,11 @@ export const PUBLIC_NAV_LINKS: NavLinkDef[] = [
 export function dashboardHrefFor(role: Role): string {
   switch (role) {
     case Role.PESERTA_MAGANG:
-      return "/internship";
+      return "/internship/dashboard";
     case Role.MENTOR:
-      return "/mentor";
+      return "/mentor/dashboard";
     case Role.ADMINISTRATOR:
-      return "/admin";
+      return "/admin/dashboard";
     case Role.PESERTA_DIDIK:
     default:
       return "/dashboard";

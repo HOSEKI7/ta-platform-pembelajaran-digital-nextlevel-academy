@@ -46,27 +46,75 @@ export async function loadStudentCatalogPage(
     ...(search ? { title: { contains: search, mode: "insensitive" } } : {}),
   };
 
-  const [total, courses] = await Promise.all([
-    prisma.course.count({ where }),
-    prisma.course.findMany({
-      where,
-      include: { category: { select: { name: true } } },
-      orderBy: orderByFor(sort),
-      skip: (page - 1) * PAGE_SIZE,
-      take: PAGE_SIZE,
-    }),
-  ]);
+  const skip = (page - 1) * PAGE_SIZE;
+  const include = {
+    category: { select: { name: true } },
+  } satisfies Prisma.CourseInclude;
 
-  const ownedIds = courses.length
-    ? new Set(
-        (
-          await prisma.enrollment.findMany({
-            where: { userId, courseId: { in: courses.map((c) => c.id) } },
-            select: { courseId: true },
+  type CourseRow = Prisma.CourseGetPayload<{ include: typeof include }>;
+
+  const total = await prisma.course.count({ where });
+
+  let courses: CourseRow[];
+  let ownedIds: Set<string>;
+
+  if (sort === "latest") {
+    // Default ordering pins courses the student already owns to the top
+    // (newest first), then the rest of the catalog (newest first). We page
+    // across the two contiguous blocks with exact skip/take math so owned and
+    // unowned items never duplicate or skip at the page boundary.
+    const owned = await prisma.enrollment.findMany({
+      where: { userId, course: where },
+      select: { courseId: true },
+    });
+    const ownedCourseIds = owned.map((e) => e.courseId);
+    ownedIds = new Set(ownedCourseIds);
+    const ownedTotal = ownedCourseIds.length;
+
+    const ownedTake = Math.max(0, Math.min(PAGE_SIZE, ownedTotal - skip));
+    const ownedRows =
+      ownedTake > 0
+        ? await prisma.course.findMany({
+            where: { ...where, id: { in: ownedCourseIds } },
+            include,
+            orderBy: { createdAt: "desc" },
+            skip,
+            take: ownedTake,
           })
-        ).map((e) => e.courseId),
-      )
-    : new Set<string>();
+        : [];
+
+    const remaining = PAGE_SIZE - ownedRows.length;
+    const unownedRows =
+      remaining > 0
+        ? await prisma.course.findMany({
+            where: { ...where, id: { notIn: ownedCourseIds } },
+            include,
+            orderBy: { createdAt: "desc" },
+            skip: Math.max(0, skip - ownedTotal),
+            take: remaining,
+          })
+        : [];
+
+    courses = [...ownedRows, ...unownedRows];
+  } else {
+    courses = await prisma.course.findMany({
+      where,
+      include,
+      orderBy: orderByFor(sort),
+      skip,
+      take: PAGE_SIZE,
+    });
+    ownedIds = courses.length
+      ? new Set(
+          (
+            await prisma.enrollment.findMany({
+              where: { userId, courseId: { in: courses.map((c) => c.id) } },
+              select: { courseId: true },
+            })
+          ).map((e) => e.courseId),
+        )
+      : new Set<string>();
+  }
 
   return {
     courses: courses.map((c) => ({

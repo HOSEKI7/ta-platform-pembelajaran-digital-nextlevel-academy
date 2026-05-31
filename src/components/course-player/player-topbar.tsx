@@ -28,13 +28,8 @@ export function PlayerTopbar({
   const router = useRouter();
 
   function handleBack() {
-    // If there is history within this tab, prefer back. Otherwise route to
-    // "Kursus Saya" so the user always lands somewhere sensible.
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      router.back();
-    } else {
-      router.push("/my-courses");
-    }
+    // Exiting the player always returns the student to their dashboard.
+    router.push("/dashboard");
   }
 
   return (
