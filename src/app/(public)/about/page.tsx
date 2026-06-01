@@ -2,9 +2,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Compass, Gauge, Sparkles, Users } from "lucide-react";
 
+import { loadPlatformInfo } from "@/lib/platform-info";
 import { SiteContainer } from "@/components/public/site-container";
 
 export const metadata = { title: "Tentang Kami" };
+export const dynamic = "force-dynamic";
 
 const PILLARS = [
   {
@@ -24,14 +26,36 @@ const PILLARS = [
   },
 ];
 
-const TEAM = [
+type TeamMemberView = { name: string; role: string; initials: string };
+
+// Shown only when an admin hasn't filled in the Tim list under Informasi
+// Platform (PRD §6.11.11), so the section never renders empty.
+const FALLBACK_TEAM: TeamMemberView[] = [
   { initials: "FZ", name: "Farid Zahran", role: "Founder & Product" },
   { initials: "AS", name: "Andi Saputra", role: "Lead Instructor" },
   { initials: "RH", name: "Rina H.", role: "Design Lead" },
   { initials: "BP", name: "Bagus P.", role: "Engineering Lead" },
 ];
 
-export default function AboutPage() {
+/** First letters of the first two words, e.g. "Farid Zahran" → "FZ". */
+function toInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  const letters = (parts[0][0] ?? "") + (parts.length > 1 ? (parts[parts.length - 1][0] ?? "") : "");
+  return letters.toUpperCase() || "?";
+}
+
+export default async function AboutPage() {
+  const info = await loadPlatformInfo();
+  const team: TeamMemberView[] =
+    info.tim.length > 0
+      ? info.tim.map((m) => ({
+          name: m.nama,
+          role: m.posisi,
+          initials: toInitials(m.nama),
+        }))
+      : FALLBACK_TEAM;
+
   return (
     <>
       {/* Hero */}
@@ -189,9 +213,9 @@ export default function AboutPage() {
           </div>
 
           <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {TEAM.map((member, idx) => (
+            {team.map((member, idx) => (
               <div
-                key={member.name}
+                key={`${member.name}-${idx}`}
                 className="relative overflow-hidden rounded-3xl bg-white p-6 ring-1 ring-zinc-200"
               >
                 <div className="grid size-14 place-items-center rounded-2xl bg-[color:var(--color-brand-accent)] font-heading text-base font-extrabold text-[color:var(--color-brand-900)]">
@@ -204,7 +228,7 @@ export default function AboutPage() {
                   {member.role}
                 </p>
                 <span className="absolute right-5 top-5 font-mono text-[11px] text-zinc-300">
-                  0{idx + 1}
+                  {String(idx + 1).padStart(2, "0")}
                 </span>
               </div>
             ))}
