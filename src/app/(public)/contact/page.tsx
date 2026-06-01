@@ -1,41 +1,63 @@
 import { Clock, Mail, MapPin, MessageCircle } from "lucide-react";
 
+import { loadPlatformInfo } from "@/lib/platform-info";
 import { ContactForm } from "@/components/public/contact-form";
 import { SiteContainer } from "@/components/public/site-container";
 
 export const metadata = { title: "Kontak" };
+export const dynamic = "force-dynamic";
 
-const INFOS = [
-  {
-    icon: Mail,
-    label: "Email",
-    value: "nextlevelacademy@gmail.com",
-    hint: "Untuk pertanyaan umum & kerja sama",
-    href: "mailto:nextlevelacademy@gmail.com",
-  },
-  {
-    icon: MessageCircle,
-    label: "WhatsApp",
-    value: "+62 821 2270 1170",
-    hint: "Senin – Jumat, 09:00 – 18:00 WIB",
-    href: "https://wa.me/6282122701170",
-  },
-  {
-    icon: MapPin,
-    label: "Alamat",
-    value:
-      "Jl. Sederhana Komplek Graha Swadaya, Tembung, Kec. Percut Sei Tuan, Sumatera Utara",
-    hint: "Indonesia · WIB (UTC+7)",
-  },
-  {
-    icon: Clock,
-    label: "Jam operasional",
-    value: "Senin – Jumat, 09:00 – 18:00",
-    hint: "Respons rata-rata < 1 hari kerja",
-  },
-];
+type Info = {
+  icon: typeof Mail;
+  label: string;
+  value: string;
+  hint: string;
+  href?: string;
+};
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const info = await loadPlatformInfo();
+
+  // DB-backed with graceful fallbacks so the page never looks empty before an
+  // admin fills in Informasi Platform (PRD §6.11.11).
+  const email = info.emailKontak.trim() || "nextlevelacademy@gmail.com";
+  const whatsapp = info.nomorWhatsapp.trim() || "+62 821 2270 1170";
+  const waDigits = whatsapp.replace(/\D/g, "");
+  const alamat =
+    info.alamat.trim() ||
+    "Jl. Sederhana Komplek Graha Swadaya, Tembung, Kec. Percut Sei Tuan, Sumatera Utara";
+  const lokasi = [info.kota.trim(), info.negara.trim()].filter(Boolean).join(" · ");
+  const jamOperasional = info.jamOperasional.trim() || "Senin – Jumat, 09:00 – 18:00";
+
+  const INFOS: Info[] = [
+    {
+      icon: Mail,
+      label: "Email",
+      value: email,
+      hint: "Untuk pertanyaan umum & kerja sama",
+      href: `mailto:${email}`,
+    },
+    {
+      icon: MessageCircle,
+      label: "WhatsApp",
+      value: whatsapp,
+      hint: "Sapa langsung lewat WhatsApp",
+      href: waDigits ? `https://wa.me/${waDigits}` : undefined,
+    },
+    {
+      icon: MapPin,
+      label: "Alamat",
+      value: alamat,
+      hint: lokasi || "Indonesia · WIB (UTC+7)",
+    },
+    {
+      icon: Clock,
+      label: "Jam operasional",
+      value: jamOperasional,
+      hint: "Respons rata-rata < 1 hari kerja",
+    },
+  ];
+
   return (
     <>
       <section className="relative isolate overflow-hidden pt-16 pb-12 sm:pt-20">

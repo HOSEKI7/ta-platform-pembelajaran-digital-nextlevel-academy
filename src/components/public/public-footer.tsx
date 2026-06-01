@@ -2,6 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { Mail, MapPin } from "lucide-react";
 
+import { loadPlatformInfo } from "@/lib/platform-info";
+
 import { SiteContainer } from "./site-container";
 import { NewsletterForm } from "./newsletter-form";
 import {
@@ -50,8 +52,10 @@ const SOCIALS = [
   { icon: LinkedinGlyph, label: "LinkedIn", href: "#" },
 ];
 
-export function PublicFooter() {
+export async function PublicFooter() {
   const year = new Date().getFullYear();
+  const info = await loadPlatformInfo();
+  const platformName = info.namaPlatform.trim() || "NextLevel Academy";
 
   return (
     <footer className="relative isolate overflow-hidden border-t border-zinc-100 bg-[color:var(--color-brand-50)]/40">
@@ -87,10 +91,10 @@ export function PublicFooter() {
         <div className="grid gap-12 lg:grid-cols-12">
           {/* Brand column */}
           <div className="lg:col-span-4">
-            <Link href="/" aria-label="NextLevel Academy beranda" className="inline-flex items-center">
+            <Link href="/" aria-label={`${platformName} beranda`} className="inline-flex items-center">
               <Image
                 src="/NextLevel_LogoXFit.webp"
-                alt="NextLevel Academy"
+                alt={platformName}
                 width={1397}
                 height={351}
                 className="h-11 w-auto"
@@ -182,7 +186,7 @@ export function PublicFooter() {
         {/* Bottom strip */}
         <div className="mt-14 flex flex-col items-start justify-between gap-3 border-t border-zinc-200/70 pt-6 text-xs text-zinc-500 sm:flex-row sm:items-center">
           <p>
-            © {year} <span className="font-semibold text-zinc-700">NextLevel Academy</span>. Dibuat
+            © {year} <span className="font-semibold text-zinc-700">{platformName}</span>. Dibuat
             dengan ❤︎ di Indonesia · WIB (UTC+7)
           </p>
           <p className="inline-flex items-center gap-2">
