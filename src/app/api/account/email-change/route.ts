@@ -12,8 +12,17 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
-  const session = await requireRoleInRoute(Role.PESERTA_DIDIK);
+  const session = await requireRoleInRoute([
+    Role.PESERTA_DIDIK,
+    Role.ADMINISTRATOR,
+  ]);
   if (session instanceof Response) return session;
+
+  // Admins live under /admin; everyone else uses the student settings path.
+  const settingsPath =
+    session.user.role === Role.ADMINISTRATOR
+      ? "/admin/settings?email=verified"
+      : "/settings?email=verified";
 
   let json: unknown;
   try {
@@ -61,7 +70,7 @@ export async function POST(req: Request) {
       headers: await headers(),
       body: {
         newEmail,
-        callbackURL: "/settings?email=verified",
+        callbackURL: settingsPath,
       },
     });
   } catch (err) {

@@ -15,6 +15,7 @@ export async function POST(req: Request) {
     Role.PESERTA_DIDIK,
     Role.PESERTA_MAGANG,
     Role.MENTOR,
+    Role.ADMINISTRATOR,
   ]);
   if (guard instanceof Response) return guard;
 

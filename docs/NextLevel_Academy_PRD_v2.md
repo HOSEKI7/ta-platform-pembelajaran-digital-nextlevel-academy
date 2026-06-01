@@ -1362,10 +1362,20 @@ Halaman `/admin/internship/work-config` ("Konfigurasi Jam Kerja dan Libur", menu
 
 Aksi terlarang ditolak dengan pesan jelas (HTTP 400/409). Setiap perubahan dicatat ke **audit trail** (`AuditLog` aksi `HOLIDAY_CREATE/UPDATE/END_EARLY/DELETE` — actor, waktu, nilai sebelum/sesudah, alasan opsional). Setiap mutasi dijalankan dalam satu transaksi DB (baris `Holiday` + `AuditLog` sekaligus), menjaga ketiga kolom `startDate`/`days`/`endDate` tetap konsisten.
 
-#### 6.11.11 Konfigurasi Platform
+#### 6.11.11 Pengaturan Admin _(implemented)_
 
-- Konfigurasi sertifikat global (expiration date setting).
-- Konfigurasi email transaksional (Resend API Key).
+Halaman `/admin/settings` ("Pengaturan") — satu halaman dengan **4 tab** bergaya tab primary-color, URL-stateful `?tab=`:
+
+1. **Profil** — identitas akun administrator (nama, username, foto/avatar preset). Email **dapat diubah** dengan alur verifikasi (tautan dikirim ke email baru; perubahan aktif setelah verifikasi). Reuse komponen settings bersama (`ProfileForm`/`IdentityCard`).
+2. **Keamanan** — ganti password via verifikasi password lama (reuse `SecurityForm`). Setiap perubahan password **mencabut seluruh sesi lain** (`revokeOtherSessions`) dan mengirim email notifikasi keamanan.
+3. **Informasi Platform** — data konten/tampilan: Nama Platform (wajib), Tagline, Deskripsi, Email Kontak, Nomor WhatsApp, Alamat, Kota, Negara, Jam Operasional. Disimpan sebagai satu blob JSON pada `platform_setting` key `PLATFORM_INFO` (audit `PLATFORM_INFO_UPDATE`). Belum di-wire ke UI publik (footer/landing) — disimpan sebagai sumber kebenaran untuk pemakaian menyusul.
+4. **Status Integrasi** — pemantauan **read-only** konektivitas layanan eksternal (Database, Midtrans, Resend, Bunny Stream, Bunny Storage, Better Auth). Status diuji **ping langsung** ke tiap layanan (✅ Terhubung / ❌ Gagal / ⚪ Belum dikonfigurasi) dengan tombol "Periksa Ulang".
+
+**Keputusan kunci:** seluruh **kredensial/secret** (Midtrans, Resend/email, Bunny) **tetap dikelola lewat environment variable** dan **tidak pernah** dimasukkan atau ditampilkan di UI — tab Status Integrasi hanya menunjukkan keterhubungan, bukan nilainya. Ini menjaga arsitektur `.env` yang ada dan mengurangi attack surface.
+
+Notifikasi email tambahan: setelah perubahan email **berhasil terverifikasi**, sistem mengirim email **informatif** ke alamat baru ("email ini kini terdaftar") — bukan langkah konfirmasi.
+
+> Konfigurasi sertifikat global (masa berlaku) tetap berada di halaman Manajemen Sertifikat (§6.11.7), bukan di halaman ini.
 
 ---
 

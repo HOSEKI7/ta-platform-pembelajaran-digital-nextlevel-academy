@@ -3,6 +3,7 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { APIError, createAuthMiddleware } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 
+import { EmailChangedEmail } from "@/emails/email-changed";
 import { PasswordChangedEmail } from "@/emails/password-changed";
 import { ResetPasswordEmail } from "@/emails/reset-password";
 import { VerifyEmail } from "@/emails/verify-email";
@@ -111,6 +112,30 @@ export const auth = betterAuth({
         subject: "Verifikasi Email Anda — NextLevel Academy",
         react: VerifyEmail({ name: user.name ?? user.email, verifyUrl: url }),
       });
+    },
+    // PRD §6.1.4: after a *change-email* verification completes (the new
+    // address has just been swapped in), send an informational notice to that
+    // address. This same hook also fires on sign-up verification, so we gate
+    // on "user already has a session": with `autoSignIn: false`, sign-up
+    // verification happens before any session exists (count = 0), whereas an
+    // email change is always performed by a logged-in user (count > 0).
+    afterEmailVerification: async (user) => {
+      try {
+        const sessions = await prisma.session.count({
+          where: { userId: user.id },
+        });
+        if (sessions === 0) return; // fresh sign-up verification — skip
+        await sendEmail({
+          to: user.email,
+          subject: "Email Akun Anda Telah Diperbarui",
+          react: EmailChangedEmail({
+            name: user.name ?? user.email,
+            newEmail: user.email,
+          }),
+        });
+      } catch (err) {
+        console.error("[auth] failed to send email-changed notice", err);
+      }
     },
   },
 
