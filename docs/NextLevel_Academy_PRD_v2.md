@@ -1320,15 +1320,17 @@ Halaman **Nilai Akhir** di grup Program Magang (`/admin/internship/grades`) untu
     informatif (perubahan nilai prev→baru + alasan). Upsert + notifikasi + audit
     dalam satu transaksi.
 
-#### 6.11.10 Konfigurasi Magang
+#### 6.11.10 Konfigurasi Magang _(implemented)_
+
+Halaman `/admin/internship/config` ("Konfigurasi Magang") — satu halaman dengan **3 tab** (Batch / Bidang / Kelas) bergaya tab primary-color, sort per kolom client-side. Halaman ini hanya mengelola **struktur** Batch/Bidang/Kelas; Rekap Absensi, Rekap Tugas, dan Nilai Akhir adalah halaman terpisah (lihat §6.11.9.x), dan Pengaturan Tanggal Libur belum dibangun.
 
 **Kelola Batch:**
 
 - CRUD daftar batch/angkatan (contoh: Batch 1, Batch 2, Batch 3).
-- Batch yang masih digunakan akun aktif tidak dapat dihapus.
-- Batch tidak dapat dihapus setelah dibuat.
-- Saat menambahkan Batch, Admin diwajibkan mengisi field Keterangan Batch (contoh: Batch 1 Periode November 2025 – Januari 2026), **Tanggal Mulai** dan **Tanggal Berakhir** magang (validasi: tanggal berakhir harus setelah tanggal mulai), dan mengonfirmasi pembuatan melalui popup konfirmasi.
+- **Hapus diblokir (409)** bila batch masih memiliki minimal satu Bidang atau Tugas — admin harus mengosongkan dulu. Batch tanpa bidang/tugas boleh dihapus.
+- Saat menambahkan/mengedit Batch, Admin mengisi **Nama Batch** (contoh: Batch 1), **Keterangan** (contoh: Batch 1 Magang Periode November 2025 – Januari 2026), **Tanggal Mulai** dan **Tanggal Berakhir** magang (validasi: tanggal berakhir tidak boleh sebelum tanggal mulai), via popup form.
 - Tanggal Mulai/Berakhir menentukan rentang waktu magang batch & membatasi kalender absensi peserta (lihat §6.9.2 & §9.4).
+- Mengganti nama Batch otomatis menyinkronkan nama komposit Kelas turunannya.
 
 **Pengaturan Tanggal Libur:**
 
@@ -1338,30 +1340,19 @@ Halaman **Nilai Akhir** di grup Program Magang (`/admin/internship/grades`) untu
 
 **Kelola Bidang:**
 
-- Admin menambahkan Bidang baru dengan memilih satu Batch yang dikaitkan dan mengisi nama Bidang (harus unik). Nama Bidang yang tersimpan otomatis digabung menjadi format: <Nama Batch> - <Nama Bidang> (contoh: Batch 1 - Web Programming).
-- Bidang yang masih digunakan akun aktif tidak dapat dihapus.
+- Admin menambahkan Bidang baru dengan memilih satu Batch yang dikaitkan dan mengisi nama Bidang (contoh: Data Analyst). Nama disimpan **polos** dan **unik per batch** — nama yang sama boleh dipakai di batch lain (lihat §9.5). Edit hanya mengganti nama (batch terkunci); rename menyinkronkan nama komposit Kelas turunan.
+- **Hapus diblokir (409)** bila Bidang masih memiliki Kelas atau Tugas.
+- Tabel: No, Batch, Nama Bidang, jumlah Kelas, Aksi.
 
 **Kelola Kelas:**
 
-- Admin menambahkan Kelas baru dengan memilih satu Bidang yang dikaitkan. Nama Kelas dibuat otomatis secara berurutan menggunakan abjad (A, B, C, dst.) berdasarkan ketersediaan kelas yang sudah ada pada Bidang tersebut. Nama akhir kelas mengikuti format: <Nama Bidang> - <Huruf Kelas> (contoh: Batch 1 - Web Programming - A).
-- Kelas yang masih digunakan akun aktif tidak dapat dihapus.
-- Maksimal 10 Peserta Magang per kelas.
+- Admin menambahkan Kelas baru dengan memilih Batch lalu Bidang (bidang di-cascade dari batch terpilih). Huruf kelas (A, B, C, …) di-assign **server-side** = huruf bebas berikutnya dalam bidang tersebut. Nama akhir kelas komposit (unik global): <Nama Batch> - <Nama Bidang> - <Huruf Kelas> (contoh: Batch 1 - Web Programming - A).
+- Edit Kelas hanya mengubah **kapasitas** (`maxStudents`, default 10, maks 100) — tidak boleh di bawah jumlah peserta saat ini.
+- **Hapus diblokir (409)** bila Kelas masih memiliki Peserta, Mentor, atau Tugas.
+- Maksimal 10 Peserta Magang per kelas (default kapasitas).
+- Tabel: No, Batch, Bidang, Kelas, Jumlah Peserta (current/max), Aksi.
 
-**Rekap Absensi:**
-
-- Lihat rekap absensi seluruh peserta magang.
-- Edit status absensi secara manual per peserta per hari (Tidak Hadir/Hadir).
-- Filter berdasarkan batch, bidang, kelas, dan rentang tanggal.
-
-**Rekap Tugas:**
-
-- Lihat seluruh tugas yang dibuat mentor.
-- Lihat detail tugas dan status pengumpulan tugas per peserta.
-
-**Nilai Akhir:**
-
-- Lihat & **sesuaikan** nilai akhir seluruh peserta magang sebagai override
-  administratif (lihat §6.11.9.2 — bukan read-only).
+> Rekap Absensi (§6.11.9), Rekap Tugas (§6.11.9.1), dan Nilai Akhir (§6.11.9.2) berada di halaman/menu sidebar tersendiri, bukan di halaman Konfigurasi Magang.
 
 #### 6.11.11 Konfigurasi Platform
 
@@ -1551,10 +1542,13 @@ Batch {
 Field {
   id        UUID (PK)
   batchId   UUID (FK → Batch)
-  name      String (unique, nama tampilan gabungan, contoh: Batch 1 - Web Programming)
+  name      String (nama bidang polos, contoh: "Web Programming" / "Data Analyst")
   createdAt DateTime
+  @@unique([batchId, name])  // unik PER BATCH — nama bidang boleh diulang di batch lain
 }
 ```
+
+Nama Bidang disimpan **polos** (tanpa prefix batch) dan unik **per batch** (`@@unique([batchId, name])`), sehingga bidang yang sama (mis. "Data Analyst") dapat berjalan di banyak angkatan. Keunikan global tetap dijamin di tingkat **Class** lewat nama kompositnya.
 
 ### 9.6 Class
 
@@ -1562,7 +1556,7 @@ Field {
 Class {
   id          UUID (PK)
   fieldId     UUID (FK → Field)
-  name        String (nama tampilan mengikuti format: <Nama Bidang> - <Huruf Kelas>, contoh: Batch 1 - Web Programming - A)
+  name        String (unique global; komposit format: <Nama Batch> - <Nama Bidang> - <Huruf Kelas>, contoh: Batch 1 - Web Programming - A. Huruf di-assign server-side: huruf bebas berikutnya A..Z dalam bidang)
   maxStudents Integer (kapasitas maksimal peserta per kelas, default 10)
   createdAt   DateTime
   updatedAt   DateTime

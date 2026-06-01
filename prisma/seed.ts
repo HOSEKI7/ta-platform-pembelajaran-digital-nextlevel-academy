@@ -112,7 +112,10 @@ async function main() {
   });
 
   const field = await db.field.upsert({
-    where: { name: "Batch 1 2026 - Web Programming" },
+    // Field name is now unique per batch (@@unique([batchId, name])).
+    where: {
+      batchId_name: { batchId: batch.id, name: "Batch 1 2026 - Web Programming" },
+    },
     create: { name: "Batch 1 2026 - Web Programming", batchId: batch.id },
     update: {},
   });

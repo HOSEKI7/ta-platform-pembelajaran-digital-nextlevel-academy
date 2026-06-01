@@ -1,0 +1,145 @@
+"use client";
+
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
+
+import type { BatchRow } from "@/lib/admin-internship-config-query";
+import {
+  batchFormSchema,
+  type BatchFormInput,
+} from "@/lib/validations/admin-internship-config";
+import {
+  useCreateBatchMutation,
+  useUpdateBatchMutation,
+} from "@/hooks/use-admin-internship-config-actions";
+
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+
+import { Field } from "./form-field";
+
+type Props = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  mode: "create" | "edit";
+  initial?: BatchRow;
+  onSubmitted: () => void;
+};
+
+function buildDefaults(initial?: BatchRow): BatchFormInput {
+  return {
+    name: initial?.name ?? "",
+    description: initial?.description ?? "",
+    startDate: initial?.startDate ?? "",
+    endDate: initial?.endDate ?? "",
+  };
+}
+
+export function BatchFormDialog({
+  open,
+  onOpenChange,
+  mode,
+  initial,
+  onSubmitted,
+}: Props) {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<BatchFormInput>({
+    resolver: zodResolver(batchFormSchema),
+    defaultValues: buildDefaults(initial),
+  });
+
+  const createMutation = useCreateBatchMutation();
+  const updateMutation = useUpdateBatchMutation(initial?.id ?? "");
+  const submitting = createMutation.isPending || updateMutation.isPending;
+
+  const onValid = (values: BatchFormInput) => {
+    const mutation = mode === "create" ? createMutation : updateMutation;
+    mutation.mutate(values, {
+      onSuccess: () => {
+        toast.success(
+          mode === "create" ? "Batch berhasil dibuat." : "Perubahan batch tersimpan.",
+        );
+        onSubmitted();
+        onOpenChange(false);
+      },
+      onError: (err) =>
+        toast.error(err instanceof Error ? err.message : "Gagal menyimpan batch."),
+    });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>
+            {mode === "create" ? "Tambah Batch" : "Edit Batch"}
+          </DialogTitle>
+          <DialogDescription>
+            {mode === "create"
+              ? "Buat periode magang baru. Tanggal mulai & selesai menjadi dasar kalender absensi."
+              : "Ubah nama, keterangan, atau periode batch."}
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit(onValid)} className="flex flex-col gap-5">
+          <Field label="Nama Batch" error={errors.name?.message}>
+            <Input
+              {...register("name")}
+              placeholder="cth. Batch 1"
+              className="h-11 rounded-xl"
+              autoFocus
+            />
+          </Field>
+
+          <Field label="Keterangan" error={errors.description?.message}>
+            <Textarea
+              {...register("description")}
+              placeholder="cth. Batch 1 Magang Periode November 2025 - Januari 2026"
+              rows={2}
+            />
+          </Field>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Tanggal Mulai" error={errors.startDate?.message}>
+              <Input type="date" {...register("startDate")} className="h-11 rounded-xl" />
+            </Field>
+            <Field label="Tanggal Selesai" error={errors.endDate?.message}>
+              <Input type="date" {...register("endDate")} className="h-11 rounded-xl" />
+            </Field>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={submitting}
+            >
+              Batal
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting
+                ? "Menyimpan…"
+                : mode === "create"
+                  ? "Buat Batch"
+                  : "Simpan Perubahan"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

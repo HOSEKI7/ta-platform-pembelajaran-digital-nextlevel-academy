@@ -238,13 +238,17 @@ model Batch {
 model Field {
   id        String   @id @default(cuid())
   batchId   String
-  name      String   @unique
+  // Field name is unique *within* a batch (not globally) so the same field
+  // (e.g. "Data Analyst") can run across multiple batches. Class names stay
+  // globally unique via their composite "<Batch> - <Field> - <Letter>" form.
+  name      String
   createdAt DateTime @default(now())
 
   batch   Batch   @relation(fields: [batchId], references: [id])
   classes Class[]
   tasks   Task[]
 
+  @@unique([batchId, name])
   @@index([batchId])
   @@map("field")
 }
