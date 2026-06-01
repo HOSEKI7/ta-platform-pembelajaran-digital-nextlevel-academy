@@ -3,6 +3,7 @@ import {
   BookOpen,
   Briefcase,
   CalendarCheck,
+  ClipboardCheck,
   ClipboardList,
   FolderTree,
   GraduationCap,
@@ -85,7 +86,8 @@ export const ADMIN_NAV_ITEMS: AdminNavEntry[] = [
     label: "Program Magang",
     icon: Briefcase,
     children: [
-      { href: "/admin/internship/attendance", label: "Absensi", icon: CalendarCheck },
+      { href: "/admin/internship/mentor-attendance", label: "Absensi Mentor", icon: CalendarCheck },
+      { href: "/admin/internship/student-attendance", label: "Absensi Peserta", icon: ClipboardCheck },
       { href: "/admin/internship/tasks", label: "Tugas", icon: ClipboardList },
       { href: "/admin/internship/grades", label: "Nilai Akhir", icon: GraduationCap },
       { href: "/admin/internship/config", label: "Konfigurasi Magang", icon: SlidersHorizontal },

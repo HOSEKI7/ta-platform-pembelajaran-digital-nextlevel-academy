@@ -196,7 +196,7 @@ menumpuk vertikal tepat di bawah parent dalam satu blok background menyatu, deng
 ikon panah pada parent sebagai indikator). Urutan & pengelompokan:
 Dashboard · **Course** (Daftar Course, Kategori Course) · Pengguna · Sertifikat ·
 **Keuangan** (Transaksi, Voucher) · **Gamifikasi** (Aturan EXP, Badge) ·
-**Program Magang** (Absensi, Tugas, Nilai Akhir, Konfigurasi Magang) · Pengaturan.
+**Program Magang** (Absensi Mentor, Absensi Peserta, Tugas, Nilai Akhir, Konfigurasi Magang) · Pengaturan.
 
 ```
 /admin
@@ -213,7 +213,8 @@ Dashboard · **Course** (Daftar Course, Kategori Course) · Pengguna · Sertifik
 │   ├── /admin/gamification/exp-rules (Aturan EXP — read-only)
 │   └── /admin/gamification/badges (Manajemen Badge — CRUD)
 ├── /admin/internship (Magang)
-│   ├── /admin/internship/attendance
+│   ├── /admin/internship/mentor-attendance (Absensi Mentor)
+│   ├── /admin/internship/student-attendance (Absensi Peserta)
 │   ├── /admin/internship/tasks
 │   ├── /admin/internship/grades
 │   └── /admin/internship/config
@@ -1225,7 +1226,32 @@ Admin dapat melakukan CRUD badge dengan ketentuan:
 - **Belum dibangun (ditunda):** monitor data EXP/level seluruh pengguna & log
   pemberian voucher reward — di luar 2 tab saat ini.
 
-#### 6.11.9 Konfigurasi Magang
+#### 6.11.9 Manajemen Absensi Magang
+
+Dua halaman terpisah di grup Program Magang — **Absensi Mentor**
+(`/admin/internship/mentor-attendance`) dan **Absensi Peserta**
+(`/admin/internship/student-attendance`) — untuk **memantau & mengoreksi**
+kehadiran lintas kelas pada satu tanggal terpilih (acuan derivasi status: §6.9.2).
+
+- **Tabel:** Nama, Kelas (mis. "Batch 1 2026 - Web Programming - A"), Waktu absen
+  (jam:menit WIB atau "—"), Status (Hadir/Tidak Hadir/Belum), dan Aksi (tombol
+  Hadir / Tidak Hadir).
+- **Filter:** pencarian nama, pemilih **tanggal** (default hari ini WIB, tidak
+  bisa memilih tanggal masa depan), serta filter berjenjang **Batch → Bidang →
+  Kelas**.
+- **Koreksi status (Aksi):** menulis baris absensi **eksplisit** dengan jejak
+  editor (`Attendance.editedById`) — "Hadir" menyimpan `PRESENT` dengan waktu
+  absen = waktu saat aksi (WIB); "Tidak Hadir" menyimpan `ABSENT`. Setiap
+  perubahan dikonfirmasi via popup dan dicatat ke `AuditLog`
+  (`ATTENDANCE_EDIT`).
+- **Batas edit:** hanya **hari kerja** pada/sebelum hari ini (dalam periode batch
+  peserta, bukan akhir pekan, bukan hari libur). Tanggal libur/akhir pekan/di
+  luar periode tampil sebagai banner dan aksinya dinonaktifkan. Semua aturan
+  divalidasi di server (jam klien tidak dipercaya).
+- **Absensi Mentor** memakai data kehadiran mentor sendiri (lihat §6.9.2.1);
+  selain sumber roster, perilaku kedua halaman identik.
+
+#### 6.11.10 Konfigurasi Magang
 
 **Kelola Batch:**
 
@@ -1267,7 +1293,7 @@ Admin dapat melakukan CRUD badge dengan ketentuan:
 
 - Lihat nilai akhir seluruh peserta magang (read-only untuk admin).
 
-#### 6.11.10 Konfigurasi Platform
+#### 6.11.11 Konfigurasi Platform
 
 - Konfigurasi sertifikat global (expiration date setting).
 - Konfigurasi email transaksional (Resend API Key).
