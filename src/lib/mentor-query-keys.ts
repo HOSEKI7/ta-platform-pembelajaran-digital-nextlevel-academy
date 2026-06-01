@@ -9,4 +9,6 @@ export const mentorKeys = {
     [...mentorKeys.all, "student-attendance", dateISO] as const,
   /** Class final grades (`/mentor/grades`). */
   grades: () => [...mentorKeys.all, "grades"] as const,
+  /** Mentor's notification feed (topbar bell). */
+  notifications: () => [...mentorKeys.all, "notifications"] as const,
 };

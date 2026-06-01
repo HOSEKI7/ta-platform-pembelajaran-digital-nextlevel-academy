@@ -97,6 +97,8 @@ enum NotificationType {
   // Admin manually resolved a pending payment from /admin/transactions (PRD §6.11.5).
   PAYMENT_ACCEPTED
   PAYMENT_REJECTED
+  // Admin overrode a peserta-magang's final grade — notifies the responsible mentor (PRD §6.11.9 / §6.9.4).
+  FINAL_GRADE_OVERRIDE
 }
 
 // -----------------------------------------------------------------------------

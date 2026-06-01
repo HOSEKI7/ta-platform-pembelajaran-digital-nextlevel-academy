@@ -1,27 +1,36 @@
-# Todo — Admin: Kelola Tugas Peserta Magang
+# Todo — Admin: Kelola Nilai Akhir Peserta Magang
 
-Plan lengkap: `~/.claude/plans/frontend-design-frontend-design-buatlah-eager-floyd.md`
+Plan: `~/.claude/plans/buatlah-halaman-manajemen-nilai-cuddly-acorn.md`
 
-- [x] 1. Tipe & query helper `src/lib/admin-internship-tasks-query.ts`
-- [x] 2. Loader `src/lib/admin-internship-tasks-loader.ts` (list, detail, edit)
-- [x] 3. Write submission `src/lib/admin-task-submission-write.ts`
-- [x] 4. Validasi `src/lib/validations/admin-task.ts`
-- [x] 5. API GET list `/api/admin/internship/tasks`
-- [x] 6. API PUT+DELETE `/api/admin/internship/tasks/[taskId]`
-- [x] 7. API PATCH force status `.../[taskId]/submissions/[studentId]`
-- [x] 8. API POST images `/api/admin/internship/tasks/images`
-- [x] 9. Hooks `src/hooks/use-admin-tasks.ts`
-- [x] 10. Tweak `task-form.tsx` + `task-description-editor.tsx` (prop imageUploadUrl)
-- [x] 11. List page + view + table
-- [x] 12. Detail page + view + submissions table + force-status dialog
-- [x] 13. Edit page + view
-- [x] 14. Update PRD §6.11.9.1 + Session History CLAUDE.md
-- [x] 15. Verifikasi: tsc ✓, lint ✓ (0 error), dev run + Playwright (list/detail/force-toggle dua arah/edit) ✓
+## Schema
+- [x] Tambah `FINAL_GRADE_OVERRIDE` ke `enum NotificationType`
 
-## Catatan verifikasi
-- List render + badge Aktif/Overdue + filter + paginasi OK.
-- Force SUBMITTED tanpa berkas → "tanpa berkas", tak crash, persisten (tx + AuditLog commit).
-- Force NOT_SUBMITTED (reverse) → hero count 1/2 → 0/2, data seed dipulihkan.
-- Edit page prefilled (judul/Tiptap/lampiran/tenggat) via TaskForm + route gambar admin.
-- Tidak ada error di console (hanya log query Prisma dev).
-- Tidak diuji manual (low-risk, kode terbukti): Delete (reuse logika mentor) & file-keep saat reverse pada submission ber-file (jaminan kode: branch update tak menyentuh submissionUrl).
+## Part A — Halaman Nilai Akhir Admin
+- [x] A1 `src/lib/admin-internship-grades-query.ts`
+- [x] A2 `src/lib/admin-internship-grades-loader.ts`
+- [x] A3 `src/lib/validations/admin-final-grade.ts`
+- [x] A4 `src/lib/admin-final-grade-write.ts`
+- [x] A5 API GET `grades/route.ts` + PUT `grades/[studentId]/route.ts`
+- [x] A6 `src/hooks/use-admin-grades.ts`
+- [x] A7 `admin-grades-view.tsx` + `admin-grades-table.tsx` + `admin-grade-dialog.tsx`
+- [x] A8 `src/app/(admin)/admin/internship/grades/page.tsx`
+
+## Part B — Bell notifikasi mentor DB-backed
+- [x] B1 API `mentor/notifications/route.ts` + `mark-all-read/route.ts`
+- [x] B2 `src/hooks/use-mentor-notifications.ts` + `mentorKeys.notifications()`
+- [x] B3 Rewrite `mentor-notifications-button.tsx`
+
+## Docs
+- [x] PRD §6.11.9.2 + §6.9.4 + §6.10.1
+- [x] CLAUDE.md Session History
+
+## Verifikasi
+- [x] `prisma generate`; `tsc --noEmit` bersih; `eslint` file baru bersih
+- [ ] **USER:** `npx prisma db push` (enum baru di Postgres) + restart dev server
+- [ ] **USER:** uji manual admin grades + integritas mentorId + audit + notifikasi mentor
+
+## Catatan
+- `MentorProfile` tak punya `createdAt` → resolusi mentor pakai `orderBy: { id: "asc" }`.
+- `setAdminFinalGrade` tolak 409 bila kelas tanpa mentor; edit existing tak ubah `mentorId`.
+- Alasan admin hanya di `AuditLog FINAL_GRADE_OVERRIDE` (tanpa kolom baru).
+- Bell mentor kini DB-backed (reuse loader student role-agnostic).

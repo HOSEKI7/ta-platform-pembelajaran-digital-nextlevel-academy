@@ -889,7 +889,8 @@ Jika tidak valid → tampilkan pesan error yang deskriptif.
 - Mentor dapat mengisi nilai akhir (skala **0–100**, integer) untuk setiap Peserta Magang kapan saja.
 - Nilai ditampilkan di tabel "Nilai Akhir" pada menu magang peserta.
 - Kolom nilai kosong hingga mentor mengisi.
-- Mentor dapat mengubahnya kapan saja, namun admin bisa mengubah nya juga.
+- Mentor dapat mengubahnya kapan saja, namun admin bisa mengubah nya juga (override administratif — lihat §6.11.9.2).
+- **Integritas data:** field mentor penanggung jawab (`FinalGrade.mentorId`) selalu menunjuk mentor, tidak pernah digantikan ID admin. Saat admin mengisi nilai BARU (belum pernah dinilai), `mentorId` diisi dari mentor kelas peserta; saat admin mengubah nilai yang sudah ada, `mentorId` tidak diubah. Pelaku aksi terakhir dicatat di `lastEditedById`.
 
 ### 6.10 Notification System
 
@@ -908,6 +909,9 @@ Jika tidak valid → tampilkan pesan error yang deskriptif.
 | Peserta Magang | Mendapat tugas baru dari mentor                    |
 | Peserta Magang | Tugas mendapat feedback (dikembalikan) dari mentor |
 | Mentor         | Peserta magang mengumpulkan tugas                  |
+| Mentor         | Admin mengubah nilai akhir peserta bimbingannya (`FINAL_GRADE_OVERRIDE`) — pesan memuat perubahan nilai + alasan |
+
+> Bell notifikasi Mentor kini **DB-backed** (sebelumnya statis): menampilkan feed `TASK_SUBMITTED` + `FINAL_GRADE_OVERRIDE` dengan badge belum-dibaca dan mark-as-read saat dropdown dibuka (reuse `loadNotifications`/`markAllNotificationsRead` yang role-agnostic).
 
 #### 6.10.2 Email Notification
 
@@ -1289,6 +1293,33 @@ mengedit, dan menghapus.
     peserta/mentor. (3) **Tidak ada notifikasi** ke peserta (hanya `AuditLog`).
     (4) Peserta di luar kelas tugas ditolak (404) agar tak ada baris yatim.
 
+#### 6.11.9.2 Manajemen Nilai Akhir Magang _(implemented)_
+
+Halaman **Nilai Akhir** di grup Program Magang (`/admin/internship/grades`) untuk
+**memantau dan menyesuaikan** nilai akhir peserta magang lintas kelas sebagai
+**tindakan administratif darurat** (mis. mentor berhalangan).
+
+- **Daftar (tabel):** Nama Peserta (+ institusi), Kelas
+  ("Batch 1 2026 - Web Programming - A"), Nilai Akhir (angka 0–100 + badge huruf
+  A/A-/…/E via band yang sama dengan tampilan peserta; "Belum dinilai" bila
+  kosong), dan Aksi (**Beri Nilai**/**Edit Nilai**). Urut nama, paginasi
+  10/halaman.
+- **Filter:** pencarian nama peserta + filter berjenjang **Batch → Bidang →
+  Kelas** (memakai endpoint filter yang sama dengan Absensi/Tugas Magang).
+- **Edit (modal dialog):** input nilai 0–100, catatan nilai opsional (terlihat
+  peserta), dan **Alasan perubahan WAJIB**.
+- **Integritas data (keputusan):**
+  - `FinalGrade.mentorId` selalu menunjuk **mentor penanggung jawab**, tidak
+    pernah ID admin. Nilai baru → `mentorId` diambil dari mentor kelas peserta
+    (paling awal, deterministik); nilai yang sudah ada → `mentorId` tidak diubah.
+    Bila kelas **belum punya mentor**, aksi ditolak (409).
+  - Pelaku aksi terakhir dicatat di `FinalGrade.lastEditedById` (= admin).
+  - **Alasan** disimpan **hanya di `AuditLog`** (`FINAL_GRADE_OVERRIDE`,
+    metadata: `prevGrade`, `grade`, `note`, `reason`), bukan kolom baru.
+  - **Notifikasi:** mentor penanggung jawab menerima notifikasi in-app
+    informatif (perubahan nilai prev→baru + alasan). Upsert + notifikasi + audit
+    dalam satu transaksi.
+
 #### 6.11.10 Konfigurasi Magang
 
 **Kelola Batch:**
@@ -1329,7 +1360,8 @@ mengedit, dan menghapus.
 
 **Nilai Akhir:**
 
-- Lihat nilai akhir seluruh peserta magang (read-only untuk admin).
+- Lihat & **sesuaikan** nilai akhir seluruh peserta magang sebagai override
+  administratif (lihat §6.11.9.2 — bukan read-only).
 
 #### 6.11.11 Konfigurasi Platform
 
