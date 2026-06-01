@@ -196,7 +196,7 @@ menumpuk vertikal tepat di bawah parent dalam satu blok background menyatu, deng
 ikon panah pada parent sebagai indikator). Urutan & pengelompokan:
 Dashboard · **Course** (Daftar Course, Kategori Course) · Pengguna · Sertifikat ·
 **Keuangan** (Transaksi, Voucher) · **Gamifikasi** (Aturan EXP, Badge) ·
-**Program Magang** (Absensi Mentor, Absensi Peserta, Tugas, Nilai Akhir, Konfigurasi Magang) · Pengaturan.
+**Program Magang** (Absensi Mentor, Absensi Peserta, Tugas, Nilai Akhir, Konfigurasi Magang, Konfigurasi Jam Kerja dan Libur) · Pengaturan.
 
 ```
 /admin
@@ -1322,7 +1322,7 @@ Halaman **Nilai Akhir** di grup Program Magang (`/admin/internship/grades`) untu
 
 #### 6.11.10 Konfigurasi Magang _(implemented)_
 
-Halaman `/admin/internship/config` ("Konfigurasi Magang") — satu halaman dengan **3 tab** (Batch / Bidang / Kelas) bergaya tab primary-color, sort per kolom client-side. Halaman ini hanya mengelola **struktur** Batch/Bidang/Kelas; Rekap Absensi, Rekap Tugas, dan Nilai Akhir adalah halaman terpisah (lihat §6.11.9.x), dan Pengaturan Tanggal Libur belum dibangun.
+Halaman `/admin/internship/config` ("Konfigurasi Magang") — satu halaman dengan **3 tab** (Batch / Bidang / Kelas) bergaya tab primary-color, sort per kolom client-side. Halaman ini hanya mengelola **struktur** Batch/Bidang/Kelas; Rekap Absensi, Rekap Tugas, dan Nilai Akhir adalah halaman terpisah (lihat §6.11.9.x), dan Pengaturan Tanggal Libur kini berada di halaman tersendiri (lihat §6.11.10.1).
 
 **Kelola Batch:**
 
@@ -1331,12 +1331,6 @@ Halaman `/admin/internship/config` ("Konfigurasi Magang") — satu halaman denga
 - Saat menambahkan/mengedit Batch, Admin mengisi **Nama Batch** (contoh: Batch 1), **Keterangan** (contoh: Batch 1 Magang Periode November 2025 – Januari 2026), **Tanggal Mulai** dan **Tanggal Berakhir** magang (validasi: tanggal berakhir tidak boleh sebelum tanggal mulai), via popup form.
 - Tanggal Mulai/Berakhir menentukan rentang waktu magang batch & membatasi kalender absensi peserta (lihat §6.9.2 & §9.4).
 - Mengganti nama Batch otomatis menyinkronkan nama komposit Kelas turunannya.
-
-**Pengaturan Tanggal Libur:**
-
-- Admin mengelola daftar tanggal libur (global, berlaku semua batch — lihat §9.6.1).
-- Menambah libur: klik "Set Tanggal Libur" → isi **tanggal mulai libur**, **jumlah hari**, dan **keterangan**. Rentang libur dihitung dari tanggal mulai sepanjang jumlah hari.
-- CRUD daftar libur; libur tampil sebagai hari **Libur** di kalender absensi seluruh peserta magang.
 
 **Kelola Bidang:**
 
@@ -1353,6 +1347,20 @@ Halaman `/admin/internship/config` ("Konfigurasi Magang") — satu halaman denga
 - Tabel: No, Batch, Bidang, Kelas, Jumlah Peserta (current/max), Aksi.
 
 > Rekap Absensi (§6.11.9), Rekap Tugas (§6.11.9.1), dan Nilai Akhir (§6.11.9.2) berada di halaman/menu sidebar tersendiri, bukan di halaman Konfigurasi Magang.
+
+#### 6.11.10.1 Konfigurasi Jam Kerja dan Libur _(implemented)_
+
+Halaman `/admin/internship/work-config` ("Konfigurasi Jam Kerja dan Libur", menu tersendiri di grup Program Magang) — satu halaman dengan **2 tab** bergaya tab primary-color: **Tanggal Libur** (Holiday CRUD, sudah dibangun) dan **Window Absen** (placeholder — pengaturan jendela jam check-in belum dipromosikan dari konstanta global, lihat §6.9.2). Tujuan: mencegah kesalahan absensi saat ada **libur mendadak** yang tidak ada di kalender nasional. Libur bersifat **global** (berlaku semua batch — lihat §9.6.1) dan tampil sebagai hari **Libur** di kalender absensi seluruh peserta & mentor magang.
+
+**Menambah libur:** isi **keterangan**, **jumlah hari libur**, dan **tanggal mulai** (hari pertama libur). Tanggal selesai dihitung otomatis = `tanggal mulai + (jumlah hari − 1)` (contoh: 3 hari mulai tanggal 11 → berlaku 11–13). Tanggal mulai tidak boleh sebelum hari ini (tidak ada libur retroaktif; libur mendadak hari ini → mulai = hari ini).
+
+**Aturan akses berbasis tanggal hari ini (WIB), divalidasi server-side (bukan hanya UI):**
+
+- **Akan Datang (UPCOMING, hari ini < tanggal mulai):** edit penuh (keterangan, jumlah hari, tanggal mulai) **dan** hapus diizinkan.
+- **Berlangsung (ACTIVE, tanggal mulai ≤ hari ini ≤ tanggal selesai):** editing dibatasi — admin hanya dapat **mengakhiri lebih awal**, yaitu mengubah **keterangan** dan **memperpendek tanggal selesai** ke rentang `[hari ini, tanggal selesai semula]` (tidak boleh mundur ke masa lalu / retroaktif, tidak boleh memperpanjang). Tanggal mulai, durasi, dan hapus **terkunci**. Tanggal yang sudah lewat tidak berubah sehingga absensi sebelumnya tetap terjaga.
+- **Selesai (PAST, hari ini > tanggal selesai):** **read-only**, semua modifikasi ditolak.
+
+Aksi terlarang ditolak dengan pesan jelas (HTTP 400/409). Setiap perubahan dicatat ke **audit trail** (`AuditLog` aksi `HOLIDAY_CREATE/UPDATE/END_EARLY/DELETE` — actor, waktu, nilai sebelum/sesudah, alasan opsional). Setiap mutasi dijalankan dalam satu transaksi DB (baris `Holiday` + `AuditLog` sekaligus), menjaga ketiga kolom `startDate`/`days`/`endDate` tetap konsisten.
 
 #### 6.11.11 Konfigurasi Platform
 
