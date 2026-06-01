@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import {
   Building2,
   Clock,
+  Compass,
   Globe2,
   Loader2,
   Mail,
@@ -14,12 +15,15 @@ import {
   Phone,
   Save,
   Sparkles,
+  Target,
+  Users,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useUpdatePlatformInfoMutation } from "@/hooks/use-admin-platform-info";
 import { cn } from "@/lib/utils";
 import {
+  PLATFORM_LIST_MAX,
   type PlatformInfo,
   platformInfoSchema,
 } from "@/lib/validations/admin-platform-settings";
@@ -33,8 +37,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+
+import { StatementSection, TeamSection } from "./platform-info-dynamic";
+import { Field, Section } from "./settings-primitives";
 
 type Props = {
   initial: PlatformInfo;
@@ -49,6 +55,7 @@ export function PlatformInfoForm({ initial }: Props) {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors, isDirty },
   } = useForm<PlatformInfo>({
     resolver: zodResolver(platformInfoSchema),
@@ -236,6 +243,48 @@ export function PlatformInfoForm({ initial }: Props) {
           </div>
         </Section>
 
+        {/* Visi (dinamis) */}
+        <StatementSection
+          control={control}
+          register={register}
+          errors={errors}
+          name="visi"
+          eyebrow="04 · Visi"
+          title="Visi"
+          helper="Pernyataan visi platform. Tambahkan satu atau beberapa poin."
+          noun="Visi"
+          placeholder="Contoh: Menjadi platform belajar digital paling memberdayakan di Indonesia."
+          icon={Target}
+          max={PLATFORM_LIST_MAX}
+        />
+
+        {/* Misi (dinamis) */}
+        <StatementSection
+          control={control}
+          register={register}
+          errors={errors}
+          name="misi"
+          eyebrow="05 · Misi"
+          title="Misi"
+          helper="Daftar misi yang mendukung visi. Tambah atau kurangi sesuai kebutuhan."
+          noun="Misi"
+          placeholder="Contoh: Menyediakan kurikulum praktis yang relevan dengan industri."
+          icon={Compass}
+          max={PLATFORM_LIST_MAX}
+        />
+
+        {/* Tim (dinamis) */}
+        <TeamSection
+          control={control}
+          register={register}
+          errors={errors}
+          eyebrow="06 · Tim"
+          title="Tim"
+          helper="Anggota tim yang ditampilkan beserta posisinya."
+          icon={Users}
+          max={PLATFORM_LIST_MAX}
+        />
+
         {/* Action bar */}
         <div
           className={cn(
@@ -295,68 +344,5 @@ export function PlatformInfoForm({ initial }: Props) {
         </DialogContent>
       </Dialog>
     </>
-  );
-}
-
-type SectionProps = {
-  eyebrow: string;
-  title: string;
-  helper: string;
-  children: React.ReactNode;
-};
-
-function Section({ eyebrow, title, helper, children }: SectionProps) {
-  return (
-    <section
-      className={cn(
-        "relative overflow-hidden rounded-3xl bg-white p-6 ring-1 ring-zinc-200",
-        "dark:bg-[color:var(--color-surface-card)] dark:ring-[color:var(--color-surface-border)]",
-      )}
-    >
-      <header className="mb-5 flex flex-col gap-1">
-        <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[color:var(--color-brand-700)] dark:text-[color:var(--color-brand-300)]">
-          {eyebrow}
-        </span>
-        <h2 className="font-heading text-lg font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50">
-          {title}
-        </h2>
-        <p className="text-xs leading-relaxed text-zinc-500 dark:text-zinc-300/70">
-          {helper}
-        </p>
-      </header>
-      {children}
-    </section>
-  );
-}
-
-type FieldProps = {
-  id: string;
-  label: string;
-  icon?: React.ReactNode;
-  error?: string;
-  required?: boolean;
-  children: React.ReactNode;
-};
-
-function Field({ id, label, icon, error, required, children }: FieldProps) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <Label
-        htmlFor={id}
-        className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-zinc-600 dark:text-zinc-300"
-      >
-        {icon}
-        {label}
-        {required ? (
-          <span className="text-[color:var(--color-error)]">*</span>
-        ) : null}
-      </Label>
-      {children}
-      {error ? (
-        <p className="text-[11px] font-semibold text-[color:var(--color-error)]">
-          {error}
-        </p>
-      ) : null}
-    </div>
   );
 }

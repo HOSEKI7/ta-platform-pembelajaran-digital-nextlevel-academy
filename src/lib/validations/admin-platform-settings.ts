@@ -24,6 +24,12 @@ export const PLATFORM_CITY_MAX = 80;
 export const PLATFORM_COUNTRY_MAX = 80;
 export const PLATFORM_HOURS_MAX = 120;
 
+/** Repeatable lists (Visi / Misi / Tim) — soft caps to keep the blob bounded. */
+export const PLATFORM_LIST_MAX = 20;
+export const PLATFORM_STATEMENT_MAX = 240;
+export const PLATFORM_TEAM_NAME_MAX = 80;
+export const PLATFORM_TEAM_ROLE_MAX = 80;
+
 /** Optional free-text field: trimmed, capped, empty allowed. */
 function optionalText(max: number, label: string) {
   return z
@@ -35,6 +41,36 @@ function optionalText(max: number, label: string) {
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // Indonesian-friendly phone shape: digits, spaces, +, -, parentheses. Empty allowed.
 const WHATSAPP_RE = /^[0-9+\-\s()]+$/;
+
+/**
+ * Visi / Misi items use an object wrapper (`{ value }`) rather than a bare
+ * string so they bind cleanly + type-safely to react-hook-form's
+ * `useFieldArray` (which expects object arrays). The loader tolerates legacy
+ * bare-string entries on read.
+ */
+const statementItem = z.object({
+  value: z
+    .string()
+    .trim()
+    .min(1, "Tidak boleh kosong.")
+    .max(PLATFORM_STATEMENT_MAX, `Maksimal ${PLATFORM_STATEMENT_MAX} karakter.`),
+});
+
+const teamMember = z.object({
+  nama: z
+    .string()
+    .trim()
+    .min(1, "Nama wajib diisi.")
+    .max(PLATFORM_TEAM_NAME_MAX, `Nama maksimal ${PLATFORM_TEAM_NAME_MAX} karakter.`),
+  posisi: z
+    .string()
+    .trim()
+    .min(1, "Posisi wajib diisi.")
+    .max(PLATFORM_TEAM_ROLE_MAX, `Posisi maksimal ${PLATFORM_TEAM_ROLE_MAX} karakter.`),
+});
+
+export type PlatformStatement = z.infer<typeof statementItem>;
+export type PlatformTeamMember = z.infer<typeof teamMember>;
 
 export const platformInfoSchema = z.object({
   namaPlatform: z
@@ -56,6 +92,15 @@ export const platformInfoSchema = z.object({
   kota: optionalText(PLATFORM_CITY_MAX, "Kota"),
   negara: optionalText(PLATFORM_COUNTRY_MAX, "Negara"),
   jamOperasional: optionalText(PLATFORM_HOURS_MAX, "Jam operasional"),
+  visi: z
+    .array(statementItem)
+    .max(PLATFORM_LIST_MAX, `Maksimal ${PLATFORM_LIST_MAX} visi.`),
+  misi: z
+    .array(statementItem)
+    .max(PLATFORM_LIST_MAX, `Maksimal ${PLATFORM_LIST_MAX} misi.`),
+  tim: z
+    .array(teamMember)
+    .max(PLATFORM_LIST_MAX, `Maksimal ${PLATFORM_LIST_MAX} anggota tim.`),
 });
 
 export type PlatformInfo = z.infer<typeof platformInfoSchema>;
@@ -71,4 +116,7 @@ export const EMPTY_PLATFORM_INFO: PlatformInfo = {
   kota: "",
   negara: "",
   jamOperasional: "",
+  visi: [],
+  misi: [],
+  tim: [],
 };

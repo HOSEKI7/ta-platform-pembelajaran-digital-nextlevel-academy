@@ -45,7 +45,40 @@ function coercePlatformInfo(raw: string | null | undefined): PlatformInfo {
     kota: pick("kota"),
     negara: pick("negara"),
     jamOperasional: pick("jamOperasional"),
+    visi: pickStatements(obj.visi),
+    misi: pickStatements(obj.misi),
+    tim: pickTeam(obj.tim),
   };
+}
+
+/** Parse a Visi/Misi list. Tolerates both the `{ value }` object shape and
+ *  legacy bare strings; drops anything malformed. */
+function pickStatements(v: unknown): PlatformInfo["visi"] {
+  if (!Array.isArray(v)) return [];
+  return v.flatMap((item) => {
+    if (typeof item === "string") {
+      return item.trim() ? [{ value: item }] : [];
+    }
+    if (item && typeof item === "object") {
+      const raw = (item as Record<string, unknown>).value;
+      if (typeof raw === "string" && raw.trim()) return [{ value: raw }];
+    }
+    return [];
+  });
+}
+
+/** Parse a Tim list of `{ nama, posisi }`; drops malformed/empty entries. */
+function pickTeam(v: unknown): PlatformInfo["tim"] {
+  if (!Array.isArray(v)) return [];
+  return v.flatMap((item) => {
+    if (item && typeof item === "object") {
+      const o = item as Record<string, unknown>;
+      if (typeof o.nama === "string" && typeof o.posisi === "string") {
+        return [{ nama: o.nama, posisi: o.posisi }];
+      }
+    }
+    return [];
+  });
 }
 
 export async function loadPlatformInfo(): Promise<PlatformInfo> {
