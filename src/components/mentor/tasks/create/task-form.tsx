@@ -46,6 +46,8 @@ type Props = {
   initial?: TaskFormInitial;
   onSubmit: (payload: TaskFormSubmit) => void;
   onCancel: () => void;
+  /** Inline-image upload endpoint forwarded to the editor (default: mentor). */
+  imageUploadUrl?: string;
 };
 
 function splitDeadline(wib: string): { date: string; time: string } {
@@ -72,6 +74,7 @@ export function TaskForm({
   initial,
   onSubmit,
   onCancel,
+  imageUploadUrl,
 }: Props) {
   const initialDeadline = splitDeadline(initial?.deadlineWib ?? "");
   const hasExisting = Boolean(initial?.attachment);
@@ -134,6 +137,7 @@ export function TaskForm({
         <TaskDescriptionEditor
           initialHTML={initial?.description}
           disabled={submitting}
+          imageUploadUrl={imageUploadUrl}
           onChange={(html) => setValue("description", html, { shouldValidate: true })}
         />
       </Field>

@@ -54,18 +54,23 @@ type Props = {
   /** Initial HTML content (edit mode). Images keep their `data-bunny-path`. */
   initialHTML?: string;
   disabled?: boolean;
+  /** Endpoint for inline image uploads. Admin edit points this at its own
+   *  ADMINISTRATOR-gated route; defaults to the mentor route. */
+  imageUploadUrl?: string;
 };
 
 /**
  * Word-like rich-text editor for a task description. Supports basic formatting
  * plus a single pasted/dropped/uploaded image (capped to save Bunny storage).
- * Images upload to `/api/mentor/tasks/images`; the returned object path is kept
- * on the node so it can be normalized/validated server-side.
+ * Images upload to `imageUploadUrl` (default `/api/mentor/tasks/images`); the
+ * returned object path is kept on the node so it can be normalized/validated
+ * server-side.
  */
 export function TaskDescriptionEditor({
   onChange,
   initialHTML,
   disabled = false,
+  imageUploadUrl = "/api/mentor/tasks/images",
 }: Props) {
   const editorRef = useRef<Editor | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -92,7 +97,7 @@ export function TaskDescriptionEditor({
     try {
       const fd = new FormData();
       fd.append("file", file);
-      const res = await fetch("/api/mentor/tasks/images", { method: "POST", body: fd });
+      const res = await fetch(imageUploadUrl, { method: "POST", body: fd });
       const json = (await res.json()) as { data?: { path: string; url: string }; error?: string };
       if (!res.ok || !json.data) {
         throw new Error(json.error ?? "Gagal mengunggah gambar.");
@@ -110,7 +115,7 @@ export function TaskDescriptionEditor({
     } finally {
       setUploading(false);
     }
-  }, []);
+  }, [imageUploadUrl]);
 
   const editor = useEditor({
     immediatelyRender: false,

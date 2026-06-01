@@ -1,42 +1,27 @@
-# Todo — Admin Tambah/Edit Kursus + Kurikulum
+# Todo — Admin: Kelola Tugas Peserta Magang
 
-Plan lengkap: `~/.claude/plans/frontend-design-frontend-design-create-happy-lighthouse.md`
+Plan lengkap: `~/.claude/plans/frontend-design-frontend-design-buatlah-eager-floyd.md`
 
-## Phase A — Fondasi backend (skema + env + helper + webhook) ✅
-- [x] Skema: enum `VideoStatus` + `Video.status`/`videoUrl` + `duration @default(0)`
-- [x] Env: `BUNNY_WEBHOOK_SECRET` ke `.env.example` (+ ingatkan isi `.env.local` & `BUNNY_STREAM_API_KEY`)
-- [x] Helper `src/lib/bunny-stream-admin.ts` (createBunnyVideo / signTusUpload / getBunnyVideo / deleteBunnyVideo / cdnPlaybackUrl)
-- [x] Extend `src/lib/bunny-storage.ts` (uploadCourseAsset, uploadQuizImage)
-- [x] Util `src/lib/slugify.ts`
-- [x] Webhook `POST /api/webhooks/bunny`
-- [ ] Ingatkan user: `npx prisma generate && npx prisma db push` + `npm i tus-js-client`
+- [x] 1. Tipe & query helper `src/lib/admin-internship-tasks-query.ts`
+- [x] 2. Loader `src/lib/admin-internship-tasks-loader.ts` (list, detail, edit)
+- [x] 3. Write submission `src/lib/admin-task-submission-write.ts`
+- [x] 4. Validasi `src/lib/validations/admin-task.ts`
+- [x] 5. API GET list `/api/admin/internship/tasks`
+- [x] 6. API PUT+DELETE `/api/admin/internship/tasks/[taskId]`
+- [x] 7. API PATCH force status `.../[taskId]/submissions/[studentId]`
+- [x] 8. API POST images `/api/admin/internship/tasks/images`
+- [x] 9. Hooks `src/hooks/use-admin-tasks.ts`
+- [x] 10. Tweak `task-form.tsx` + `task-description-editor.tsx` (prop imageUploadUrl)
+- [x] 11. List page + view + table
+- [x] 12. Detail page + view + submissions table + force-status dialog
+- [x] 13. Edit page + view
+- [x] 14. Update PRD §6.11.9.1 + Session History CLAUDE.md
+- [x] 15. Verifikasi: tsc ✓, lint ✓ (0 error), dev run + Playwright (list/detail/force-toggle dua arah/edit) ✓
 
-## Phase B — API general + loader + form General Info (alur draf)
-- [x] Validations `src/lib/validations/admin-course.ts`
-- [x] `POST /api/admin/courses` (create draft, multipart) + `PATCH [courseId]`
-- [x] Helper `admin-course-write.ts` (parse/upload/isUniqueError) + resolver `resolveCourseImageUrl`
-- [x] Loader `admin-course-edit-loader.ts` + types `admin-course-form-types.ts`
-- [x] `RichTextEditor`, `ImageUploader`, benefit/FAQ repeater
-- [x] Seksi General + Seksi Pengaturan Kursus (Status/Kategori/Instruktur)
-- [x] Page `/new` + `/[id]/edit` + hooks `use-admin-course-form`
-
-## Phase C — Kurikulum sprint/step ✅
-- [x] API sprints + steps CRUD (sprints/[sprintId], steps/[stepId])
-- [x] `curriculum-builder` / `sprint-card` / `step-row` + hook `use-admin-curriculum`
-
-## Phase D — Upload video TUS + status ✅
-- [x] `POST /api/admin/videos/create-upload`
-- [x] `video-step-dialog` + `video-uploader` + `use-video-upload` (tus-js-client)
-
-## Phase E — Editor quiz ✅
-- [x] `POST /api/admin/quiz/images`
-- [x] `quiz-step-dialog` + `quiz-question-editor` (soal + gambar + opsi)
-
-## Phase F — Validasi Publish §6.11.3 ✅
-- [x] `PATCH /api/admin/courses/[courseId]/status` (publish gate)
-- [x] Status di seksi Pengaturan + orkestrasi simpan + error spesifik
-
-## Verifikasi
-- [x] tsc + lint bersih (0 error)
-- [x] Smoke test browser: create draft → redirect edit (0 err); add sprint + quiz live; field persist; publish gate tolak tanpa thumbnail (400 + tetap Draft)
-- [ ] Manual (user): upload video TUS dgn file nyata + webhook Bunny → READY
+## Catatan verifikasi
+- List render + badge Aktif/Overdue + filter + paginasi OK.
+- Force SUBMITTED tanpa berkas → "tanpa berkas", tak crash, persisten (tx + AuditLog commit).
+- Force NOT_SUBMITTED (reverse) → hero count 1/2 → 0/2, data seed dipulihkan.
+- Edit page prefilled (judul/Tiptap/lampiran/tenggat) via TaskForm + route gambar admin.
+- Tidak ada error di console (hanya log query Prisma dev).
+- Tidak diuji manual (low-risk, kode terbukti): Delete (reuse logika mentor) & file-keep saat reverse pada submission ber-file (jaminan kode: branch update tak menyentuh submissionUrl).

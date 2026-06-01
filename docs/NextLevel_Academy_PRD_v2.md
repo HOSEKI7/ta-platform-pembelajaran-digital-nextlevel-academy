@@ -1251,6 +1251,44 @@ kehadiran lintas kelas pada satu tanggal terpilih (acuan derivasi status: §6.9.
 - **Absensi Mentor** memakai data kehadiran mentor sendiri (lihat §6.9.2.1);
   selain sumber roster, perilaku kedua halaman identik.
 
+#### 6.11.9.1 Manajemen Tugas Magang _(implemented)_
+
+Halaman **Tugas** di grup Program Magang (`/admin/internship/tasks`) untuk
+**memantau** seluruh tugas magang lintas kelas. Admin **tidak dapat membuat**
+tugas (pembuatan tetap milik mentor, §6.9.3) — admin hanya memantau, mengoreksi,
+mengedit, dan menghapus.
+
+- **Daftar (tabel):** Nama Tugas, Kelas ("Batch 1 2026 - Web Programming - A"),
+  Waktu Dibuat (DD/MM/YYYY), Tenggat (DD/MM/YYYY · HH:mm WIB), Status (**Aktif**
+  bila tenggat ≥ sekarang, **Overdue** bila lewat), dan Aksi (Lihat Detail +
+  Hapus). Urut terbaru-dibuat lebih dulu, paginasi 10/halaman.
+- **Filter:** pencarian nama tugas, serta filter **Batch → Bidang → Kelas**
+  (berjenjang, memakai endpoint filter yang sama dengan Absensi Magang) dan
+  filter **Status tugas** (Semua/Aktif/Overdue). Semua status difilter di level
+  DB terhadap satu acuan waktu server agar paginasi konsisten.
+- **Hapus:** konfirmasi popup; menghapus tugas **beserta seluruh pengumpulan**
+  (cascade) dan membersihkan blob Bunny terkait (lampiran, gambar deskripsi,
+  berkas submission). Dicatat di `AuditLog` (`TASK_DELETE`).
+- **Detail tugas** (`/admin/internship/tasks/[taskId]`): mirip detail milik
+  mentor — menampilkan instruksi (rich-text), lampiran, dan **tabel pengumpulan
+  peserta** se-kelas. Terdapat tombol **Edit** dan **Hapus**.
+  - **Edit** (`…/edit`): paritas penuh dengan form mentor — judul, deskripsi
+    Tiptap (maks 1 gambar, upload via route admin), tenggat (WIB), dan lampiran
+    (ganti/hapus). Tenggat lampau tidak dipaksa ke masa depan. Dicatat di
+    `AuditLog` (`TASK_EDIT`).
+  - **Aksi pengumpulan = ubah-paksa status** (bukan "kembalikan" milik mentor):
+    admin dapat menandai status pengumpulan peserta menjadi **Terkumpul**
+    (`SUBMITTED`) atau **Belum** (`NOT_SUBMITTED`) secara paksa — walaupun
+    peserta belum/sudah mengunggah berkas. Setiap aksi dikonfirmasi popup dan
+    dicatat di `AuditLog` (`TASK_SUBMISSION_OVERRIDE`).
+  - **Keputusan perilaku:** (1) memaksa **Belum** bersifat **non-destruktif** —
+    berkas yang sudah diunggah **tetap disimpan** (dapat dipulihkan dengan
+    memaksa kembali ke Terkumpul); catatan feedback dibersihkan agar status
+    tampil "Belum" yang bersih (bukan "Dikembalikan"). (2) Memaksa **Terkumpul**
+    tanpa berkas valid — baris ditampilkan "tanpa berkas", tidak meng-crash sisi
+    peserta/mentor. (3) **Tidak ada notifikasi** ke peserta (hanya `AuditLog`).
+    (4) Peserta di luar kelas tugas ditolak (404) agar tak ada baris yatim.
+
 #### 6.11.10 Konfigurasi Magang
 
 **Kelola Batch:**
