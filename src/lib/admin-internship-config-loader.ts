@@ -1,6 +1,7 @@
 import "server-only";
 
 import { prisma } from "@/lib/prisma";
+import { classLetter } from "@/lib/internship-naming";
 import type {
   BatchRow,
   ClassRow,
@@ -18,11 +19,6 @@ import type {
 /** `@db.Date` columns are stored as UTC midnight → format back as "YYYY-MM-DD". */
 function dbDateToISO(d: Date): string {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
-}
-
-/** Trailing segment of a composite class name, e.g. "Batch 1 - WP - A" → "A". */
-function classLetter(name: string): string {
-  return name.split(" - ").pop()?.trim() || name;
 }
 
 export async function loadInternshipConfig(): Promise<InternshipConfigData> {

@@ -2,6 +2,7 @@ import "server-only";
 
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/generated/prisma";
+import { internshipClassLabel } from "@/lib/internship-naming";
 
 import {
   PAGE_SIZE,
@@ -10,31 +11,11 @@ import {
   type ClassOption,
 } from "./admin-users-query";
 
-/** Builds "Batch - Field - Class" from a class include, or null. */
-function classLabel(
-  cls: {
-    name: string;
-    field: { name: string; batch: { name: string } };
-  } | null,
-): string | null {
-  if (!cls) return null;
-  return `${cls.field.batch.name} - ${cls.field.name} - ${cls.name}`;
-}
-
-const classInclude = {
-  select: {
-    name: true,
-    field: { select: { name: true, batch: { select: { name: true } } } },
-  },
-} satisfies Prisma.ClassDefaultArgs;
-
 /**
  * Loads one page of the admin User Management table (PRD §6.11.4).
  *
  * Performance shape:
  * - 2 parallel queries (count + findMany) for the page slice.
- * - Class labels for magang/mentor come from a nested `select` on the same
- *   findMany — no per-row follow-up query (anti-N+1).
  *
  * Soft-deleted users (`deletedAt != null`) are always excluded.
  */
@@ -73,10 +54,7 @@ export async function loadAdminUsersPage(
         role: true,
         isActive: true,
         createdAt: true,
-        internshipProfile: {
-          select: { institution: true, class: classInclude },
-        },
-        mentorProfile: { select: { class: classInclude } },
+        internshipProfile: { select: { institution: true } },
       },
       orderBy: { createdAt: sort === "created_asc" ? "asc" : "desc" },
       skip: (page - 1) * PAGE_SIZE,
@@ -91,9 +69,6 @@ export async function loadAdminUsersPage(
       email: u.email,
       image: u.image,
       role: u.role,
-      classLabel: classLabel(
-        u.internshipProfile?.class ?? u.mentorProfile?.class ?? null,
-      ),
       institution: u.internshipProfile?.institution ?? null,
       isActive: u.isActive,
       createdAt: u.createdAt.toISOString(),
@@ -128,7 +103,11 @@ export async function loadClassOptions(): Promise<ClassOption[]> {
 
   return classes.map((c) => ({
     id: c.id,
-    label: `${c.field.batch.name} - ${c.field.name} - ${c.name}`,
+    label: internshipClassLabel({
+      batchName: c.field.batch.name,
+      fieldName: c.field.name,
+      className: c.name,
+    }),
     studentCount: c._count.internshipProfiles,
     maxStudents: c.maxStudents,
   }));

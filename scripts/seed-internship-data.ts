@@ -5,7 +5,7 @@
  *
  * Creates:
  *   - Batch "Batch 1 2026" (period 14/04/2026 – 04/07/2026)
- *   - Field "Batch 1 - Web Programming" → Class "Batch 1 - Web Programming - A"
+ *   - Field "Web Programming" → Class "Batch 1 2026 - Web Programming - A"
  *   - A MENTOR (with MentorProfile → class) and an ADMINISTRATOR test account
  *   - Places the test PESERTA_MAGANG user into the class (InternshipProfile)
  *   - Global Holidays (1 May, 1 Jun, 17–19 Jun 2026)
@@ -172,15 +172,16 @@ async function main() {
     },
   });
   const field = await db.field.upsert({
-    // Field name is now unique per batch (@@unique([batchId, name])).
-    where: { batchId_name: { batchId: batch.id, name: "Batch 1 - Web Programming" } },
+    // Field name is the bare bidang (unique per batch via @@unique([batchId, name])).
+    where: { batchId_name: { batchId: batch.id, name: "Web Programming" } },
     update: {},
-    create: { name: "Batch 1 - Web Programming", batchId: batch.id },
+    create: { name: "Web Programming", batchId: batch.id },
   });
   const klass = await db.class.upsert({
-    where: { name: "Batch 1 - Web Programming - A" },
+    // Class name is the globally-unique composite "<Batch> - <Bidang> - <Letter>".
+    where: { name: "Batch 1 2026 - Web Programming - A" },
     update: {},
-    create: { name: "Batch 1 - Web Programming - A", fieldId: field.id, maxStudents: 10 },
+    create: { name: "Batch 1 2026 - Web Programming - A", fieldId: field.id, maxStudents: 10 },
   });
 
   // 3) Profiles: mentor + student placement.

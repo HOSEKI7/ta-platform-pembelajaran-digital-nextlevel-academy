@@ -756,7 +756,7 @@ Jika tidak valid → tampilkan pesan error yang deskriptif.
 
 #### 6.9.1 Pencocokan Mentor & Peserta Magang
 
-- Setiap akun Peserta Magang dan Mentor memiliki satu field pencocokan: Kelas. Kelas sudah mengandung informasi Batch dan Bidang di dalam penamaannya (contoh: Batch 1 - Web Programming - A).
+- Setiap akun Peserta Magang dan Mentor memiliki satu field pencocokan: Kelas. Nama Kelas adalah komposit yang dirakit dari masing-masing variabel `[Batch] - [Bidang] - [Huruf]` (contoh: Batch 1 2026 - Web Programming - A); `Field.name` disimpan polos ("Web Programming") dan huruf kelas adalah segmen terakhir nama komposit.
 - Mentor hanya melihat Peserta Magang yang memiliki Kelas yang sama dengannya.
 
 **Data akun Peserta Magang (diisi Admin saat membuat akun):**
@@ -1062,7 +1062,7 @@ Jika ada yang tidak lolos validasi, sistem menampilkan pesan error spesifik dan 
 **Daftar Pengguna:**
 
 - Filter berdasarkan role.
-- Tabel: nama, email, role, bidang dan kelas (khusus magang/mentor), status akun, tanggal daftar.
+- Tabel: nama, email, role, status akun, tanggal daftar. (Kolom Kelas **tidak** ditampilkan di tabel daftar — informasi Batch/Bidang/Kelas tetap dikelola di halaman Edit dan di Program Magang.)
 - Aksi: Lihat Detail, Edit, Nonaktifkan, Hapus.
 
 **Membuat Akun (Peserta Didik):**
@@ -1083,7 +1083,7 @@ Jika ada yang tidak lolos validasi, sistem menampilkan pesan error spesifik dan 
 | Nama Lengkap | Ya | — |
 | Email | Ya | - |
 | Password Awal | Ya | — |
-| Kelas | Ya | Pilih dari daftar kelas yang tersedia (sudah mencakup info Batch dan Bidang, contoh: Batch 1 - Web Programming - A) |
+| Kelas | Ya | Pilih dari daftar kelas yang tersedia (label dirakit `[Batch] - [Bidang] - [Huruf]`, contoh: Batch 1 2026 - Web Programming - A) |
 | Institusi | Tidak | - |
 
 **Membuat Akun Mentor:**

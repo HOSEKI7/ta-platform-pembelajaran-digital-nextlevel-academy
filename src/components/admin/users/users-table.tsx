@@ -61,15 +61,6 @@ function PersonCell({ user }: { user: AdminUserRow }) {
   );
 }
 
-function ClassValue({ label }: { label: string | null }) {
-  if (!label) {
-    return <span className="text-sm text-zinc-300 dark:text-zinc-600">—</span>;
-  }
-  return (
-    <span className="text-sm text-zinc-600 dark:text-zinc-300">{label}</span>
-  );
-}
-
 function RowActions({
   user,
   onToggleStatus,
@@ -136,7 +127,6 @@ export function UsersTable({ users, isFetching, onToggleStatus, onDelete }: Prop
               <th className={cn(TH, "w-12 text-center")}>#</th>
               <th className={TH}>Pengguna</th>
               <th className={TH}>Role</th>
-              <th className={TH}>Kelas</th>
               <th className={TH}>Tgl Daftar</th>
               <th className={TH}>Status</th>
               <th className={cn(TH, "text-right")}>Aksi</th>
@@ -161,9 +151,6 @@ export function UsersTable({ users, isFetching, onToggleStatus, onDelete }: Prop
                 </td>
                 <td className="px-4 py-3">
                   <UserRoleBadge role={u.role} />
-                </td>
-                <td className="max-w-[16rem] px-4 py-3">
-                  <ClassValue label={u.classLabel} />
                 </td>
                 <td className="px-4 py-3 text-sm tabular-nums text-zinc-500 dark:text-zinc-400">
                   {fmtDate(u.createdAt)}
@@ -198,7 +185,6 @@ export function UsersTable({ users, isFetching, onToggleStatus, onDelete }: Prop
             </div>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 pl-[3.25rem] text-xs text-zinc-500 dark:text-zinc-400">
               <UserRoleBadge role={u.role} />
-              {u.classLabel ? <span>{u.classLabel}</span> : null}
               <span className="tabular-nums">{fmtDate(u.createdAt)}</span>
             </div>
             <div className="flex items-center justify-end pl-[3.25rem]">

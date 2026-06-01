@@ -1,36 +1,37 @@
-# Todo — Admin: Kelola Nilai Akhir Peserta Magang
+# Perbaikan penamaan Bidang & Kelas (Admin Panel)
 
-Plan: `~/.claude/plans/buatlah-halaman-manajemen-nilai-cuddly-acorn.md`
+Keputusan user: **normalisasi data DB** (bukan hanya tampilan) + kolom gabungan
+`[Batch] - [Bidang] - [Kelas]` di tabel Tugas/Nilai/Absensi **tetap**.
 
-## Schema
-- [x] Tambah `FINAL_GRADE_OVERRIDE` ke `enum NotificationType`
+Akar masalah: nama tersimpan berprefix — `Field.name` = "Batch 1 - Web Programming",
+`Class.name` = "Batch 1 - Web Programming - A". Target: `Field.name` polos
+("Web Programming"), `Class.name` komposit dari variabel
+("Batch 1 2026 - Web Programming - A").
 
-## Part A — Halaman Nilai Akhir Admin
-- [x] A1 `src/lib/admin-internship-grades-query.ts`
-- [x] A2 `src/lib/admin-internship-grades-loader.ts`
-- [x] A3 `src/lib/validations/admin-final-grade.ts`
-- [x] A4 `src/lib/admin-final-grade-write.ts`
-- [x] A5 API GET `grades/route.ts` + PUT `grades/[studentId]/route.ts`
-- [x] A6 `src/hooks/use-admin-grades.ts`
-- [x] A7 `admin-grades-view.tsx` + `admin-grades-table.tsx` + `admin-grade-dialog.tsx`
-- [x] A8 `src/app/(admin)/admin/internship/grades/page.tsx`
+## Tugas
 
-## Part B — Bell notifikasi mentor DB-backed
-- [x] B1 API `mentor/notifications/route.ts` + `mark-all-read/route.ts`
-- [x] B2 `src/hooks/use-mentor-notifications.ts` + `mentorKeys.notifications()`
-- [x] B3 Rewrite `mentor-notifications-button.tsx`
+- [x] Helper bersama `src/lib/internship-naming.ts` (`classLetter`, `internshipClassLabel`) — aman di server & client
+- [x] Skrip migrasi `scripts/normalize-internship-names.ts` (idempotent, hapus duplikat-kosong)
+- [x] Refactor loader admin pakai helper (build label dari variabel, tanpa strip):
+  - [x] `admin-internship-attendance-loader.ts`
+  - [x] `admin-internship-grades-loader.ts`
+  - [x] `admin-internship-tasks-loader.ts` (3 titik)
+  - [x] `admin-internship-config-loader.ts` (dedupe `classLetter`)
+  - [x] `admin-internship-config-write.ts` (dedupe `classLetter`)
+- [x] Dropdown filter Kelas → tampilkan huruf saja (`classLetter`):
+  - [x] `admin-attendance-view.tsx`
+  - [x] `admin-grades-view.tsx`
+  - [x] `admin-tasks-view.tsx`
+- [x] Tabel Pengguna: **hapus kolom Kelas**
+  - [x] `users-table.tsx` (desktop + mobile + helper `ClassValue`)
+  - [x] `admin-users-loader.ts` (buang `classLabel` dari list + rapikan join; perbaiki `loadClassOptions` label)
+  - [x] `admin-users-query.ts` (buang `classLabel` dari `AdminUserRow`)
+- [x] Perbaiki seed agar konsisten (field polos):
+  - [x] `prisma/seed.ts`
+  - [x] `scripts/seed-internship-data.ts`
+- [x] Jalankan migrasi (applied + idempotent) + `tsc --noEmit` + lint (0 error)
+- [x] Update PRD (§5/§6.11.4) + CLAUDE.md
 
-## Docs
-- [x] PRD §6.11.9.2 + §6.9.4 + §6.10.1
-- [x] CLAUDE.md Session History
-
-## Verifikasi
-- [x] `prisma generate`; `tsc --noEmit` bersih; `eslint` file baru bersih
-- [ ] **USER:** `npx prisma db push` (enum baru di Postgres) + restart dev server
-- [ ] **USER:** uji manual admin grades + integritas mentorId + audit + notifikasi mentor
-
-## Catatan
-- `MentorProfile` tak punya `createdAt` → resolusi mentor pakai `orderBy: { id: "asc" }`.
-- `setAdminFinalGrade` tolak 409 bila kelas tanpa mentor; edit existing tak ubah `mentorId`.
-- Alasan admin hanya di `AuditLog FINAL_GRADE_OVERRIDE` (tanpa kolom baru).
-- Bell mentor kini DB-backed (reuse loader student role-agnostic).
+## Hasil verifikasi
+- DB ternormalisasi: Field "Web Programming", Class "Batch 1 2026 - Web Programming - A" (2 peserta/3 mentor/6 tugas terjaga); orphan kosong dibuang.
+- `tsc --noEmit` bersih; eslint 0 error (hanya warning `watch()` benign pra-ada).

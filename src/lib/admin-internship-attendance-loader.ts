@@ -4,6 +4,7 @@ import { formatInTimeZone } from "date-fns-tz";
 
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/generated/prisma";
+import { internshipClassLabel } from "@/lib/internship-naming";
 import { INTERNSHIP_CHECKIN_WINDOW } from "@/lib/internship-config";
 import {
   computeWindow,
@@ -46,22 +47,21 @@ function compareYmd(a: Ymd, b: Ymd): number {
   return 0;
 }
 
-/** "Batch - Field - Class" label from a nested class include. */
+/**
+ * "Batch - Bidang - Kelas" label from a nested class include, assembled from
+ * each name part (see `internshipClassLabel`), e.g. "Batch 1 2026 - Web
+ * Programming - A". Names are stored clean (`scripts/normalize-internship-names.ts`).
+ */
 type ClassWithChain = {
   name: string;
   field: { name: string; batch: { name: string; startDate: Date; endDate: Date } };
 };
-/**
- * Clean "Batch - Bidang - Kelas" label, e.g. "Batch 1 2026 - Web Programming - A".
- * The Field/Class names redundantly embed the batch prefix (e.g. Field
- * "Batch 1 - Web Programming", Class "Batch 1 - Web Programming - A"), so strip
- * it to the meaningful tail — mirrors the mentor `toContext` cleanup.
- */
 function classLabel(cls: ClassWithChain): string {
-  const field =
-    cls.field.name.split(" - ").slice(1).join(" - ") || cls.field.name;
-  const section = cls.name.split(" - ").pop() ?? cls.name;
-  return `${cls.field.batch.name} - ${field} - ${section}`;
+  return internshipClassLabel({
+    batchName: cls.field.batch.name,
+    fieldName: cls.field.name,
+    className: cls.name,
+  });
 }
 
 const classChainSelect = {

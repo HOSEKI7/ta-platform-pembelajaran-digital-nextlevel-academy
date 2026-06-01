@@ -4,6 +4,7 @@ import { formatInTimeZone } from "date-fns-tz";
 
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/generated/prisma";
+import { internshipClassLabel } from "@/lib/internship-naming";
 import { resolveTaskFileUrl } from "@/lib/bunny-storage";
 import { signTaskDescriptionImages } from "@/lib/task-description";
 import { formatFileSize } from "@/components/internship/tasks/task-helpers";
@@ -26,16 +27,18 @@ const WIB_TZ = "Asia/Jakarta";
  * every class. Soft-delete is not modelled on `Task`, so no `deletedAt` filter.
  */
 
-/** "Batch - Bidang - Kelas" label from a nested class include. Mirrors the
- *  attendance loader: Field/Class names embed the batch prefix, so strip it. */
+/** "Batch - Bidang - Kelas" label assembled from each name part (see
+ *  `internshipClassLabel`) — mirrors the attendance/grades loaders. */
 type ClassWithChain = {
   name: string;
   field: { name: string; batch: { name: string; startDate: Date; endDate: Date } };
 };
 function classLabel(cls: ClassWithChain): string {
-  const field = cls.field.name.split(" - ").slice(1).join(" - ") || cls.field.name;
-  const section = cls.name.split(" - ").pop() ?? cls.name;
-  return `${cls.field.batch.name} - ${field} - ${section}`;
+  return internshipClassLabel({
+    batchName: cls.field.batch.name,
+    fieldName: cls.field.name,
+    className: cls.name,
+  });
 }
 
 const classChainSelect = {

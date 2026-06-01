@@ -2,6 +2,7 @@ import "server-only";
 
 import type { Prisma } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
+import { classLetter } from "@/lib/internship-naming";
 import type {
   BatchFormInput,
   ClassCreateInput,
@@ -56,11 +57,6 @@ function isUniqueConstraintError(err: unknown): boolean {
 function toUtcMidnight(iso: string): Date {
   const [y, m, d] = iso.split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, d));
-}
-
-/** Trailing segment of a composite class name → its letter. */
-function classLetter(name: string): string {
-  return name.split(" - ").pop()?.trim() || name;
 }
 
 function composeClassName(

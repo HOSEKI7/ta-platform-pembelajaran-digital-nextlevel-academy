@@ -15,6 +15,7 @@ import {
   type AttendanceScope,
   type SettableStatus,
 } from "@/lib/admin-internship-attendance-query";
+import { classLetter } from "@/lib/internship-naming";
 import {
   useAdminAttendanceQuery,
   useAttendanceFiltersQuery,
@@ -166,10 +167,11 @@ export function AdminAttendanceView({ scope }: Props) {
     id === "all"
       ? "Semua Bidang"
       : (filters?.fields.find((f) => f.id === id)?.name ?? "Semua Bidang");
-  const classLabel = (id: string) =>
-    id === "all"
-      ? "Semua Kelas"
-      : (filters?.classes.find((c) => c.id === id)?.name ?? "Semua Kelas");
+  const classLabel = (id: string) => {
+    if (id === "all") return "Semua Kelas";
+    const c = filters?.classes.find((c) => c.id === id);
+    return c ? `Kelas ${classLetter(c.name)}` : "Semua Kelas";
+  };
 
   const data = query.data;
   const rows = data?.rows ?? [];
@@ -309,7 +311,7 @@ export function AdminAttendanceView({ scope }: Props) {
               <SelectItem value="all">Semua Kelas</SelectItem>
               {classOptions.map((c) => (
                 <SelectItem key={c.id} value={c.id}>
-                  {c.name}
+                  Kelas {classLetter(c.name)}
                 </SelectItem>
               ))}
             </SelectContent>

@@ -2,6 +2,7 @@ import "server-only";
 
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/generated/prisma";
+import { internshipClassLabel } from "@/lib/internship-naming";
 import { resolveGradeBand } from "@/components/internship/final-grade/final-grade-helpers";
 import {
   PAGE_SIZE,
@@ -18,17 +19,18 @@ import {
  * user relation (so ungraded interns still appear) — no N+1.
  */
 
-/** "Batch - Bidang - Kelas" label. Field/Class names embed the batch prefix
- *  (e.g. "Batch 1 - Web Programming - A"), so strip it to the meaningful tail —
- *  mirrors the attendance/tasks loaders. */
+/** "Batch - Bidang - Kelas" label assembled from each name part (see
+ *  `internshipClassLabel`) — mirrors the attendance/tasks loaders. */
 type ClassWithChain = {
   name: string;
   field: { name: string; batch: { name: string } };
 };
 function classLabel(cls: ClassWithChain): string {
-  const field = cls.field.name.split(" - ").slice(1).join(" - ") || cls.field.name;
-  const section = cls.name.split(" - ").pop() ?? cls.name;
-  return `${cls.field.batch.name} - ${field} - ${section}`;
+  return internshipClassLabel({
+    batchName: cls.field.batch.name,
+    fieldName: cls.field.name,
+    className: cls.name,
+  });
 }
 
 const classChainSelect = {

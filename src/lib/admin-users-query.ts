@@ -60,8 +60,6 @@ export type AdminUserRow = {
   email: string;
   image: string | null;
   role: Role;
-  /** "Batch - Field - Class" for magang/mentor; null for other roles. */
-  classLabel: string | null;
   /** Universitas (magang only); null otherwise. */
   institution: string | null;
   isActive: boolean;
