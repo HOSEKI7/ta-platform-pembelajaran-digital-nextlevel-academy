@@ -2,13 +2,6 @@ export type StepType = "VIDEO" | "QUIZ";
 
 export type StepStatus = "completed" | "active" | "available" | "locked";
 
-export type PlayerResource = {
-  label: string;
-  href: string;
-  kind: "pdf" | "link" | "code";
-  meta?: string;
-};
-
 /**
  * Single quiz option. A string is treated as an image when it matches
  * `^(https?:\/\/|\/)` (URL or root-relative path); otherwise it renders as
@@ -37,7 +30,6 @@ export type PlayerStep = {
   type: StepType;
   durationSec: number;
   description: string;
-  resources?: PlayerResource[];
   /** Populated only when `type === "QUIZ"`. */
   quiz?: PlayerQuiz;
 };
@@ -90,6 +82,8 @@ export type QuizStepState = {
 export type CoursePlayerData = {
   course: PlayerCourse;
   completedStepIds: string[];
+  /** Per-step personal notes (Catatan tab), keyed by step id. Empty when none. */
+  notes: Record<string, string>;
   embedUrls: Record<string, string>;
   /** Keyed by step id. Only present for steps where `type === "QUIZ"`. */
   quizStates: Record<string, QuizStepState>;

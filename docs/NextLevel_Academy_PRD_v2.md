@@ -534,11 +534,20 @@ Memprioritaskan informasi magang:
 - Jika tahap = Video: tampilkan video player (Bunny.net embed dengan signed URL).
 - Jika tahap = Quiz: tampilkan antarmuka quiz pilihan ganda.
 
-**Tab Notes:**
+**Tab di bawah konten — tepat 2 tab (Deskripsi & Catatan):**
 
-- Deskripsi/catatan yang dibuat oleh Admin untuk tahap tersebut.
-- Dapat berisi teks, link, dan informasi tambahan (bersifat read-only bagi pengguna).
-- Equivalent dengan deskripsi video di YouTube.
+1. **Deskripsi** — deskripsi/penjelasan materi yang dibuat Admin untuk tahap tersebut
+   (teks/HTML, bersifat read-only bagi pengguna; equivalent dengan deskripsi video di YouTube).
+2. **Catatan** — catatan pribadi milik pengguna untuk tahap tersebut. Disimpan **per-user
+   per-step di database** (tabel `StepNote`, unik `(enrollmentId, stepId)`) dan dihidrasi saat
+   halaman dimuat sehingga tersinkron di semua perangkat. Bersifat **draft autosave**:
+   penyimpanan di-*debounce* ~1,5 detik setelah pengguna berhenti mengetik (bukan tiap karakter,
+   demi performa) dan di-*flush* langsung saat pindah step / meninggalkan tab / menutup halaman.
+   Indikator status ditampilkan: Menyimpan… / Tersimpan / Gagal menyimpan. Catatan kosong
+   menghapus barisnya.
+
+> Tidak ada tab/fitur "Sumber" (lampiran file/PDF/link per-step) — fitur tersebut tidak pernah
+> diimplementasikan dan telah dihapus dari sistem & UI.
 
 #### 6.5.6 Video Completion
 

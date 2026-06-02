@@ -405,6 +405,7 @@ model Step {
   quiz   Quiz?
 
   progresses StepProgress[]
+  notes      StepNote[]
   expLogs    ExpLog[]       @relation("ExpLogStep")
 
   @@index([sprintId, order])
@@ -483,6 +484,7 @@ model Enrollment {
   user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   course      Course         @relation(fields: [courseId], references: [id])
   progresses  StepProgress[]
+  stepNotes   StepNote[]
   certificate Certificate?
 
   @@unique([userId, courseId])
@@ -507,6 +509,25 @@ model StepProgress {
   @@unique([enrollmentId, stepId])
   @@index([stepId])
   @@map("step_progress")
+}
+
+// Personal per-step notes written by a student inside the Course Player
+// "Catatan" tab. One row per (enrollment, step); autosaved (debounced) and
+// hydrated by the player loader. Cascades on enrollment delete.
+model StepNote {
+  id           String   @id @default(cuid())
+  enrollmentId String
+  stepId       String
+  content      String   @db.Text
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  step       Step       @relation(fields: [stepId], references: [id])
+
+  @@unique([enrollmentId, stepId])
+  @@index([stepId])
+  @@map("step_note")
 }
 
 // -----------------------------------------------------------------------------

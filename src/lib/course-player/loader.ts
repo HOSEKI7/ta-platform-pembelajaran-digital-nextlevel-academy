@@ -81,6 +81,9 @@ export async function loadCoursePlayer(
           cooldownUntil: true,
         },
       },
+      stepNotes: {
+        select: { stepId: true, content: true },
+      },
     },
   });
 
@@ -114,7 +117,6 @@ export async function loadCoursePlayer(
         type: st.type,
         durationSec: st.video?.duration ?? 0,
         description: st.description,
-        resources: [],
         quiz,
       };
     }),
@@ -175,9 +177,15 @@ export async function loadCoursePlayer(
     .filter((p) => p.isCompleted)
     .map((p) => p.stepId);
 
+  const notes: Record<string, string> = {};
+  for (const n of enrollment.stepNotes) {
+    notes[n.stepId] = n.content;
+  }
+
   return {
     course,
     completedStepIds,
+    notes,
     embedUrls,
     quizStates,
     courseId: c.id,

@@ -1,18 +1,22 @@
 "use client";
 
 import { useId } from "react";
-import { Check, Loader2, PenLine } from "lucide-react";
+import { Check, Loader2, PenLine, TriangleAlert } from "lucide-react";
 
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { useStepNotes } from "@/lib/course-player/use-step-notes";
+import {
+  type NotesSaveState,
+  useStepNotes,
+} from "@/lib/course-player/use-step-notes";
 
 type Props = {
   stepId: string;
+  initialContent: string;
 };
 
-export function StepNotes({ stepId }: Props) {
-  const { value, setValue, saveState } = useStepNotes(stepId);
+export function StepNotes({ stepId, initialContent }: Props) {
+  const { value, setValue, saveState } = useStepNotes(stepId, initialContent);
   const labelId = useId();
   const hintId = useId();
 
@@ -44,18 +48,21 @@ export function StepNotes({ stepId }: Props) {
         id={hintId}
         className="mt-2 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500"
       >
-        Tersimpan otomatis di perangkat ini · belum disinkronkan ke akun
+        Tersimpan otomatis ke akun Anda · tersinkron di semua perangkat
       </p>
     </div>
   );
 }
 
-function SaveIndicator({
-  state,
-}: {
-  state: "idle" | "saving" | "saved";
-}) {
-  const label = state === "saving" ? "Menyimpan…" : state === "saved" ? "Tersimpan" : "Mulai mengetik";
+function SaveIndicator({ state }: { state: NotesSaveState }) {
+  const label =
+    state === "saving"
+      ? "Menyimpan…"
+      : state === "saved"
+        ? "Tersimpan"
+        : state === "error"
+          ? "Gagal menyimpan"
+          : "Mulai mengetik";
   return (
     <span
       role="status"
@@ -64,12 +71,15 @@ function SaveIndicator({
         state === "saved" && "text-[color:var(--player-accent)]",
         state === "saving" && "text-zinc-500",
         state === "idle" && "text-zinc-400",
+        state === "error" && "text-red-500",
       )}
     >
       {state === "saving" ? (
         <Loader2 className="size-3 animate-spin" strokeWidth={2.4} />
       ) : state === "saved" ? (
         <Check className="size-3" strokeWidth={3} />
+      ) : state === "error" ? (
+        <TriangleAlert className="size-3" strokeWidth={2.4} />
       ) : (
         <span className="size-1.5 rounded-full bg-current" />
       )}

@@ -29,7 +29,7 @@ type CompleteResponse = {
 };
 
 export function CoursePlayer({ data }: Props) {
-  const { course, completedStepIds, embedUrls, quizStates } = data;
+  const { course, completedStepIds, embedUrls, quizStates, notes } = data;
   const { state, select, complete, hydrate, goNext } = usePlayerState({
     course,
     completedStepIds,
@@ -147,7 +147,11 @@ export function CoursePlayer({ data }: Props) {
               onNext={goNext}
               onQuizSubmitted={handleQuizSubmitted}
             />
-            <StepTabs step={activeStep} course={course} />
+            <StepTabs
+              step={activeStep}
+              course={course}
+              noteContent={notes[activeStep.id] ?? ""}
+            />
           </div>
 
           {/* Right column: sticky curriculum sidebar (desktop only) */}

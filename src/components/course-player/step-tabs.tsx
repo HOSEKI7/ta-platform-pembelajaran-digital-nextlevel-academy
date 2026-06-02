@@ -1,23 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { BookOpen, Layers, PenLine } from "lucide-react";
+import { BookOpen, PenLine } from "lucide-react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import type { PlayerCourse, PlayerStep } from "@/lib/course-player/types";
 import { StepDescription } from "./step-description";
 import { StepNotes } from "./step-notes";
-import { StepResources } from "./step-resources";
 
 type Props = {
   step: PlayerStep;
   course: PlayerCourse;
+  noteContent: string;
 };
 
-type TabValue = "deskripsi" | "catatan" | "sumber";
+type TabValue = "deskripsi" | "catatan";
 
-export function StepTabs({ step, course }: Props) {
+export function StepTabs({ step, course, noteContent }: Props) {
   const [value, setValue] = useState<TabValue>("deskripsi");
   const [prevStepId, setPrevStepId] = useState(step.id);
 
@@ -38,7 +38,6 @@ export function StepTabs({ step, course }: Props) {
         >
           <TabTrigger value="deskripsi" icon={BookOpen} label="Deskripsi" />
           <TabTrigger value="catatan" icon={PenLine} label="Catatan" />
-          <TabTrigger value="sumber" icon={Layers} label="Sumber" />
         </TabsList>
 
         <TabsContent value="deskripsi" className="pt-2">
@@ -46,11 +45,7 @@ export function StepTabs({ step, course }: Props) {
         </TabsContent>
 
         <TabsContent value="catatan" className="pt-2">
-          <StepNotes stepId={step.id} />
-        </TabsContent>
-
-        <TabsContent value="sumber" className="pt-2">
-          <StepResources resources={step.resources} />
+          <StepNotes stepId={step.id} initialContent={noteContent} />
         </TabsContent>
       </Tabs>
     </div>
