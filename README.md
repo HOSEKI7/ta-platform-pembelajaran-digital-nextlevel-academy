@@ -21,9 +21,17 @@ Repositori dan source code ini bertujuan sebagai identifikasi progres pengembang
 - **Zod** validation, **react-hook-form** + `@hookform/resolvers`, **@react-pdf/renderer** for certificates, **Tiptap** for rich-text course descriptions, **Recharts** for admin analytics
 
 ### Website Preview
+
+#### Landing Page
 ![Landing Page](/assets/LandingPage.png)
+
+#### Auth Page
 ![Login Page](/assets/LoginPage.png)
+
+#### Student Dashboard
 ![Dashboard Page (Peserta Didik)](/assets/Dashboard_PesertaDidik.png)
+
+#### Video Course Learning
 ![Video Learning](/assets/LearningPage_Video_PesertaDidik.png)
 
 ### How To Install?
