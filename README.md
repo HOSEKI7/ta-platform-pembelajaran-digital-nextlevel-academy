@@ -1,4 +1,4 @@
-# NextLevel Academy
+# NextLevel Academy ! [Logo](/assets/NextLevel%20Logo.webp)
 
 NextLevel Academy adalah platform edukasi digital yang menyediakan kursus online, pelatihan, mentoring, seminar, dan workshop di berbagai bidang seperti multimedia, AI, programming, digital creative.
 
@@ -19,6 +19,12 @@ Repositori dan source code ini bertujuan sebagai identifikasi progres pengembang
 - **Midtrans**
 - **Supabase**
 - **Zod** validation, **react-hook-form** + `@hookform/resolvers`, **@react-pdf/renderer** for certificates, **Tiptap** for rich-text course descriptions, **Recharts** for admin analytics
+
+### Website Preview
+![Landing Page](/assets/LandingPage.png)
+![Login Page](/assets/LoginPage.png)
+![Dashboard Page (Peserta Didik)](/assets/Dashboard_PesertaDidik.png)
+![Video Learning](/assets/LearningPage_Video_PesertaDidik.png)
 
 ### How To Install?
 
