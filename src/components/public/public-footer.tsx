@@ -91,7 +91,11 @@ export async function PublicFooter() {
         <div className="grid gap-12 lg:grid-cols-12">
           {/* Brand column */}
           <div className="lg:col-span-4">
-            <Link href="/" aria-label={`${platformName} beranda`} className="inline-flex items-center">
+            <Link
+              href="/"
+              aria-label={`${platformName} beranda`}
+              className="inline-flex items-center"
+            >
               <Image
                 src="/NextLevel_LogoXFit.webp"
                 alt={platformName}
@@ -101,21 +105,26 @@ export async function PublicFooter() {
               />
             </Link>
             <p className="mt-5 max-w-sm text-sm leading-relaxed text-zinc-600">
-              <span className="font-semibold text-zinc-900">Belajar dengan pace kamu.</span>{" "}
-              Platform pembelajaran digital dengan gamifikasi EXP, level, dan sistem magang
-              terintegrasi untuk karir digital di Indonesia.
+              <span className="font-semibold text-zinc-900">
+                Belajar dengan pace kamu.
+              </span>{" "}
+              Platform pembelajaran digital dengan gamifikasi EXP, level, dan
+              sistem magang terintegrasi untuk karir digital di Indonesia.
             </p>
 
             <ul className="mt-6 space-y-2 text-sm text-zinc-600">
               <li className="inline-flex items-center gap-2">
                 <Mail className="size-4 text-[color:var(--color-brand-600)]" />
-                <a href="mailto:halo@nextlevel.academy" className="hover:text-zinc-900">
-                  halo@nextlevel.academy
+                <a
+                  href="mailto:halo@nextlevel.academy"
+                  className="hover:text-zinc-900"
+                >
+                  admin@nextlevelacademy.id
                 </a>
               </li>
               <li className="flex items-start gap-2">
                 <MapPin className="mt-0.5 size-4 text-[color:var(--color-brand-600)]" />
-                <span>Jakarta, Indonesia · WIB (UTC+7)</span>
+                <span>Medan, Indonesia · WIB (UTC+7)</span>
               </li>
             </ul>
 
@@ -177,7 +186,8 @@ export async function PublicFooter() {
               Newsletter
             </h4>
             <p className="mb-4 text-sm text-zinc-600">
-              Update kursus baru, panduan karir, dan voucher eksklusif tiap dua minggu.
+              Update kursus baru, panduan karir, dan voucher eksklusif tiap dua
+              minggu.
             </p>
             <NewsletterForm />
           </div>
@@ -186,8 +196,9 @@ export async function PublicFooter() {
         {/* Bottom strip */}
         <div className="mt-14 flex flex-col items-start justify-between gap-3 border-t border-zinc-200/70 pt-6 text-xs text-zinc-500 sm:flex-row sm:items-center">
           <p>
-            © {year} <span className="font-semibold text-zinc-700">{platformName}</span>. Dibuat
-            dengan ❤︎ di Indonesia · WIB (UTC+7)
+            © {year}{" "}
+            <span className="font-semibold text-zinc-700">{platformName}</span>.
+            Dibuat dengan ❤︎ di Indonesia · WIB (UTC+7)
           </p>
           <p className="inline-flex items-center gap-2">
             <span

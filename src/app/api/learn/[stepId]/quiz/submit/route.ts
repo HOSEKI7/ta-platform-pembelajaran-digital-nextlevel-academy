@@ -1,12 +1,19 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse, after, type NextRequest } from "next/server";
 
 import { ExpSource, Role } from "@/generated/prisma";
 import { requireRoleInRoute } from "@/lib/auth-server";
+import {
+  ensureCertificateIssued,
+  generateAndStoreCertificateImage,
+} from "@/lib/certificates/issue-certificate";
 import { awardCompletionBadges, awardExp } from "@/lib/gamification";
 import { prisma } from "@/lib/prisma";
 import { submitQuizSchema } from "@/lib/validators/quiz";
 
 export const dynamic = "force-dynamic";
+// A passing quiz can complete the course → certificate auto-issue (Satori +
+// Sharp PNG render) needs the Node runtime.
+export const runtime = "nodejs";
 
 /** PRD §6.5.7 / §6.7.x — quiz rules. */
 const EXP_QUIZ_PASS = 90;
@@ -257,10 +264,30 @@ export async function POST(
         courseCompleted,
         correctCount,
         totalQuestions: total,
+        enrollmentId: enrollment.id,
+        courseId,
       };
     });
 
-    return NextResponse.json({ data: result });
+    // Auto-issue certificate on course completion (PRD §6.6); PNG render +
+    // upload happen after the response flushes via `after()`.
+    if (result.courseCompleted) {
+      try {
+        const cert = await ensureCertificateIssued({
+          userId,
+          courseId: result.courseId,
+          enrollmentId: result.enrollmentId,
+        });
+        after(() => generateAndStoreCertificateImage(cert.id));
+      } catch (err) {
+        console.error("[quiz/submit] certificate auto-issue failed", err);
+      }
+    }
+
+    const { enrollmentId: _enrollmentId, courseId: _courseId, ...data } = result;
+    void _enrollmentId;
+    void _courseId;
+    return NextResponse.json({ data });
   } catch (err) {
     if (err instanceof HttpError) {
       return NextResponse.json(

@@ -1,9 +1,12 @@
 import "server-only";
 
+import { cache } from "react";
+
 import {
   CERT_PUBLIC_ID_REGEX,
   certificateNoFromPublicId,
 } from "@/lib/certificates/generate-certificate-no";
+import { resolveCertificateImageUrl } from "@/lib/certificates/issue-certificate";
 import { prisma } from "@/lib/prisma";
 import type {
   CertificatesPageSize,
@@ -12,10 +15,11 @@ import type {
 
 export type CertificateUnclaimedRowDTO = {
   kind: "unclaimed";
-  enrollmentId: string;
+  id: string;
+  certificateNo: string;
   courseId: string;
   courseTitle: string;
-  completedAt: string | null;
+  issuedAt: string;
 };
 
 export type CertificateClaimedRowDTO = {
@@ -47,12 +51,12 @@ export type CertificatesFilters = {
 /**
  * Loads certificate rows for the student "Sertifikat" page.
  *
- * Returns two row groups so the UI can render them as a single visually-
- * unified table:
- *   - `unclaimed`: enrollments with `progressPct >= 100` that don't yet have
- *     a `Certificate`. Always returned in full (count is tiny in practice).
- *   - `claimed`:   existing `Certificate` rows, sorted by `issuedAt` and
- *     paginated independently.
+ * Certificates are auto-issued at 100% completion (PRD §6.6), so every row is a
+ * real `Certificate`. The "Klaim" button is now a formality that stamps
+ * `claimedAt`. We split rows by that flag:
+ *   - `unclaimed`: issued-but-not-yet-acknowledged (`claimedAt = null`). Always
+ *     returned in full (count is tiny in practice).
+ *   - `claimed`:   acknowledged rows, sorted by `issuedAt` and paginated.
  *
  * Pagination metadata only describes the claimed set so totalPages doesn't
  * jitter as new claims appear.
@@ -64,26 +68,20 @@ export async function loadCertificateRows(
   const { sort, pageSize, page } = filters;
 
   const [unclaimedRows, total, claimedRows] = await Promise.all([
-    prisma.enrollment.findMany({
-      where: {
-        userId,
-        progressPct: { gte: 100 },
-        certificate: null,
-      },
+    prisma.certificate.findMany({
+      where: { userId, claimedAt: null },
       select: {
         id: true,
+        certificateNo: true,
         courseId: true,
-        completedAt: true,
+        issuedAt: true,
         course: { select: { title: true } },
       },
-      orderBy: [
-        { completedAt: { sort: "desc", nulls: "last" } },
-        { enrolledAt: "desc" },
-      ],
+      orderBy: { issuedAt: "desc" },
     }),
-    prisma.certificate.count({ where: { userId } }),
+    prisma.certificate.count({ where: { userId, claimedAt: { not: null } } }),
     prisma.certificate.findMany({
-      where: { userId },
+      where: { userId, claimedAt: { not: null } },
       select: {
         id: true,
         certificateNo: true,
@@ -102,10 +100,11 @@ export async function loadCertificateRows(
   return {
     unclaimed: unclaimedRows.map((r) => ({
       kind: "unclaimed",
-      enrollmentId: r.id,
+      id: r.id,
+      certificateNo: r.certificateNo,
       courseId: r.courseId,
       courseTitle: r.course.title,
-      completedAt: r.completedAt ? r.completedAt.toISOString() : null,
+      issuedAt: r.issuedAt.toISOString(),
     })),
     claimed: claimedRows.map((r) => ({
       kind: "claimed",
@@ -122,6 +121,7 @@ export async function loadCertificateRows(
 export type PublicCertificateDTO = {
   certificateNo: string;
   publicId: string;
+  imageUrl: string;
   issuedAt: string;
   expiresAt: string | null;
   isExpired: boolean;
@@ -150,8 +150,11 @@ export type PublicCertificateDTO = {
  * so the page can render a clean 404. Evaluates `isExpired` at fetch time
  * so the rendering component stays pure (React Compiler flags `Date.now()`
  * reads inside components).
+ *
+ * Wrapped in React `cache()` so the page's `generateMetadata` and its render
+ * share a single lookup (and a single lazy image-regen) per request.
  */
-export async function loadPublicCertificate(
+export const loadPublicCertificate = cache(async function loadPublicCertificate(
   certificateId: string,
 ): Promise<PublicCertificateDTO | null> {
   if (!CERT_PUBLIC_ID_REGEX.test(certificateId)) return null;
@@ -159,7 +162,9 @@ export async function loadPublicCertificate(
   const cert = await prisma.certificate.findUnique({
     where: { certificateNo: certificateNoFromPublicId(certificateId) },
     select: {
+      id: true,
       certificateNo: true,
+      imageUrl: true,
       issuedAt: true,
       expiresAt: true,
       course: {
@@ -184,10 +189,17 @@ export async function loadPublicCertificate(
   });
   if (!cert) return null;
 
+  const imageUrl = await resolveCertificateImageUrl({
+    id: cert.id,
+    certificateNo: cert.certificateNo,
+    imageUrl: cert.imageUrl,
+  });
+
   const now = Date.now();
   return {
     certificateNo: cert.certificateNo,
     publicId: certificateId,
+    imageUrl,
     issuedAt: cert.issuedAt.toISOString(),
     expiresAt: cert.expiresAt ? cert.expiresAt.toISOString() : null,
     isExpired: cert.expiresAt ? cert.expiresAt.getTime() <= now : false,
@@ -206,4 +218,4 @@ export async function loadPublicCertificate(
       categoryName: cert.course.category.name,
     },
   };
-}
+});

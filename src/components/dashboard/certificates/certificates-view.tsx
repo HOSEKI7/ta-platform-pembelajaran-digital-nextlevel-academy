@@ -199,7 +199,7 @@ function CertificatesContent({
                     tone="brand"
                   />
                   {unclaimed.map((row) => (
-                    <UnclaimedRow key={row.enrollmentId} row={row} />
+                    <UnclaimedRow key={row.id} row={row} />
                   ))}
                 </>
               ) : null}
@@ -471,7 +471,7 @@ function MobileRows({
       ) : null}
       {unclaimed.map((row) => (
         <div
-          key={row.enrollmentId}
+          key={row.id}
           className="flex flex-col gap-3 border-b border-zinc-200 px-5 py-4 last:border-0 dark:border-[color:var(--color-surface-border)]"
         >
           <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">

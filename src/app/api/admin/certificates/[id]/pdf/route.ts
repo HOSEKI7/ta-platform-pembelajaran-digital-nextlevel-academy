@@ -2,17 +2,18 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { Role } from "@/generated/prisma";
 import { requireRoleInRoute } from "@/lib/auth-server";
-import { publicIdFromCertificateNo } from "@/lib/certificates/cert-id";
-import { renderCertificatePdf } from "@/lib/certificates/certificate-pdf";
+import { wrapPngInPdf } from "@/lib/certificates/certificate-pdf-wrapper";
+import { getCertificatePngBytes } from "@/lib/certificates/issue-certificate";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 /**
- * GET /api/admin/certificates/:id/pdf — re-renders any issued certificate's PDF
- * for admin lookup/support (PRD §6.11.7). Mirrors the student route but is gated
- * to ADMINISTRATOR and has NO owner check (admins may inspect any certificate).
+ * GET /api/admin/certificates/:id/pdf — re-streams any certificate's PDF for
+ * admin lookup/support (PRD §6.11.7). Like the student route it wraps the
+ * certificate PNG (single source of design); gated to ADMINISTRATOR with NO
+ * owner check (admins may inspect any certificate).
  */
 export async function GET(
   _request: NextRequest,
@@ -30,6 +31,7 @@ export async function GET(
         certificateNo: true,
         issuedAt: true,
         expiresAt: true,
+        imageUrl: true,
         course: { select: { title: true } },
         user: { select: { name: true } },
       },
@@ -42,21 +44,10 @@ export async function GET(
       );
     }
 
-    const baseUrl =
-      process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ??
-      "http://localhost:3000";
-    const verifyUrl = `${baseUrl}/cert/${publicIdFromCertificateNo(cert.certificateNo)}`;
+    const png = await getCertificatePngBytes(cert);
+    const pdf = await wrapPngInPdf(png);
 
-    const buffer = await renderCertificatePdf({
-      recipientName: cert.user.name,
-      courseTitle: cert.course.title,
-      certificateNo: cert.certificateNo,
-      issuedAt: cert.issuedAt,
-      expiresAt: cert.expiresAt,
-      verifyUrl,
-    });
-
-    return new NextResponse(new Uint8Array(buffer), {
+    return new NextResponse(new Uint8Array(pdf), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",

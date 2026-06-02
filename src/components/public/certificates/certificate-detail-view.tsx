@@ -18,8 +18,6 @@ import { formatDateID } from "@/lib/format-date";
 
 import { SiteContainer } from "@/components/public/site-container";
 
-import { CertificatePreview } from "./certificate-preview";
-
 type Props = {
   cert: PublicCertificateDTO;
   verificationUrl: string;
@@ -92,16 +90,19 @@ export function CertificateDetailView({ cert, verificationUrl }: Props) {
             </div>
           </div>
 
-          {/* Large certificate preview */}
+          {/* Large certificate image (rendered PNG — single source of design) */}
           <div className="mx-auto mt-12 w-full max-w-5xl">
-            <CertificatePreview
-              recipientName={recipient.name}
-              courseTitle={course.title}
-              certificateNo={cert.certificateNo}
-              issuedAt={cert.issuedAt}
-              expiresAt={cert.expiresAt}
-              verificationUrl={verificationUrl}
-            />
+            <div
+              className="relative overflow-hidden rounded-2xl bg-white shadow-[0_30px_80px_-30px_rgba(35,65,137,0.35)] ring-1 ring-[color:var(--color-brand-200)]"
+              style={{ aspectRatio: "1.414 / 1" }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element -- cross-origin CDN PNG; next/image adds no value for a static certificate */}
+              <img
+                src={cert.imageUrl}
+                alt={`Sertifikat ${cert.certificateNo} atas nama ${recipient.name}`}
+                className="h-full w-full object-contain"
+              />
+            </div>
           </div>
         </SiteContainer>
       </section>

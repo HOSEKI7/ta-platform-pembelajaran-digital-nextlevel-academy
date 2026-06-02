@@ -601,34 +601,57 @@ Setelah video ditandai selesai:
 
 ### 6.6 Certificate System
 
-#### 6.6.1 Klaim Sertifikat
+> **Arsitektur (implemented).** Ada **satu sumber desain** sertifikat: layout JSX
+> **Satori** yang dirender server-side → SVG → **Sharp** → **PNG resolusi tinggi**
+> (2000×1414, rasio A4 landscape). PNG disimpan permanen di **Bunny Storage zone
+> khusus sertifikat yang publik/tokenless** dan URL CDN-nya disimpan di
+> `Certificate.imageUrl`. Tombol **Download PDF** hanya membungkus PNG yang sama
+> ke dalam PDF satu halaman via **pdf-lib** (di-stream, tidak disimpan) — sehingga
+> PNG dan PDF dijamin identik. Tidak ada `@react-pdf/renderer` dan tidak ada
+> headless browser. Semua render berjalan di runtime **Node.js** (Sharp butuh
+> binary native).
 
-- Sertifikat dapat diklaim setelah progres kursus mencapai **100%**.
-- Tombol klaim tersedia di:
-  - Halaman course player (setelah semua tahap selesai).
-  - Halaman "Sertifikat" di sidebar.
-- Sertifikat di-generate sebagai file **PDF** secara on-demand.
+#### 6.6.1 Penerbitan & Klaim Sertifikat
 
-#### 6.6.2 Konten Sertifikat PDF
+- Sertifikat **otomatis terbit** saat progres kursus mencapai **100%** (record DB
+  dibuat idempotent; PNG dirender + di-upload ke Bunny secara non-blocking via
+  `after()`, dengan **lazy regen** sebagai fallback bila gambar belum ada saat
+  dibaca).
+- Tombol **Klaim** (di halaman "Sertifikat") kini **formalitas**: menstempel
+  `claimedAt` untuk memindahkan sertifikat dari grup "Belum Diklaim" ke
+  "Diterbitkan". Keabsahan tidak bergantung pada klaim maupun keberadaan file —
+  **selalu** divalidasi dari record DB.
 
-| Field                       | Sumber Data                                | Keterangan                      |
-| --------------------------- | ------------------------------------------ | ------------------------------- |
-| Nama Penerima               | Nama lengkap akun user                     | —                               |
-| Nama Kursus                 | Judul kursus                               | —                               |
-| Tanggal Terbit (Issue Date) | Tanggal klaim                              | Format: DD/MM/YYYY              |
-| Tanggal Kedaluwarsa         | Issue Date + konfigurasi global            | Opsional; default tidak ada     |
-| Nomor Sertifikat Unik       | Auto-generated                             | Format: `NLA-YYYYMMDD-XXXXXXXX` |
-| URL Verifikasi              | `https://domain.com/verify/:certificateId` | Tercetak di sertifikat          |
+#### 6.6.2 Konten & Desain Sertifikat
+
+Desain khas NextLevel: berwarna (brand biru + aksen kuning), ramai, informatif.
+Elemen wajib:
+
+| Field                       | Sumber Data                       | Keterangan                          |
+| --------------------------- | --------------------------------- | ----------------------------------- |
+| Logo NextLevel              | Aset brand                        | Logo resmi pada sertifikat          |
+| Nama Penerima               | Nama lengkap akun user            | —                                   |
+| Nama Kursus                 | Judul kursus                      | —                                   |
+| Tanggal Terbit (Issue Date) | Tanggal penerbitan (100%)         | Format: DD/MM/YYYY                  |
+| Tanggal Kedaluwarsa         | Issue Date + konfigurasi global   | Opsional; tampil jika dikonfigurasi |
+| Nomor Sertifikat Unik       | Auto-generated                    | Format: `NLA-XXXXXXXXXXXX` (12 char acak ber-entropi tinggi) |
+| URL Verifikasi              | `https://domain.com/cert/:publicId` | Tercetak di sertifikat            |
+| QR Code                     | Encode URL verifikasi             | Pindai untuk verifikasi             |
+| Tanda Tangan                | **Kevin Arya Swardhana**, Chief Executive Officer NextLevel Academy | Blok tanda tangan |
 
 **Expiration Date:**
 
-- Dikonfigurasi admin secara global (default: 3 tahun dari tanggal terbit).
-- Jika admin tidak mengisi konfigurasi expiry → field ini **tidak ditampilkan** di PDF.
+- Dikonfigurasi admin secara global (lihat §6.11.7); kosong = tanpa kedaluwarsa.
+- Jika tidak dikonfigurasi → field ini **tidak ditampilkan** pada sertifikat.
 
-#### 6.6.3 Halaman Verifikasi Publik (`/verify/:certificateId`)
+#### 6.6.3 Halaman Verifikasi Publik (`/cert/:publicId`)
 
-- Dapat diakses oleh siapapun tanpa login.
-- Menampilkan: nama penerima, nama kursus, tanggal terbit, tanggal kedaluwarsa (jika ada), status validitas sertifikat (Valid / Kedaluwarsa).
+- Dapat diakses oleh siapapun tanpa login, via **URL publik tanpa token**.
+- Menampilkan **PNG sertifikat sebagai `<img>`** + metadata (nama penerima, nama
+  kursus, tanggal terbit, tanggal kedaluwarsa jika ada, status Valid/Kedaluwarsa).
+- Path gambar Bunny memakai identifier ber-entropi tinggi
+  (`certificates/{publicId}.png`) untuk mencegah enumeration; keabsahan tetap dari
+  query DB berdasarkan nomor sertifikat.
 
 ---
 
@@ -1181,10 +1204,11 @@ Jika ada yang tidak lolos validasi, sistem menampilkan pesan error spesifik dan 
   diterbitkan: penerima (nama + email + avatar), kursus, tanggal terbit, nomor sertifikat, dan **status
   validitas** (Valid / Kedaluwarsa, diturunkan dari `expiresAt`). Dilengkapi pencarian (nomor / nama /
   email / kursus), filter status + kursus, urut tanggal terbit, dan pagination (10/halaman).
-- **Aksi per-baris (non-destruktif):** unduh ulang PDF + buka halaman verifikasi publik (`/cert/:id`).
+- **Aksi per-baris (non-destruktif):** unduh ulang PDF (wrapper PNG via pdf-lib) + buka halaman
+  verifikasi publik (`/cert/:publicId`).
 - **Konfigurasi global expiration** (panel "Pengaturan Sertifikat" di halaman ini): input jumlah tahun
   (kosong = no expiry), tersimpan di `platform_setting` key `CERTIFICATE_EXPIRY_YEARS` (dibaca
-  `computeCertExpiry` saat klaim). **Non-retroaktif** — hanya memengaruhi sertifikat yang diterbitkan
+  `computeCertExpiry` saat penerbitan). **Non-retroaktif** — hanya memengaruhi sertifikat yang diterbitkan
   setelahnya; sertifikat lama tetap memakai `expiresAt` yang sudah ter-stamp. Disimpan lewat dialog
   konfirmasi + dicatat ke `AuditLog` (`CERT_EXPIRY_UPDATE`). _(Keputusan: ditempatkan di sini, bukan di
   §6.13 Pengaturan yang belum dibangun.)_
@@ -1745,12 +1769,19 @@ Certificate {
   userId         UUID (FK → User)
   courseId       UUID (FK → Course)
   enrollmentId   UUID (FK → Enrollment, unique)
-  certificateNo  String (unique) — format: NLA-YYYYMMDD-XXXXXXXX
+  certificateNo  String (unique) — format: NLA-XXXXXXXXXXXX (12 char acak)
   issuedAt       DateTime
   expiresAt      DateTime (nullable)
-  pdfUrl         String (nullable — path file PDF)
+  imageUrl       String (nullable — permanent public CDN URL PNG di Bunny cert zone)
+  claimedAt      DateTime (nullable — null = terbit tapi belum diklaim/diakui)
 }
 ```
+
+> **Catatan implementasi.** PNG dirender via Satori+Sharp dan di-upload ke Bunny
+> **storage zone khusus sertifikat yang tokenless** (env `BUNNY_CERT_STORAGE_*` +
+> `BUNNY_CERT_PULL_ZONE`, terpisah dari zone blob privat). PDF dihasilkan
+> on-demand sebagai pembungkus PNG via pdf-lib (tidak disimpan). Backfill
+> sekali-jalan: `scripts/backfill-certificates.ts`.
 
 ### 9.13 Voucher
 

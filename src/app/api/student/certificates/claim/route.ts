@@ -1,31 +1,27 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse, after, type NextRequest } from "next/server";
 
-import { Prisma, Role } from "@/generated/prisma";
+import { Role } from "@/generated/prisma";
 import { requireRoleInRoute } from "@/lib/auth-server";
-import { computeCertExpiry } from "@/lib/certificates/cert-expiry";
-import { generateCertificateNo } from "@/lib/certificates/generate-certificate-no";
+import {
+  ensureCertificateIssued,
+  generateAndStoreCertificateImage,
+} from "@/lib/certificates/issue-certificate";
 import { prisma } from "@/lib/prisma";
 import { claimCertificateSchema } from "@/lib/validators/certificates";
 
 export const dynamic = "force-dynamic";
+// May render/upload the certificate PNG as a fallback — needs Node runtime.
+export const runtime = "nodejs";
 
-const MAX_CERT_NO_RETRIES = 5;
-
-function isUniqueViolationOn(
-  err: unknown,
-  field: string,
-): err is Prisma.PrismaClientKnownRequestError {
-  if (!(err instanceof Prisma.PrismaClientKnownRequestError)) return false;
-  if (err.code !== "P2002") return false;
-  const target = err.meta?.target;
-  const fields = Array.isArray(target)
-    ? target
-    : typeof target === "string"
-      ? [target]
-      : [];
-  return fields.some((f) => f.includes(field));
-}
-
+/**
+ * POST /api/student/certificates/claim
+ *
+ * Certificates are auto-issued at 100% completion (PRD §6.6), so "claiming" is
+ * now a FORMALITY: it stamps `claimedAt`, moving the certificate from the
+ * "Belum Diklaim" group into "Diterbitkan". Idempotent — re-claiming returns
+ * the same row. As a safety net it also issues the certificate if it somehow
+ * doesn't exist yet, and kicks off image generation when missing.
+ */
 export async function POST(request: NextRequest) {
   const session = await requireRoleInRoute(Role.PESERTA_DIDIK);
   if (session instanceof Response) return session;
@@ -51,11 +47,7 @@ export async function POST(request: NextRequest) {
   try {
     const enrollment = await prisma.enrollment.findUnique({
       where: { userId_courseId: { userId, courseId } },
-      select: {
-        id: true,
-        progressPct: true,
-        certificate: { select: { id: true } },
-      },
+      select: { id: true, progressPct: true },
     });
 
     if (!enrollment) {
@@ -70,73 +62,45 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
-    if (enrollment.certificate) {
-      return NextResponse.json(
-        { error: "Sertifikat untuk kursus ini sudah diklaim." },
-        { status: 409 },
-      );
+
+    // Safety net: issue if not yet auto-issued, then acknowledge.
+    const issued = await ensureCertificateIssued({
+      userId,
+      courseId,
+      enrollmentId: enrollment.id,
+    });
+
+    const certificate = await prisma.certificate.update({
+      where: { id: issued.id },
+      data: { claimedAt: new Date() },
+      select: {
+        id: true,
+        certificateNo: true,
+        issuedAt: true,
+        expiresAt: true,
+        imageUrl: true,
+      },
+    });
+
+    // Ensure the PNG exists (no-op if already generated). Non-blocking.
+    if (!certificate.imageUrl) {
+      after(() => generateAndStoreCertificateImage(certificate.id));
     }
 
-    const issuedAt = new Date();
-    const expiresAt = await computeCertExpiry(issuedAt);
-
-    for (let attempt = 0; attempt < MAX_CERT_NO_RETRIES; attempt += 1) {
-      const certificateNo = generateCertificateNo();
-      try {
-        const certificate = await prisma.certificate.create({
-          data: {
-            userId,
-            courseId,
-            enrollmentId: enrollment.id,
-            certificateNo,
-            issuedAt,
-            expiresAt,
-          },
-          select: {
-            id: true,
-            certificateNo: true,
-            issuedAt: true,
-            expiresAt: true,
-          },
-        });
-        return NextResponse.json(
-          {
-            data: {
-              certificate: {
-                id: certificate.id,
-                certificateNo: certificate.certificateNo,
-                issuedAt: certificate.issuedAt.toISOString(),
-                expiresAt: certificate.expiresAt
-                  ? certificate.expiresAt.toISOString()
-                  : null,
-              },
-            },
-          },
-          { status: 201 },
-        );
-      } catch (err) {
-        // Race: another request already created a certificate for this
-        // enrollment (the @unique enrollmentId guard fires before the cert-
-        // no check). Surface as 409.
-        if (isUniqueViolationOn(err, "enrollmentId")) {
-          return NextResponse.json(
-            { error: "Sertifikat untuk kursus ini sudah diklaim." },
-            { status: 409 },
-          );
-        }
-        // Cosmic-ray collision on the random suffix — try a new one.
-        if (isUniqueViolationOn(err, "certificateNo")) continue;
-        throw err;
-      }
-    }
-
-    console.error(
-      "[POST /api/student/certificates/claim] cert-no collisions exhausted",
-      { userId, courseId },
-    );
     return NextResponse.json(
-      { error: "Gagal membuat nomor sertifikat unik." },
-      { status: 500 },
+      {
+        data: {
+          certificate: {
+            id: certificate.id,
+            certificateNo: certificate.certificateNo,
+            issuedAt: certificate.issuedAt.toISOString(),
+            expiresAt: certificate.expiresAt
+              ? certificate.expiresAt.toISOString()
+              : null,
+          },
+        },
+      },
+      { status: 200 },
     );
   } catch (err) {
     console.error("[POST /api/student/certificates/claim]", err);

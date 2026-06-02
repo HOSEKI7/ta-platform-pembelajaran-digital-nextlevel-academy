@@ -602,10 +602,16 @@ model Certificate {
   userId        String
   courseId      String
   enrollmentId  String    @unique
-  certificateNo String    @unique // format: NLA-YYYYMMDD-XXXXXXXX
+  certificateNo String    @unique // format: NLA-XXXXXXXXXXXX (12 high-entropy chars)
   issuedAt      DateTime  @default(now())
   expiresAt     DateTime?
-  pdfUrl        String?
+  // Permanent public CDN URL of the rendered PNG (Satori → Bunny cert zone,
+  // tokenless). Null until the background `after()` render completes; the
+  // public page / PDF route lazy-regenerate it on read as a fallback.
+  imageUrl      String?
+  // Auto-issued at 100% completion (record + PNG). The "Klaim" button is a
+  // formality that stamps `claimedAt`; null = issued-but-not-acknowledged.
+  claimedAt     DateTime?
 
   user       User       @relation(fields: [userId], references: [id])
   course     Course     @relation(fields: [courseId], references: [id])

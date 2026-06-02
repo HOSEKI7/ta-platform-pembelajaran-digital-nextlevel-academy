@@ -1,11 +1,17 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse, after, type NextRequest } from "next/server";
 
 import { ExpSource, Role } from "@/generated/prisma";
 import { requireRoleInRoute } from "@/lib/auth-server";
+import {
+  ensureCertificateIssued,
+  generateAndStoreCertificateImage,
+} from "@/lib/certificates/issue-certificate";
 import { awardCompletionBadges, awardExp } from "@/lib/gamification";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
+// Certificate auto-issue renders a PNG (Satori + Sharp) — needs Node runtime.
+export const runtime = "nodejs";
 
 /** PRD §6.5.6 / §6.7.x — fixed EXP awards per source. */
 const EXP_VIDEO_COMPLETE = 15;
@@ -161,10 +167,35 @@ export async function POST(
         completedStepIds: completedRows.map((r) => r.stepId),
         totalExpAwarded: awardedStepExp + awardedCourseExp,
         courseCompleted,
+        enrollmentId: enrollment.id,
+        courseId,
       };
     });
 
-    return NextResponse.json({ data: result });
+    // Auto-issue the certificate the moment the course is completed (PRD §6.6).
+    // Idempotent; the PNG render + Bunny upload run AFTER the response flushes
+    // so course-completion UX never waits on image generation.
+    if (result.courseCompleted) {
+      try {
+        const cert = await ensureCertificateIssued({
+          userId,
+          courseId: result.courseId,
+          enrollmentId: result.enrollmentId,
+        });
+        after(() => generateAndStoreCertificateImage(cert.id));
+      } catch (err) {
+        console.error("[complete] certificate auto-issue failed", err);
+      }
+    }
+
+    return NextResponse.json({
+      data: {
+        progressPct: result.progressPct,
+        completedStepIds: result.completedStepIds,
+        totalExpAwarded: result.totalExpAwarded,
+        courseCompleted: result.courseCompleted,
+      },
+    });
   } catch (err) {
     if (err instanceof HttpError) {
       return NextResponse.json({ error: err.message }, { status: err.status });

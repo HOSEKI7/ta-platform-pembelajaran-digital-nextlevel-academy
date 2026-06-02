@@ -2,13 +2,21 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { Role } from "@/generated/prisma";
 import { requireRoleInRoute } from "@/lib/auth-server";
-import { publicIdFromCertificateNo } from "@/lib/certificates/cert-id";
-import { renderCertificatePdf } from "@/lib/certificates/certificate-pdf";
+import { wrapPngInPdf } from "@/lib/certificates/certificate-pdf-wrapper";
+import { getCertificatePngBytes } from "@/lib/certificates/issue-certificate";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+/**
+ * GET /api/student/certificates/:id/pdf
+ *
+ * Streams a one-page PDF that simply wraps the certificate's PNG (the single
+ * source of design — see `certificate-image.tsx`). The PNG is fetched from its
+ * CDN URL when present, or rendered on the fly as a fallback. Nothing is
+ * persisted. Owner-only: a request for someone else's certificate 404s.
+ */
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -22,18 +30,16 @@ export async function GET(
     const cert = await prisma.certificate.findUnique({
       where: { id },
       select: {
-        id: true,
         userId: true,
         certificateNo: true,
         issuedAt: true,
         expiresAt: true,
+        imageUrl: true,
         course: { select: { title: true } },
         user: { select: { name: true } },
       },
     });
 
-    // Owner-only: leak nothing about other users' certificates. If a user
-    // asks for someone else's PDF, behave identically to "doesn't exist".
     if (!cert || cert.userId !== session.user.id) {
       return NextResponse.json(
         { error: "Sertifikat tidak ditemukan." },
@@ -41,21 +47,10 @@ export async function GET(
       );
     }
 
-    const baseUrl =
-      process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ??
-      "http://localhost:3000";
-    const verifyUrl = `${baseUrl}/cert/${publicIdFromCertificateNo(cert.certificateNo)}`;
+    const png = await getCertificatePngBytes(cert);
+    const pdf = await wrapPngInPdf(png);
 
-    const buffer = await renderCertificatePdf({
-      recipientName: cert.user.name,
-      courseTitle: cert.course.title,
-      certificateNo: cert.certificateNo,
-      issuedAt: cert.issuedAt,
-      expiresAt: cert.expiresAt,
-      verifyUrl,
-    });
-
-    return new NextResponse(new Uint8Array(buffer), {
+    return new NextResponse(new Uint8Array(pdf), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
