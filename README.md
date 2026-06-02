@@ -1,4 +1,8 @@
-# NextLevel Academy ! [Logo](/assets/LogoFit.png)
+<div align="center">
+  <img src="/assets/LogoFit.png" height="85" alt="Deskripsi Gambar">
+  <br>
+  <br>
+</div> 
 
 NextLevel Academy adalah platform edukasi digital yang menyediakan kursus online, pelatihan, mentoring, seminar, dan workshop di berbagai bidang seperti multimedia, AI, programming, digital creative.
 
