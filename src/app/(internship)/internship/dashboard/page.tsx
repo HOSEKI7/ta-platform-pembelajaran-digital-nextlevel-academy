@@ -20,6 +20,7 @@ export default async function InternshipDashboardPage() {
     redirectTo: "/internship/dashboard",
   });
   const firstName = session.user.name.split(" ")[0] ?? session.user.name;
+  const displayName = session.user.username?.trim() || firstName;
 
   // Capture "now" on the server so the live clock's first client render matches.
   const serverNowISO = new Date().toISOString();
@@ -33,7 +34,7 @@ export default async function InternshipDashboardPage() {
 
   return (
     <InternshipDashboard
-      firstName={firstName}
+      firstName={displayName}
       serverNowISO={serverNowISO}
       context={data.context}
       window={data.window}

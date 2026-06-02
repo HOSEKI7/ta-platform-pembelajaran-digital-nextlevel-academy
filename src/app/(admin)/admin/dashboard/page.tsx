@@ -20,6 +20,7 @@ export default async function AdminDashboardPage() {
     redirectTo: "/admin/dashboard",
   });
   const firstName = session.user.name.split(" ")[0] ?? session.user.name;
+  const displayName = session.user.username?.trim() || firstName;
 
   // Capture "now" on the server so the live clock's first client render matches.
   const serverNowISO = new Date().toISOString();
@@ -28,7 +29,7 @@ export default async function AdminDashboardPage() {
 
   return (
     <AdminDashboard
-      firstName={firstName}
+      firstName={displayName}
       serverNowISO={serverNowISO}
       data={data}
     />

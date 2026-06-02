@@ -33,6 +33,7 @@ export default async function DashboardPage() {
   });
   const userId = session.user.id;
   const firstName = session.user.name.split(" ")[0] ?? session.user.name;
+  const displayName = session.user.username?.trim() || firstName;
 
   const queryClient = getQueryClient();
 
@@ -64,7 +65,7 @@ export default async function DashboardPage() {
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <StudentPageContainer>
-        <DashboardGreeting firstName={firstName} />
+        <DashboardGreeting firstName={displayName} />
         <StatsRow />
         <InProgressSection />
         <RecommendationsSection />
