@@ -1,4 +1,4 @@
-# NextLevel Academy ! [Logo](/assets/NextLevel%20Logo.webp)
+# NextLevel Academy ! [Logo](/assets/LogoFit.png)
 
 NextLevel Academy adalah platform edukasi digital yang menyediakan kursus online, pelatihan, mentoring, seminar, dan workshop di berbagai bidang seperti multimedia, AI, programming, digital creative.
 
