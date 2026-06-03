@@ -15,6 +15,7 @@ import {
 } from "@/lib/admin-transactions-query";
 
 import { AdminTransactionsView } from "@/components/admin/transactions/admin-transactions-view";
+import { AdminNavSeenMarker } from "@/components/admin/admin-nav-seen-marker";
 import { StudentPageContainer } from "@/components/dashboard/shared/student-page-container";
 
 export const dynamic = "force-dynamic";
@@ -54,6 +55,7 @@ export default async function AdminTransactionsPage({ searchParams }: Props) {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
+      <AdminNavSeenMarker scope="transactions" />
       <StudentPageContainer width="wide">
         <AdminTransactionsView />
       </StudentPageContainer>

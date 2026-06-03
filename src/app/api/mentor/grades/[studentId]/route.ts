@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { Role } from "@/generated/prisma";
+import { NotificationType, Role } from "@/generated/prisma";
 import { requireRoleInRoute } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
 import { upsertGradeSchema } from "@/lib/validations/mentor-grade";
@@ -65,18 +65,32 @@ export async function PUT(
   }
 
   try {
-    await prisma.finalGrade.upsert({
-      where: { studentId },
-      create: {
-        studentId,
-        mentorId,
-        grade,
-        note,
-        gradedAt: new Date(),
-        lastEditedById: mentorId,
-      },
-      update: { grade, note, lastEditedById: mentorId },
-    });
+    // Upsert the grade and notify the mentee in one tx (PRD §6.12) — fires on
+    // both first grading and edits so the peserta-magang always knows their
+    // final grade was set/changed.
+    await prisma.$transaction([
+      prisma.finalGrade.upsert({
+        where: { studentId },
+        create: {
+          studentId,
+          mentorId,
+          grade,
+          note,
+          gradedAt: new Date(),
+          lastEditedById: mentorId,
+        },
+        update: { grade, note, lastEditedById: mentorId },
+      }),
+      prisma.notification.create({
+        data: {
+          userId: studentId,
+          type: NotificationType.FINAL_GRADE_POSTED,
+          title: "Nilai akhir magang sudah keluar",
+          message: `Mentor telah mengisi nilai akhir magang kamu: ${grade}. Lihat detailnya di halaman Nilai Akhir.`,
+          refId: studentId,
+        },
+      }),
+    ]);
   } catch (err) {
     console.error("[mentor/grades] db write failed", err);
     return NextResponse.json(

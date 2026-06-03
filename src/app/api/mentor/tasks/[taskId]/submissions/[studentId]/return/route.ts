@@ -94,7 +94,7 @@ export async function POST(
           userId: studentId,
           type: NotificationType.TASK_FEEDBACK,
           title: "Tugas dikembalikan",
-          message: `Mentor mengembalikan tugas "${task.title}" untuk direvisi.`,
+          message: `Mentor mengembalikan tugas "${task.title}". Baca feedback-nya di halaman detail tugas, lalu kumpulkan revisimu.`,
           refId: task.id,
         },
       });

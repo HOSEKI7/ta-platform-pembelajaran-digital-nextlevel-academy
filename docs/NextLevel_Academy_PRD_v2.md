@@ -936,6 +936,7 @@ Jika tidak valid → tampilkan pesan error yang deskriptif.
 - Nilai ditampilkan di tabel "Nilai Akhir" pada menu magang peserta.
 - Kolom nilai kosong hingga mentor mengisi.
 - Mentor dapat mengubahnya kapan saja, namun admin bisa mengubah nya juga (override administratif — lihat §6.11.9.2).
+- **Notifikasi peserta:** setiap kali mentor mengisi atau mengubah nilai akhir, Peserta Magang menerima notifikasi in-app `FINAL_GRADE_POSTED` (membalik keputusan awal "tanpa notifikasi peserta"). Override administratif oleh admin tetap hanya memberi notifikasi ke mentor (`FINAL_GRADE_OVERRIDE`), bukan ke peserta.
 - **Integritas data:** field mentor penanggung jawab (`FinalGrade.mentorId`) selalu menunjuk mentor, tidak pernah digantikan ID admin. Saat admin mengisi nilai BARU (belum pernah dinilai), `mentorId` diisi dari mentor kelas peserta; saat admin mengubah nilai yang sudah ada, `mentorId` tidak diubah. Pelaku aksi terakhir dicatat di `lastEditedById`.
 
 ### 6.10 Notification System
@@ -944,20 +945,23 @@ Jika tidak valid → tampilkan pesan error yang deskriptif.
 
 **Komponen UI:**
 
-- **Bell icon** di navbar dengan badge counter (jumlah notifikasi belum dibaca).
-- **Titik merah** di ikon navigasi sidebar sebagai indikator ada aksi/pembaruan pada menu tersebut.
+- **Bell icon** di navbar dengan badge counter (jumlah notifikasi belum dibaca) untuk Peserta Didik, Peserta Magang, dan Mentor. Markup bell adalah satu komponen presentasi bersama (`notifications-bell.tsx`); tiap role menyuplai query + mutation `mark-all-read` ber-scope sendiri. Badge hilang saat dropdown dibuka pertama kali (mark-all-read). **Administrator tidak memiliki bell** (belum ada trigger notifikasi in-app untuk admin).
+- **Titik merah** di ikon navigasi sidebar **Admin** sebagai indikator aktivitas baru: menu **Pengguna** (ada pengguna baru mendaftar) dan menu **Transaksi** beserta parent grup **Keuangan** (ada transaksi baru). Penanda bersifat **global server-side** (timestamp "terakhir dilihat" disimpan di `PlatformSetting` keys `ADMIN_LAST_SEEN_USERS`/`ADMIN_LAST_SEEN_TRANSACTIONS`) — terbuka oleh satu admin → dot hilang untuk semua admin.
 - Hover Dropdown notifikasi menampilkan: teks notifikasi dan berapa waktu terlewat (misal 1 jam yang lalu).
 
 **Trigger Notifikasi In-App:**
 
 | Penerima       | Trigger                                            |
 | -------------- | -------------------------------------------------- |
-| Peserta Magang | Mendapat tugas baru dari mentor                    |
-| Peserta Magang | Tugas mendapat feedback (dikembalikan) dari mentor |
-| Mentor         | Peserta magang mengumpulkan tugas                  |
+| Peserta Didik  | Pembelian course berhasil & course dimiliki (`PURCHASE_SUCCESS`) — ucapan selamat + ajakan mulai belajar |
+| Peserta Didik  | Progres course mencapai 100% & sertifikat siap diklaim (`CERTIFICATE_READY`) — ucapan selamat + ajakan klaim di menu Sertifikat |
+| Peserta Magang | Mendapat tugas baru dari mentor (`TASK_ASSIGNED`)  |
+| Peserta Magang | Tugas mendapat feedback (dikembalikan) dari mentor (`TASK_FEEDBACK`) — ajakan baca feedback di halaman detail tugas |
+| Peserta Magang | Nilai akhir magang diisi/diubah oleh mentor (`FINAL_GRADE_POSTED`) |
+| Mentor         | Peserta magang mengumpulkan tugas (`TASK_SUBMITTED`) |
 | Mentor         | Admin mengubah nilai akhir peserta bimbingannya (`FINAL_GRADE_OVERRIDE`) — pesan memuat perubahan nilai + alasan |
 
-> Bell notifikasi Mentor kini **DB-backed** (sebelumnya statis): menampilkan feed `TASK_SUBMITTED` + `FINAL_GRADE_OVERRIDE` dengan badge belum-dibaca dan mark-as-read saat dropdown dibuka (reuse `loadNotifications`/`markAllNotificationsRead` yang role-agnostic).
+> Bell notifikasi **Peserta Magang & Mentor kini DB-backed** (sebelumnya statis untuk magang): reuse `loadNotifications`/`markAllNotificationsRead` yang role-agnostic via endpoint per-role (`/api/{student,internship,mentor}/notifications`). `PURCHASE_SUCCESS` ditulis idempoten di `fulfillOrderPaid` (di-suppress pada jalur admin "Terima" yang sudah mengirim `PAYMENT_ACCEPTED`); `CERTIFICATE_READY` ditulis sekali di `ensureCertificateIssued`.
 
 #### 6.10.2 Email Notification
 
@@ -1937,7 +1941,7 @@ Notification {
   userId    UUID (FK → User)
   title     String
   message   String
-  type      String (TASK_ASSIGNED | TASK_FEEDBACK | dll.)
+  type      NotificationType (TASK_ASSIGNED | TASK_FEEDBACK | TASK_SUBMITTED | PAYMENT_ACCEPTED | PAYMENT_REJECTED | FINAL_GRADE_OVERRIDE | PURCHASE_SUCCESS | CERTIFICATE_READY | FINAL_GRADE_POSTED)
   refId     UUID (nullable — ID entitas terkait)
   isRead    Boolean (default: false)
   createdAt DateTime

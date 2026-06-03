@@ -16,6 +16,7 @@ import {
 } from "@/lib/admin-users-query";
 
 import { AdminUsersView } from "@/components/admin/users/admin-users-view";
+import { AdminNavSeenMarker } from "@/components/admin/admin-nav-seen-marker";
 import { StudentPageContainer } from "@/components/dashboard/shared/student-page-container";
 
 export const dynamic = "force-dynamic";
@@ -57,6 +58,7 @@ export default async function AdminUsersPage({ searchParams }: Props) {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
+      <AdminNavSeenMarker scope="users" />
       <StudentPageContainer width="wide">
         <AdminUsersView />
       </StudentPageContainer>

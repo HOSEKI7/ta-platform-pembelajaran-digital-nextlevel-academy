@@ -1,5 +1,6 @@
 import "server-only";
 
+import { NotificationType } from "@/generated/prisma";
 import { OrderConfirmationEmail } from "@/emails/order-confirmation";
 import { env } from "@/lib/env";
 import { idr } from "@/lib/format";
@@ -31,6 +32,7 @@ export type FulfillResult =
 export async function fulfillOrderPaid(
   orderId: string,
   details: { paymentMethod?: string | null; paidAt?: Date },
+  opts?: { suppressPurchaseNotification?: boolean },
 ): Promise<FulfillResult> {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
@@ -70,6 +72,22 @@ export async function fulfillOrderPaid(
       create: { userId: order.userId, courseId: order.courseId, enrolledAt: paidAt },
       update: {},
     });
+
+    // Congratulate the buyer + nudge them to start learning (PRD §6.12). Lives
+    // inside the same tx so it fires exactly once per fulfilled order. Suppressed
+    // when the admin "Terima" flow runs — that path sends its own PAYMENT_ACCEPTED
+    // so we don't double-notify.
+    if (!opts?.suppressPurchaseNotification) {
+      await tx.notification.create({
+        data: {
+          userId: order.userId,
+          type: NotificationType.PURCHASE_SUCCESS,
+          title: "Selamat, course berhasil dimiliki!",
+          message: `Pembelian "${order.course.title}" berhasil. Akses kamu berlaku selamanya — yuk mulai belajar sekarang!`,
+          refId: order.id,
+        },
+      });
+    }
   });
 
   // Fire-and-forget confirmation email. Never let a mail error undo fulfillment.

@@ -103,7 +103,13 @@ export async function acceptOrder(
   if (!guard.ok) return guard;
   const { order } = guard;
 
-  const fulfilled = await fulfillOrderPaid(orderId, { paidAt: new Date() });
+  // The admin path sends its own PAYMENT_ACCEPTED below — suppress the generic
+  // PURCHASE_SUCCESS so the buyer isn't notified twice for the same event.
+  const fulfilled = await fulfillOrderPaid(
+    orderId,
+    { paidAt: new Date() },
+    { suppressPurchaseNotification: true },
+  );
   if (!fulfilled.ok) return { ok: false, reason: "not_found" };
 
   try {

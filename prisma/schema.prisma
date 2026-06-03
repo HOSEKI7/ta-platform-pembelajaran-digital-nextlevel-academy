@@ -99,6 +99,12 @@ enum NotificationType {
   PAYMENT_REJECTED
   // Admin overrode a peserta-magang's final grade — notifies the responsible mentor (PRD §6.11.9 / §6.9.4).
   FINAL_GRADE_OVERRIDE
+  // Peserta Didik successfully purchased & now owns a course (PRD §6.4 / §6.12).
+  PURCHASE_SUCCESS
+  // Peserta Didik reached 100% — certificate is issued and ready to claim (PRD §6.6 / §6.12).
+  CERTIFICATE_READY
+  // Peserta Magang's final grade was filled/updated by their mentor (PRD §6.9.4 / §6.12).
+  FINAL_GRADE_POSTED
 }
 
 // -----------------------------------------------------------------------------

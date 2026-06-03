@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 import { SidebarNavItem } from "@/components/dashboard/sidebar-nav-item";
+import { useAdminNavIndicatorsQuery } from "@/hooks/use-admin-nav-indicators";
 
 import { ADMIN_NAV_ITEMS, findActiveGroupLabel } from "./admin-sidebar-config";
 import { AdminNavGroupItem } from "./admin-nav-group";
@@ -27,6 +28,16 @@ export function AdminSidebar({ collapsed, variant = "rail", onNavigate }: Props)
   // Synced during render (React's "adjust state on prop change" pattern) rather
   // than in an effect, so the open group never lags a frame behind navigation.
   const pathname = usePathname();
+
+  // "New activity" dots (global, server-side). `transactions` lights both the
+  // Transaksi child and its parent Keuangan group.
+  const { data: indicators } = useAdminNavIndicatorsQuery();
+  const showUsersDot = indicators?.users ?? false;
+  const showTransactionsDot = indicators?.transactions ?? false;
+  const txnDotChildren = new Set<string>(
+    showTransactionsDot ? ["/admin/transactions"] : [],
+  );
+
   const [openGroup, setOpenGroup] = useState<string | null>(() =>
     findActiveGroupLabel(pathname),
   );
@@ -106,6 +117,7 @@ export function AdminSidebar({ collapsed, variant = "rail", onNavigate }: Props)
                   exact={item.exact}
                   collapsed={isCollapsed}
                   onNavigate={onNavigate}
+                  showDot={item.href === "/admin/users" && showUsersDot}
                 />
               </li>
             ) : (
@@ -118,6 +130,8 @@ export function AdminSidebar({ collapsed, variant = "rail", onNavigate }: Props)
                     setOpenGroup((cur) => (cur === item.label ? null : item.label))
                   }
                   onNavigate={onNavigate}
+                  showGroupDot={item.label === "Keuangan" && showTransactionsDot}
+                  dotChildHrefs={item.label === "Keuangan" ? txnDotChildren : undefined}
                 />
               </li>
             ),

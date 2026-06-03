@@ -20,6 +20,10 @@ type Props = {
   open: boolean;
   onToggle: () => void;
   onNavigate?: () => void;
+  /** Red "new activity" dot on the parent group (e.g. Keuangan → new transaction). */
+  showGroupDot?: boolean;
+  /** Child hrefs that should carry their own red "new activity" dot. */
+  dotChildHrefs?: ReadonlySet<string>;
 };
 
 export function AdminNavGroupItem({
@@ -28,11 +32,16 @@ export function AdminNavGroupItem({
   open,
   onToggle,
   onNavigate,
+  showGroupDot,
+  dotChildHrefs,
 }: Props) {
   const pathname = usePathname();
   const activeHref = activeChildHref(pathname, group);
   const groupActive = activeHref !== null;
   const Icon = group.icon;
+  const childHasDot = (href: string) => dotChildHrefs?.has(href) ?? false;
+  // Hide the parent dot once the group is open — the relevant child dot is now visible.
+  const parentDot = showGroupDot && !open;
 
   // ── Collapsed rail ───────────────────────────────────────────────────────
   // Children stack vertically *directly below* the parent (no horizontal shift),
@@ -69,6 +78,12 @@ export function AdminNavGroupItem({
           )}
           strokeWidth={2.6}
         />
+        {parentDot ? (
+          <span
+            aria-label="Aktivitas baru"
+            className="absolute -right-0.5 -top-0.5 size-2 rounded-full bg-[color:var(--color-error)] ring-2 ring-white dark:ring-[color:var(--color-surface-nav)]"
+          />
+        ) : null}
       </button>
     );
 
@@ -114,6 +129,12 @@ export function AdminNavGroupItem({
                     )}
                     strokeWidth={2.1}
                   />
+                  {childHasDot(child.href) ? (
+                    <span
+                      aria-label="Aktivitas baru"
+                      className="absolute -right-0.5 -top-0.5 size-2 rounded-full bg-[color:var(--color-error)] ring-2 ring-white dark:ring-[color:var(--color-surface-nav)]"
+                    />
+                  ) : null}
                 </Link>
               );
               return (
@@ -163,7 +184,12 @@ export function AdminNavGroupItem({
           strokeWidth={2.1}
         />
         <span className="flex-1 truncate text-left">{group.label}</span>
-        {groupActive && !open ? (
+        {parentDot ? (
+          <span
+            aria-label="Aktivitas baru"
+            className="size-2 rounded-full bg-[color:var(--color-error)] ring-2 ring-white dark:ring-[color:var(--color-surface-nav)]"
+          />
+        ) : groupActive && !open ? (
           <span
             aria-hidden
             className="size-1.5 rounded-full bg-[color:var(--color-brand-accent)] shadow-[0_0_8px_var(--color-brand-accent)]"
@@ -207,6 +233,12 @@ export function AdminNavGroupItem({
                     strokeWidth={2.1}
                   />
                   <span className="flex-1 truncate">{child.label}</span>
+                  {childHasDot(child.href) ? (
+                    <span
+                      aria-label="Aktivitas baru"
+                      className="size-2 shrink-0 rounded-full bg-[color:var(--color-error)] ring-2 ring-white dark:ring-[color:var(--color-surface-nav)]"
+                    />
+                  ) : null}
                 </Link>
               </li>
             );

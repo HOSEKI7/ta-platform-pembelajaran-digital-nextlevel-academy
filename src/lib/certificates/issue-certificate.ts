@@ -1,5 +1,6 @@
 import "server-only";
 
+import { NotificationType } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
 import {
   isCertStorageConfigured,
@@ -91,7 +92,7 @@ export async function ensureCertificateIssued(
   for (let attempt = 0; attempt < MAX_CERT_NO_RETRIES; attempt += 1) {
     const certificateNo = generateCertificateNo();
     try {
-      return await prisma.certificate.create({
+      const created = await prisma.certificate.create({
         data: {
           userId: input.userId,
           courseId: input.courseId,
@@ -103,6 +104,29 @@ export async function ensureCertificateIssued(
         },
         select: { id: true, certificateNo: true },
       });
+
+      // Congratulate the learner + nudge them to claim (PRD §6.12). Fires once —
+      // only on the freshly created row, never on the idempotent `existing`
+      // return above. Best-effort: a notif failure must not block issuance.
+      try {
+        const course = await prisma.course.findUnique({
+          where: { id: input.courseId },
+          select: { title: true },
+        });
+        await prisma.notification.create({
+          data: {
+            userId: input.userId,
+            type: NotificationType.CERTIFICATE_READY,
+            title: "Sertifikat siap diklaim!",
+            message: `Selamat! Kamu telah menyelesaikan "${course?.title ?? "course"}". Sertifikatmu sudah bisa diklaim di menu Sertifikat.`,
+            refId: created.id,
+          },
+        });
+      } catch (notifErr) {
+        console.error("[ensureCertificateIssued] notification failed", notifErr);
+      }
+
+      return created;
     } catch (err) {
       // Concurrent completion already created the row — return it.
       if (isUniqueErrorOn(err, "enrollmentId")) {

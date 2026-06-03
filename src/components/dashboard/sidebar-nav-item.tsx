@@ -19,6 +19,8 @@ type Props = {
   exact?: boolean;
   collapsed: boolean;
   onNavigate?: () => void;
+  /** Red "new activity" dot (admin sidebar — e.g. new user registered). */
+  showDot?: boolean;
 };
 
 export function SidebarNavItem({
@@ -28,6 +30,7 @@ export function SidebarNavItem({
   exact,
   collapsed,
   onNavigate,
+  showDot,
 }: Props) {
   const pathname = usePathname();
   const active = exact
@@ -55,13 +58,22 @@ export function SidebarNavItem({
         strokeWidth={2.1}
       />
       {!collapsed ? <span className="flex-1 truncate">{label}</span> : null}
-      {active && !collapsed ? (
+      {showDot ? (
+        <span
+          aria-label="Aktivitas baru"
+          className={cn(
+            "size-2 shrink-0 rounded-full bg-[color:var(--color-error)] ring-2 ring-white dark:ring-[color:var(--color-surface-nav)]",
+            collapsed && "absolute -right-0.5 -top-0.5",
+          )}
+        />
+      ) : null}
+      {active && !collapsed && !showDot ? (
         <span
           aria-hidden
           className="ml-1 size-1.5 rounded-full bg-[color:var(--color-brand-accent)] shadow-[0_0_8px_var(--color-brand-accent)]"
         />
       ) : null}
-      {active && collapsed ? (
+      {active && collapsed && !showDot ? (
         <span
           aria-hidden
           className="absolute -right-1 top-1/2 size-1.5 -translate-y-1/2 rounded-full bg-[color:var(--color-brand-accent)] shadow-[0_0_8px_var(--color-brand-accent)]"

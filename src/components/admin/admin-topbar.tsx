@@ -6,8 +6,6 @@ import { cn } from "@/lib/utils";
 import { ProfileMenu } from "@/components/dashboard/profile-menu";
 import { ThemeToggle } from "@/components/dashboard/theme-toggle";
 
-import { AdminNotificationsButton } from "./admin-notifications-button";
-
 type Props = {
   user: {
     name: string;
@@ -20,9 +18,9 @@ type Props = {
 
 /**
  * Admin topbar. Unlike the student/mentor topbars there is no identity chip
- * (admin has no level/class) — the right cluster is purely workspace controls:
- * theme, notifications, and the profile menu. The live WIB clock lives in the
- * dashboard hero instead.
+ * (admin has no level/class) and no notifications bell (admin has no in-app
+ * notification triggers) — the right cluster is purely the theme toggle and the
+ * profile menu. The live WIB clock lives in the dashboard hero instead.
  */
 export function AdminTopbar({ user, onOpenMobileNav }: Props) {
   return (
@@ -53,7 +51,6 @@ export function AdminTopbar({ user, onOpenMobileNav }: Props) {
       <div className="flex items-center gap-3 sm:gap-4">
         <div className="flex items-center gap-2.5">
           <ThemeToggle />
-          <AdminNotificationsButton />
         </div>
 
         <span
