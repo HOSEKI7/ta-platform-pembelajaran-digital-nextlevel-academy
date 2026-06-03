@@ -1,5 +1,6 @@
 import "server-only";
 
+import { reconcileOrder } from "@/lib/payment/reconcile";
 import { prisma } from "@/lib/prisma";
 import type { TransactionStatus } from "@/lib/transaction-data-loader";
 
@@ -69,12 +70,25 @@ export async function loadPaymentPageData(
 
   if (!order) return null;
 
+  // Reconcile against Midtrans (or lazily expire) so opening the payment page
+  // reflects a payment/expiry the webhook may have missed.
+  const status =
+    order.status === "PENDING"
+      ? await reconcileOrder({
+          id: order.id,
+          status: order.status,
+          paymentInvoiceId: order.paymentInvoiceId,
+          finalPrice: order.finalPrice,
+          expiresAt: order.expiresAt,
+        })
+      : order.status;
+
   return {
     id: order.id,
-    status: order.status,
+    status,
     invoiceNumber: order.paymentInvoiceId,
     expiresAt: order.expiresAt.toISOString(),
-    isExpired: order.status === "PENDING" && order.expiresAt.getTime() < Date.now(),
+    isExpired: status === "PENDING" && order.expiresAt.getTime() < Date.now(),
     paymentMethod: order.paymentMethod,
     pricing: {
       originalPrice: order.originalPrice,

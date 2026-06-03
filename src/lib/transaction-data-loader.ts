@@ -1,5 +1,6 @@
 import "server-only";
 
+import { reconcileOrder } from "@/lib/payment/reconcile";
 import { prisma } from "@/lib/prisma";
 import type {
   TransactionsPageSize,
@@ -59,6 +60,8 @@ export async function loadTransactionRows(
         finalPrice: true,
         status: true,
         createdAt: true,
+        expiresAt: true,
+        paymentInvoiceId: true,
         course: { select: { title: true } },
       },
       orderBy: { createdAt: sort },
@@ -69,12 +72,32 @@ export async function loadTransactionRows(
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
+  // Reconcile PENDING rows against Midtrans (or lazily expire) so the table
+  // reflects payments/expiries the webhook may have missed. Terminal rows are
+  // left untouched; pending orders are few, and a per-row failure is isolated.
+  const statuses = await Promise.all(
+    rows.map(async (r) => {
+      if (r.status !== "PENDING") return r.status;
+      try {
+        return await reconcileOrder({
+          id: r.id,
+          status: r.status,
+          paymentInvoiceId: r.paymentInvoiceId,
+          finalPrice: r.finalPrice,
+          expiresAt: r.expiresAt,
+        });
+      } catch {
+        return r.status;
+      }
+    }),
+  );
+
   return {
-    rows: rows.map((r) => ({
+    rows: rows.map((r, i) => ({
       id: r.id,
       courseTitle: r.course.title,
       checkoutAt: r.createdAt.toISOString(),
-      status: r.status,
+      status: statuses[i],
       finalPrice: r.finalPrice,
     })),
     pagination: { page, pageSize, total, totalPages },
@@ -144,13 +167,38 @@ export async function loadTransactionDetail(
 
   if (!order) return null;
 
+  // Reconcile against Midtrans (or lazily expire) so the detail reflects a
+  // payment/expiry the webhook may have missed. On a real transition, re-read
+  // the now-stale status-derived fields (paidAt/paymentMethod).
+  let status = order.status;
+  let paidAt = order.paidAt;
+  let paymentMethod = order.paymentMethod;
+  if (order.status === "PENDING") {
+    const reconciled = await reconcileOrder({
+      id: order.id,
+      status: order.status,
+      paymentInvoiceId: order.paymentInvoiceId,
+      finalPrice: order.finalPrice,
+      expiresAt: order.expiresAt,
+    });
+    if (reconciled !== order.status) {
+      const fresh = await prisma.order.findUnique({
+        where: { id: order.id },
+        select: { status: true, paidAt: true, paymentMethod: true },
+      });
+      status = fresh?.status ?? reconciled;
+      paidAt = fresh?.paidAt ?? null;
+      paymentMethod = fresh?.paymentMethod ?? order.paymentMethod;
+    }
+  }
+
   return {
     id: order.id,
-    status: order.status,
+    status,
     checkoutAt: order.createdAt.toISOString(),
-    paidAt: order.paidAt ? order.paidAt.toISOString() : null,
+    paidAt: paidAt ? paidAt.toISOString() : null,
     expiresAt: order.expiresAt.toISOString(),
-    paymentMethod: order.paymentMethod,
+    paymentMethod,
     paymentInvoiceId: order.paymentInvoiceId,
     pricing: {
       originalPrice: order.originalPrice,

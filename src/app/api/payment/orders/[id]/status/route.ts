@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 
 import { Role } from "@/generated/prisma";
 import { requireRoleInRoute } from "@/lib/auth-server";
+import { reconcileOrder } from "@/lib/payment/reconcile";
 import { prisma } from "@/lib/prisma";
 
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
@@ -23,15 +25,26 @@ export async function GET(
 
   const order = await prisma.order.findFirst({
     where: { id, userId: session.user.id },
-    select: { status: true, expiresAt: true },
+    select: {
+      id: true,
+      status: true,
+      expiresAt: true,
+      paymentInvoiceId: true,
+      finalPrice: true,
+    },
   });
 
   if (!order) {
     return NextResponse.json({ error: "Pesanan tidak ditemukan." }, { status: 404 });
   }
 
+  // Reconcile against Midtrans (or lazily expire) so polling reflects the real
+  // status even when the webhook never reached us.
+  const status =
+    order.status === "PENDING" ? await reconcileOrder(order) : order.status;
+
   return NextResponse.json(
-    { data: { status: order.status, expiresAt: order.expiresAt.toISOString() } },
+    { data: { status, expiresAt: order.expiresAt.toISOString() } },
     { headers: { "Cache-Control": "private, no-store" } },
   );
 }

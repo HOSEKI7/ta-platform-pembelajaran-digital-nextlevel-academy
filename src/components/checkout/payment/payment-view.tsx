@@ -14,7 +14,10 @@ import {
   Sparkles,
 } from "lucide-react";
 
-import { PendingCountdown } from "@/components/dashboard/transactions/transaction-detail-actions";
+import {
+  CancelPaymentButton,
+  PendingCountdown,
+} from "@/components/dashboard/transactions/transaction-detail-actions";
 import { PriceBreakdown } from "@/components/checkout/price-breakdown";
 import { useMidtransSnap } from "@/hooks/use-midtrans-snap";
 import { useOrderStatusQuery } from "@/hooks/use-order-status";
@@ -230,9 +233,14 @@ export function PaymentView({ data, clientKey, isProduction }: Props) {
             </button>
           )}
 
+          {(live?.status ?? data.status) === "PENDING" ? (
+            <CancelPaymentButton orderId={data.id} />
+          ) : null}
+
           <p className="text-center text-[11px] leading-relaxed text-zinc-400">
             Pembayaran diproses dan dienkripsi oleh Midtrans. Tidak ada pengembalian
-            dana setelah pembayaran berhasil dan kursus aktif.
+            dana setelah pembayaran berhasil dan kursus aktif. Salah pilih metode?
+            Batalkan dan checkout ulang kapan saja.
           </p>
         </div>
       </section>

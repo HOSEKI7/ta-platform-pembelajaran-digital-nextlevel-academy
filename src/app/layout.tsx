@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist_Mono, Poppins } from "next/font/google";
+import Script from "next/script";
 
 import { QueryProvider } from "@/components/providers/query-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
@@ -24,10 +25,10 @@ const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://nextlevel.academy";
 /**
  * Anti-FOUC theme script. Runs before paint to set the `dark` class on <html>
  * from the saved preference (or the OS setting for "system"), matching the
- * logic in `ThemeProvider`. Rendered server-side so React hydrates it rather
- * than creating it on the client — which is what avoids React 19.2's
- * "Encountered a script tag…" warning that next-themes' client-rendered script
- * triggered.
+ * logic in `ThemeProvider`. Injected via `next/script` with `beforeInteractive`
+ * so Next emits it into the initial HTML head outside React's element tree —
+ * which is what avoids React 19.2's "Encountered a script tag…" warning that a
+ * raw `<script>` rendered by a component triggers on client re-render.
  */
 const THEME_INIT_SCRIPT = `(function(){try{var s=localStorage.getItem('theme');var t=(s==='light'||s==='dark'||s==='system')?s:'system';var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);var e=document.documentElement;e.classList.toggle('dark',d);e.style.colorScheme=d?'dark':'light';}catch(e){}})();`;
 
@@ -75,9 +76,10 @@ export default function RootLayout({
       className={`${poppins.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="bg-background text-foreground flex min-h-full flex-col">
-        <script
+        <Script
+          id="theme-init"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
-          suppressHydrationWarning
         />
         {/* QueryProvider sits above ThemeProvider so a ThemeProvider remount
             (e.g. Fast Refresh) can never strip the QueryClient from descendants

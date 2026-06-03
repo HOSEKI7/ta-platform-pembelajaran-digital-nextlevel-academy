@@ -39,6 +39,8 @@ declare module "midtrans-client" {
     readonly transaction: {
       status(orderOrTransactionId: string): Promise<MidtransStatusResponse>;
       notification(notificationJson: unknown): Promise<MidtransStatusResponse>;
+      cancel(orderOrTransactionId: string): Promise<MidtransStatusResponse>;
+      expire(orderOrTransactionId: string): Promise<MidtransStatusResponse>;
     };
   }
 

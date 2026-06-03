@@ -1,16 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toPng } from "html-to-image";
 import { toast } from "sonner";
-import { ArrowLeft, Download, Loader2 } from "lucide-react";
+import { ArrowLeft, Download, Loader2, ShoppingBag } from "lucide-react";
 
+import { useOrderStatusQuery } from "@/hooks/use-order-status";
 import type { TransactionDetailDTO } from "@/lib/transaction-data-loader";
 import { cn } from "@/lib/utils";
 
 import { InvoiceCard } from "./invoice-card";
 import {
+  CancelPaymentButton,
   ContinuePaymentButton,
   PendingCountdown,
 } from "./transaction-detail-actions";
@@ -20,9 +23,32 @@ type Props = {
   customer: { name: string; email: string };
 };
 
+/**
+ * While a PENDING order is open, poll its status (the endpoint reconciles with
+ * Midtrans) and refresh the server component once it becomes terminal so the
+ * actions/notes update without a manual reload. Mounted only for PENDING.
+ */
+function PendingStatusWatcher({ orderId }: { orderId: string }) {
+  const router = useRouter();
+  const { data: live } = useOrderStatusQuery(orderId, "PENDING");
+  const refreshedRef = useRef(false);
+
+  useEffect(() => {
+    const status = live?.status;
+    if (!status || status === "PENDING" || refreshedRef.current) return;
+    refreshedRef.current = true;
+    router.refresh();
+  }, [live?.status, router]);
+
+  return null;
+}
+
 export function TransactionDetailView({ tx, customer }: Props) {
+  const router = useRouter();
   const cardRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleExpire = useCallback(() => router.refresh(), [router]);
 
   async function handleDownload() {
     if (!cardRef.current) return;
@@ -85,9 +111,11 @@ export function TransactionDetailView({ tx, customer }: Props) {
 
         {tx.status === "PENDING" ? (
           <>
+            <PendingStatusWatcher orderId={tx.id} />
             <ContinuePaymentButton orderId={tx.id} />
+            <CancelPaymentButton orderId={tx.id} />
             <div className="flex justify-center">
-              <PendingCountdown expiresAt={tx.expiresAt} />
+              <PendingCountdown expiresAt={tx.expiresAt} onExpire={handleExpire} />
             </div>
             <Note tone="pending">
               Selesaikan pembayaran sebelum batas waktu 60 menit. Lewat dari itu,
@@ -97,20 +125,43 @@ export function TransactionDetailView({ tx, customer }: Props) {
         ) : null}
 
         {tx.status === "FAILED" ? (
-          <Note tone="failed">
-            Pembayaran gagal diproses dan tidak ada biaya yang ditagihkan. Kamu
-            bisa membeli kembali kursus ini kapan saja melalui halaman kursus.
-          </Note>
+          <>
+            <Note tone="failed">
+              Pembayaran gagal atau dibatalkan, dan tidak ada biaya yang
+              ditagihkan. Kamu bisa membeli kembali kursus ini kapan saja.
+            </Note>
+            <BuyAgainButton slug={tx.course.slug} />
+          </>
         ) : null}
 
         {tx.status === "EXPIRED" ? (
-          <Note tone="muted">
-            Pesanan kedaluwarsa karena melewati batas waktu pembayaran 60 menit.
-            Buat pesanan baru dari halaman kursus untuk mencoba lagi.
-          </Note>
+          <>
+            <Note tone="muted">
+              Pesanan kedaluwarsa karena melewati batas waktu pembayaran 60
+              menit. Buat pesanan baru untuk mencoba lagi.
+            </Note>
+            <BuyAgainButton slug={tx.course.slug} />
+          </>
         ) : null}
       </div>
     </div>
+  );
+}
+
+/** Re-checkout CTA shown on terminal-but-unpaid orders (FAILED/EXPIRED). */
+function BuyAgainButton({ slug }: { slug: string }) {
+  return (
+    <Link
+      href={`/checkout/${slug}`}
+      className={cn(
+        "inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl px-5 text-sm font-bold text-white transition",
+        "bg-[color:var(--color-brand-500)] shadow-[0_12px_26px_-12px_rgba(43,114,234,0.75)]",
+        "hover:bg-[color:var(--color-brand-600)]",
+      )}
+    >
+      <ShoppingBag className="size-4" strokeWidth={2.4} />
+      <span>Beli Lagi</span>
+    </Link>
   );
 }
 

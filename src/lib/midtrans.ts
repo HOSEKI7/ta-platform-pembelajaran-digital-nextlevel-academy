@@ -160,6 +160,60 @@ export function mapPaymentMethodToSnap(methodId: string): string[] | null {
   return code ? [code] : null;
 }
 
+/** The fields of a Midtrans status payload we act on during reconciliation. */
+export type MidtransStatusInfo = {
+  transactionStatus: string;
+  fraudStatus?: string;
+  /** Whole-rupiah string, e.g. "150000.00" — compared against Order.finalPrice. */
+  grossAmount: string;
+  /** Midtrans local time string (no TZ), e.g. "2026-06-03 12:00:00". */
+  transactionTime?: string;
+  /** Channel actually used, e.g. "qris", "bank_transfer". */
+  paymentType?: string;
+};
+
+/**
+ * Pulls an order's authoritative status straight from Midtrans (Get Status API).
+ *
+ * Used to reconcile an order WITHOUT relying on the webhook reaching us — which
+ * is exactly what fails in local dev (no public URL) and any time the
+ * notification is dropped. Returns `null` on any error, including a 404
+ * ("transaction doesn't exist", e.g. the user never proceeded past Snap), so
+ * callers fall back to the local expiry check.
+ *
+ * `invoiceNumber` is our `paymentInvoiceId` (== Midtrans `order_id`).
+ */
+export async function fetchMidtransTransactionStatus(
+  invoiceNumber: string,
+): Promise<MidtransStatusInfo | null> {
+  try {
+    const res = await getSnap().transaction.status(invoiceNumber);
+    return {
+      transactionStatus: res.transaction_status,
+      fraudStatus: res.fraud_status,
+      grossAmount: res.gross_amount,
+      transactionTime: res.transaction_time,
+      paymentType: res.payment_type,
+    };
+  } catch (err) {
+    console.warn(`[midtrans] status lookup failed for order_id=${invoiceNumber}`, err);
+    return null;
+  }
+}
+
+/**
+ * Best-effort cancel of a pending Snap transaction so it can no longer be paid.
+ * Swallows errors (e.g. the transaction already expired/settled at Midtrans) —
+ * the order is flipped locally regardless.
+ */
+export async function cancelMidtransTransaction(invoiceNumber: string): Promise<void> {
+  try {
+    await getSnap().transaction.cancel(invoiceNumber);
+  } catch (err) {
+    console.warn(`[midtrans] cancel failed for order_id=${invoiceNumber}`, err);
+  }
+}
+
 export type NormalizedStatus = "SUCCESS" | "PENDING" | "FAILED" | "EXPIRED" | "ignore";
 
 /**

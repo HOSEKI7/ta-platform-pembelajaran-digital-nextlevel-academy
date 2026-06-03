@@ -457,6 +457,18 @@ Seluruh riwayat transaksi tersimpan permanen, termasuk yang expired atau failed.
 - Webhook divalidasi menggunakan signature/token yang disediakan oleh payment gateway (header validasi sesuai dokumentasi Midtrans).
 - Idempotency: setiap webhook diproses sekali; order yang sudah `SUCCESS` tidak bisa diubah statusnya.
 
+#### 6.4.8 Rekonsiliasi Status (Get-Status Fallback)
+
+- Webhook adalah jalur real-time, tetapi **tidak diandalkan sebagai satu-satunya sumber** update (di lokal/tanpa public URL webhook tidak sampai → order mandek `PENDING`).
+- Saat membaca status (polling halaman pembayaran + loader transaksi), order `PENDING` di-rekonsiliasi via **Midtrans Get-Status API** (`reconcileOrder`): bila settlement/capture (dengan amount cocok) → jalur sukses idempoten yang sama (`SUCCESS` + Enrollment + email); bila deny/cancel/expire → `FAILED`/`EXPIRED`.
+- **Lazy-expiry**: order `PENDING` yang melewati 60 menit ditandai `EXPIRED` saat dibaca, walau cron/Midtrans tidak tersedia.
+
+#### 6.4.9 Pembatalan oleh Peserta
+
+- Peserta dapat **Batalkan Pembayaran** untuk order `PENDING` miliknya (mis. salah pilih metode), dari halaman detail transaksi maupun `/payment/[orderId]`, melalui dialog konfirmasi.
+- Efek: best-effort cancel transaksi di Midtrans, status → **`FAILED`** (memakai ulang status, tanpa enum baru) sehingga blokir double-purchase lepas; bila order memakai voucher, pemakaian voucher **dikembalikan** agar bisa dipakai ulang.
+- Setelah batal, peserta diarahkan ke detail transaksi dengan tombol **"Beli Lagi"** menuju checkout kursus yang sama.
+
 ---
 
 ### 6.5 Learning Page & Course Player
