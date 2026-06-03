@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { Role } from "@/generated/prisma";
 import { getSession } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
 import { dashboardHrefFor } from "@/components/public/public-nav-config";
@@ -103,9 +104,17 @@ export default async function CourseDetailPage({ params }: Props) {
 
   const totalSteps = course.sprints.reduce((acc, s) => acc + s.steps.length, 0);
 
-  const enrollHref = session
-    ? dashboardHrefFor(session.user.role)
-    : `/login?next=${encodeURIComponent(`/courses/${slug}`)}`;
+  // "Daftar Kursus" routing:
+  //  - student (logged in) → catalog with the course's preview popup auto-open
+  //  - other roles (logged in) → their own dashboard, no popup
+  //  - logged out → login, then resume to the catalog popup (the proxy strips
+  //    the query when building `next`, so we point `next` at the full URL here)
+  const previewHref = `/catalog?preview=${slug}`;
+  const enrollHref = !session
+    ? `/login?next=${encodeURIComponent(previewHref)}`
+    : session.user.role === Role.PESERTA_DIDIK
+      ? previewHref
+      : dashboardHrefFor(session.user.role);
 
   return (
     <>

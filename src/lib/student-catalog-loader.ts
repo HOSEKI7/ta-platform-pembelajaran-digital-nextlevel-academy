@@ -6,6 +6,7 @@ import type { Prisma } from "@/generated/prisma";
 import {
   PAGE_SIZE,
   type Sort,
+  type StudentCatalogCourse,
   type StudentCatalogParams,
   type StudentCatalogResult,
 } from "./student-catalog-query";
@@ -134,5 +135,42 @@ export async function loadStudentCatalogPage(
     page,
     pageSize: PAGE_SIZE,
     totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)),
+  };
+}
+
+/**
+ * Loads a single published course in the catalog-card shape, for the catalog
+ * deep-link popup (`/catalog?preview=<slug>`). Returns `null` when the slug
+ * doesn't match a published course. Ownership is resolved for `userId` so the
+ * popup shows the correct CTA ("Lanjut Belajar" vs "Checkout"), exactly like a
+ * card clicked from the grid.
+ */
+export async function loadCatalogCoursePreview(
+  userId: string,
+  slug: string,
+): Promise<StudentCatalogCourse | null> {
+  const course = await prisma.course.findFirst({
+    where: { slug, status: "PUBLISHED" },
+    include: { category: { select: { name: true } } },
+  });
+  if (!course) return null;
+
+  const owned = await prisma.enrollment.findFirst({
+    where: { userId, courseId: course.id },
+    select: { id: true },
+  });
+
+  return {
+    id: course.id,
+    title: course.title,
+    slug: course.slug,
+    thumbnailUrl: course.thumbnailUrl,
+    shortDescription: course.shortDescription,
+    price: course.price,
+    fakePrice: course.fakePrice,
+    estimatedDuration: course.estimatedDuration,
+    instructor: course.instructor,
+    category: { name: course.category.name },
+    isOwned: Boolean(owned),
   };
 }

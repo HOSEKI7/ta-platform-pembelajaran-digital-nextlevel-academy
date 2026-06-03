@@ -13,6 +13,7 @@ import {
 
 import {
   type Sort,
+  type StudentCatalogCourse,
   type StudentCatalogParams,
   parsePage,
   parseSearch,
@@ -36,6 +37,7 @@ import { SearchBox } from "@/components/dashboard/shared/search-box";
 import { InProgressGridSkeleton } from "../dashboard-skeletons";
 
 import { CatalogCourseCard } from "./catalog-course-card";
+import { CoursePreviewDialog } from "./course-preview-dialog";
 
 const SORT_LABELS: Record<Sort, string> = {
   latest: "Terbaru",
@@ -44,10 +46,29 @@ const SORT_LABELS: Record<Sort, string> = {
   "price-desc": "Harga: tinggi → rendah",
 };
 
-export function CatalogView() {
+type Props = {
+  /** When set (via `/catalog?preview=<slug>`), the course's preview popup opens
+   *  on load — server-resolved so it works regardless of page/filter. */
+  initialPreview?: StudentCatalogCourse | null;
+};
+
+export function CatalogView({ initialPreview = null }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  // Deep-link preview popup. Seeded once from the server-loaded course; closing
+  // strips `?preview=` so a refresh/back doesn't reopen it.
+  const [previewCourse] = useState(initialPreview);
+  const [previewOpen, setPreviewOpen] = useState(Boolean(initialPreview));
+
+  const closePreview = useCallback(() => {
+    setPreviewOpen(false);
+    const sp = new URLSearchParams(searchParams.toString());
+    sp.delete("preview");
+    const qs = sp.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }, [searchParams, router, pathname]);
 
   const urlPage = parsePage(searchParams.get("page"));
   const urlCategory = searchParams.get("category");
@@ -261,6 +282,18 @@ export function CatalogView() {
           </div>
         </>
       )}
+
+      {/* Deep-link preview popup (`?preview=<slug>`) */}
+      {previewCourse ? (
+        <CoursePreviewDialog
+          course={previewCourse}
+          open={previewOpen}
+          onOpenChange={(o) => {
+            if (!o) closePreview();
+            else setPreviewOpen(true);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

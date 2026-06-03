@@ -5,10 +5,10 @@ type Props = {
   href: string;
 };
 
-// Landing → app surfaces (dashboard / internship / mentor / admin) should
-// open in a new tab so the user keeps the catalog tab. Login flow stays in
-// the same tab so the auth redirect-back works.
-const APP_PREFIXES = ["/dashboard", "/internship", "/mentor", "/admin"];
+// Landing → app surfaces (catalog / dashboard / internship / mentor / admin)
+// should open in a new tab so the user keeps the public course tab. The login
+// flow stays in the same tab so the auth redirect-back works.
+const APP_PREFIXES = ["/catalog", "/dashboard", "/internship", "/mentor", "/admin"];
 
 export function EnrollButton({ href }: Props) {
   const opensApp = APP_PREFIXES.some((p) => href === p || href.startsWith(`${p}/`));

@@ -199,6 +199,8 @@ export function MobileNav({ user }: Props) {
               <>
                 <Link
                   href="/login"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   onClick={() => setOpen(false)}
                   className="inline-flex h-11 items-center justify-center rounded-full text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50"
                 >
@@ -206,6 +208,8 @@ export function MobileNav({ user }: Props) {
                 </Link>
                 <Link
                   href="/register"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   onClick={() => setOpen(false)}
                   className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-[color:var(--color-brand-500)] text-sm font-semibold text-white transition hover:bg-[color:var(--color-brand-600)]"
                 >

@@ -96,12 +96,16 @@ export function PublicNavbar({ session }: Props) {
               <>
                 <Link
                   href="/login"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="hidden h-10 items-center rounded-full px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 hover:text-zinc-900 sm:inline-flex"
                 >
                   Masuk
                 </Link>
                 <Link
                   href="/register"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="hidden h-10 items-center gap-1.5 rounded-full bg-[color:var(--color-brand-500)] px-4 text-sm font-semibold text-white shadow-[0_12px_28px_-12px_rgba(43,114,234,0.7)] transition hover:translate-y-[-1px] hover:bg-[color:var(--color-brand-600)] sm:inline-flex"
                 >
                   Daftar Gratis

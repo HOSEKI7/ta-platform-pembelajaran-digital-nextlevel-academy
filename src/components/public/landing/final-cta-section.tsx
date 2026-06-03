@@ -49,6 +49,8 @@ export function FinalCtaSection() {
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">
                 <Link
                   href="/register"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="group inline-flex items-center justify-center gap-2 rounded-full bg-[color:var(--color-brand-accent)] px-6 py-3.5 text-sm font-bold text-[color:var(--color-brand-900)] shadow-[0_18px_40px_-14px_rgba(244,214,0,0.8)] transition hover:translate-y-[-2px]"
                 >
                   Daftar Gratis Sekarang

@@ -5,7 +5,10 @@ import { Role } from "@/generated/prisma";
 import { requireRole } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
 import { getQueryClient } from "@/lib/query-client";
-import { loadStudentCatalogPage } from "@/lib/student-catalog-loader";
+import {
+  loadCatalogCoursePreview,
+  loadStudentCatalogPage,
+} from "@/lib/student-catalog-loader";
 import {
   type Sort,
   type StudentCatalogParams,
@@ -31,6 +34,8 @@ type SP = {
   category?: string;
   sort?: string;
   search?: string;
+  /** Deep-link: open the preview popup for this course slug on load. */
+  preview?: string;
 };
 
 type Props = { searchParams: Promise<SP> };
@@ -48,6 +53,10 @@ export default async function StudentCatalogPage({ searchParams }: Props) {
     sort: parseSort(sp.sort) as Sort,
     search: parseSearch(sp.search),
   };
+
+  const previewCourse = sp.preview
+    ? await loadCatalogCoursePreview(userId, sp.preview)
+    : null;
 
   const queryClient = getQueryClient();
 
@@ -83,7 +92,7 @@ export default async function StudentCatalogPage({ searchParams }: Props) {
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <StudentPageContainer>
-        <CatalogView />
+        <CatalogView initialPreview={previewCourse} />
       </StudentPageContainer>
     </HydrationBoundary>
   );
