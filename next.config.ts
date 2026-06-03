@@ -3,7 +3,9 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Sharp ships a native binary — keep it external so the bundler doesn't try
   // to trace/inline it. Required for the server-side certificate PNG renderer.
-  serverExternalPackages: ["sharp"],
+  // ioredis is a Node-only client (net sockets) used by the rate limiter; keep
+  // it external so Turbopack doesn't try to bundle it.
+  serverExternalPackages: ["sharp", "ioredis"],
   // The certificate renderer reads bundled Poppins TTFs from disk via `fs`.
   // A dynamic `fs.readFile` path isn't auto-traced, so include the font files
   // explicitly for every route that may render a certificate.

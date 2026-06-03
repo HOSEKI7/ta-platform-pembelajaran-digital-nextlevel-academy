@@ -4,6 +4,11 @@ import { Role } from "@/generated/prisma";
 import { requireRoleInRoute } from "@/lib/auth-server";
 import { validateVoucher } from "@/lib/checkout-data-loader";
 import { prisma } from "@/lib/prisma";
+import {
+  consumeRateLimit,
+  tooManyRequestsResponse,
+  voucherRateLimiter,
+} from "@/lib/rate-limit";
 import { validateVoucherSchema } from "@/lib/validators/checkout";
 
 export const dynamic = "force-dynamic";
@@ -21,6 +26,10 @@ export const dynamic = "force-dynamic";
 export async function POST(request: NextRequest) {
   const session = await requireRoleInRoute(Role.PESERTA_DIDIK);
   if (session instanceof Response) return session;
+
+  // Rate limit voucher checks — codes are brute-forceable. Fails open on infra.
+  const limit = await consumeRateLimit(voucherRateLimiter, session.user.id);
+  if (!limit.allowed) return tooManyRequestsResponse(limit.retryAfterSec);
 
   let body: unknown;
   try {

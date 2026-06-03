@@ -1,0 +1,36 @@
+# Optional self-hosted Redis for rate limiting (PRD §11.3).
+#
+# Dev does NOT need this — leave RATE_LIMIT_REDIS_URL empty and the app uses an
+# in-memory limiter. Use this when you want to exercise the Redis path locally,
+# or on the production VPS.
+#
+#   1. Set REDIS_PASSWORD in your .env (a strong value).
+#   2. docker compose up -d redis
+#   3. Set RATE_LIMIT_REDIS_URL="redis://:<password>@127.0.0.1:6379"
+#
+# Security: the port is bound to 127.0.0.1 only (never exposed publicly) and a
+# password is required. Rate-limit data is disposable, so persistence is off.
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: nla-redis
+    restart: unless-stopped
+    # `${REDIS_PASSWORD:?...}` makes compose fail fast if the password is unset,
+    # so we never start an unauthenticated Redis by accident.
+    command:
+      - redis-server
+      - --requirepass
+      - ${REDIS_PASSWORD:?set REDIS_PASSWORD in your .env}
+      - --save
+      - ""
+      - --appendonly
+      - "no"
+    # Bind to loopback only — not reachable from outside the host.
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5

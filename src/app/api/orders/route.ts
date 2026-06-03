@@ -12,6 +12,11 @@ import {
 } from "@/lib/midtrans";
 import { fulfillOrderPaid } from "@/lib/payment/fulfillment";
 import { prisma } from "@/lib/prisma";
+import {
+  consumeRateLimit,
+  orderRateLimiter,
+  tooManyRequestsResponse,
+} from "@/lib/rate-limit";
 import { createOrderSchema } from "@/lib/validators/checkout";
 
 export const dynamic = "force-dynamic";
@@ -38,6 +43,11 @@ const ORDER_EXPIRY_MS = ORDER_EXPIRY_MIN * 60 * 1000;
 export async function POST(request: NextRequest) {
   const session = await requireRoleInRoute(Role.PESERTA_DIDIK);
   if (session instanceof Response) return session;
+
+  // Rate limit before doing any work — order creation triggers external side
+  // effects (Midtrans Snap, confirmation email). Fails open on infra errors.
+  const limit = await consumeRateLimit(orderRateLimiter, session.user.id);
+  if (!limit.allowed) return tooManyRequestsResponse(limit.retryAfterSec);
 
   let body: unknown;
   try {

@@ -2094,13 +2094,28 @@ Seluruh API endpoint menggunakan prefix `/api/v1/`, diimplementasikan sebagai Ne
 
 ### 11.3 Rate Limiting
 
+**Auth & endpoint umum** — ditangani built-in rate limiter Better Auth (storage memory, key per IP):
+
 | Endpoint                     | Limit                                        |
 | ---------------------------- | -------------------------------------------- |
-| POST `/auth/login`           | 5 percobaan gagal per 15 menit per IP        |
+| POST `/auth/login`           | 5 percobaan per 15 menit per IP              |
 | POST `/auth/register`        | 10 per jam per IP                            |
 | POST `/auth/forgot-password` | 3 per jam per IP                             |
 | POST `/webhooks/payment`     | Tidak di-rate-limit (validated by signature) |
-| Endpoint umum                | 200 request per menit per IP                 |
+| Endpoint umum (auth)         | 200 request per menit per IP                 |
+
+**Endpoint sensitif-abuse (Route Handler)** — limiter terpisah berbasis `rate-limiter-flexible`, key per **userId** (bukan IP, karena endpoint butuh sesi — menghindari ketergantungan `X-Forwarded-For` di balik reverse proxy):
+
+| Endpoint                       | Limit                | Alasan                                                          |
+| ------------------------------ | -------------------- | -------------------------------------------------------------- |
+| POST `/api/orders`             | 12 per menit / user  | Side effect terberat: buat transaksi Midtrans Snap + email + DB |
+| POST `/api/vouchers/validate`  | 30 per menit / user  | Brute-forceable (enumerasi kode voucher)                       |
+| POST `/api/payment/webhook`    | Tidak di-rate-limit  | Otentik via signature SHA512                                   |
+
+- **Backend store:** Redis **self-hosted** (bukan layanan cloud), diaktifkan via env `RATE_LIMIT_REDIS_URL`. Bila kosong → fallback **in-memory** otomatis (clone-and-run dev tanpa setup Redis; tetap berfungsi di VPS karena proses Node persisten). Koneksi Redis tunggal reusable (`ioredis`).
+- **Fail-open:** bila Redis tidak terjangkau/error, request **tetap diizinkan** (tidak pernah memblokir pembelian sah karena masalah infra). Hanya kuota benar-benar habis yang mengembalikan **HTTP 429** + header `Retry-After` (pesan Bahasa Indonesia).
+- **Lapisan tambahan**, tidak menggantikan proteksi existing (sesi, advisory lock per `(user,course)`, guard double-purchase).
+- **Operasional:** `docker-compose.yml` menyediakan Redis (bind `127.0.0.1`, password wajib, persistence mati). Lihat README untuk setup dev/prod.
 
 ### 11.4 Video Protection (Bunny.net)
 
