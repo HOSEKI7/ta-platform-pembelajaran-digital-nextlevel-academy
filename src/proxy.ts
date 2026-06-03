@@ -14,7 +14,8 @@ import { NextResponse, type NextRequest } from "next/server";
  *   /mentor/*        → any authenticated user (role gate to MENTOR in RSC)
  *   /admin/*         → any authenticated user (role gate to ADMINISTRATOR in RSC)
  *   /login, /register, /forgot-password, /reset-password
- *                    → authenticated users get bounced to /dashboard
+ *                    → authenticated users get bounced to their role dashboard
+ *                      by the `(auth)` layout (role-aware, needs DB)
  */
 
 const PROTECTED_PREFIXES = [
@@ -29,13 +30,6 @@ const PROTECTED_PREFIXES = [
   "/mentor",
   "/admin",
 ];
-
-const AUTH_PAGES = new Set([
-  "/login",
-  "/register",
-  "/forgot-password",
-  "/reset-password",
-]);
 
 function isProtectedPath(pathname: string): boolean {
   return PROTECTED_PREFIXES.some(
@@ -54,9 +48,9 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (hasSession && AUTH_PAGES.has(pathname)) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
-  }
+  // Authenticated users hitting an auth page are bounced to their role
+  // dashboard by the `(auth)` layout (Node runtime — it can read the role; the
+  // edge proxy can't, so it's handled there rather than guessing here).
 
   return NextResponse.next();
 }

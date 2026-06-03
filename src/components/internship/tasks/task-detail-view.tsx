@@ -25,6 +25,15 @@ import {
 import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { StudentPageContainer } from "@/components/dashboard/shared/student-page-container";
 import { useTaskSubmitMutation } from "@/hooks/use-internship-task-submit";
 
@@ -72,8 +81,8 @@ function formatCountdown(deadline: Date, now: Date): { label: string; overdue: b
  * Tugas" flow is a local-state demo (no upload) that flips the task to
  * Terkumpul — mirroring how the Absensi check-in began before DB wiring.
  *
- * Layout: the primary submit CTA lives top-right in the hero (the dropzone stays
- * in the section below; the CTA scrolls to + flashes it when no file is picked).
+ * Layout: the dropzone and the primary submit CTA live together in the
+ * "Pengumpulan Tugas" card; submitting opens a confirmation dialog first.
  * Mentor return-feedback is demoted to the sidebar under "Ringkasan".
  */
 export function TaskDetailView({ task, serverNowISO }: Props) {
@@ -82,6 +91,7 @@ export function TaskDetailView({ task, serverNowISO }: Props) {
   const [reuploadMode, setReuploadMode] = useState(false);
   const [celebrating, setCelebrating] = useState(false);
   const [flash, setFlash] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const submissionRef = useRef<HTMLElement | null>(null);
   const submitMutation = useTaskSubmitMutation(task.id);
@@ -153,9 +163,18 @@ export function TaskDetailView({ task, serverNowISO }: Props) {
     });
   }
 
-  function onPrimaryClick() {
-    if (selectedFile) handleSubmit();
-    else scrollToDropzone();
+  // Submit now lives in the "Pengumpulan Tugas" card next to the dropzone, so
+  // the CTA no longer needs to scroll — it just guards on a picked file and
+  // opens the confirmation dialog. `scrollToDropzone` is still used by the
+  // "Kumpulkan ulang" affordance in the submitted-state hero card.
+  function requestSubmit() {
+    if (!selectedFile || isSubmitting) return;
+    setConfirmOpen(true);
+  }
+
+  function confirmSubmit() {
+    setConfirmOpen(false);
+    handleSubmit();
   }
 
   const AttachmentIcon = task.attachment ? ATTACHMENT_ICON[task.attachment.kind] : null;
@@ -225,58 +244,11 @@ export function TaskDetailView({ task, serverNowISO }: Props) {
                 </div>
               </div>
 
-              {/* Right: action zone (top-right) */}
+              {/* Right: action zone (top-right). The submit CTA lives in the
+                  "Pengumpulan Tugas" card below (next to the dropzone); the hero
+                  only surfaces the terminal submitted/overdue states. */}
               <div className="w-full shrink-0 lg:w-auto">
-                {showForm ? (
-                  <div className="flex w-full flex-col gap-2 lg:w-[256px]">
-                    <button
-                      type="button"
-                      onClick={onPrimaryClick}
-                      disabled={isSubmitting}
-                      className={cn(
-                        "group inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl px-5 text-sm font-bold transition",
-                        "bg-[color:var(--color-brand-accent)] text-[color:var(--color-brand-950)]",
-                        "shadow-[0_14px_30px_-12px_rgba(244,214,0,0.8)] hover:-translate-y-0.5 hover:shadow-[0_18px_36px_-12px_rgba(244,214,0,0.9)] active:translate-y-0",
-                        "disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0",
-                        armed && "task-cta-pulse",
-                      )}
-                    >
-                      {isSubmitting ? (
-                        <Loader2 className="size-5 animate-spin" strokeWidth={2.3} />
-                      ) : (
-                        <Send className="size-4 transition group-hover:translate-x-0.5" strokeWidth={2.3} />
-                      )}
-                      {isSubmitting
-                        ? "Mengumpulkan…"
-                        : reuploadMode
-                          ? "Kumpulkan Revisi"
-                          : "Kumpulkan Tugas"}
-                    </button>
-                    <p className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 lg:justify-end lg:text-right">
-                      {selectedFile ? (
-                        <>
-                          <Paperclip className="size-3.5 shrink-0 text-[color:var(--color-brand-600)]" strokeWidth={2.2} />
-                          <span className="truncate">{selectedFile.name}</span>
-                        </>
-                      ) : (
-                        "Lampirkan file di formulir bawah"
-                      )}
-                    </p>
-                    {reuploadMode ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setReuploadMode(false);
-                          setSelectedFile(null);
-                        }}
-                        disabled={isSubmitting}
-                        className="text-xs font-semibold text-zinc-500 underline-offset-2 transition hover:text-zinc-800 hover:underline disabled:opacity-50 dark:text-zinc-400 dark:hover:text-zinc-200 lg:text-right"
-                      >
-                        Batalkan revisi
-                      </button>
-                    ) : null}
-                  </div>
-                ) : submitted ? (
+                {showForm ? null : submitted ? (
                   <div className="flex w-full flex-col gap-1.5 rounded-2xl bg-emerald-50 p-4 ring-1 ring-emerald-200 dark:bg-emerald-500/10 dark:ring-emerald-500/30 lg:w-[256px]">
                     <span className="inline-flex items-center gap-2 text-sm font-bold text-emerald-700 dark:text-emerald-300">
                       <CheckCircle2 className="size-5 shrink-0" strokeWidth={2.3} />
@@ -458,7 +430,7 @@ export function TaskDetailView({ task, serverNowISO }: Props) {
                 </div>
               </div>
             ) : showForm ? (
-              /* State: open form (or revision) — submit lives in the hero top-right */
+              /* State: open form (or revision) — dropzone + submit CTA together */
               <div className="mt-4 flex flex-col gap-3">
                 <SubmissionDropzone
                   file={selectedFile}
@@ -467,10 +439,46 @@ export function TaskDetailView({ task, serverNowISO }: Props) {
                 />
                 <p className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">
                   <Info className="size-3.5 shrink-0" strokeWidth={2.2} />
-                  Pastikan file sudah benar, lalu klik{" "}
-                  <span className="font-semibold text-zinc-700 dark:text-zinc-200">Kumpulkan Tugas</span>{" "}
-                  di kanan atas.
+                  Pastikan file sudah benar sebelum mengumpulkan.
                 </p>
+
+                <button
+                  type="button"
+                  onClick={requestSubmit}
+                  disabled={!selectedFile || isSubmitting}
+                  className={cn(
+                    "group inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl px-5 text-sm font-bold transition",
+                    "bg-[color:var(--color-brand-accent)] text-[color:var(--color-brand-950)]",
+                    "shadow-[0_14px_30px_-12px_rgba(244,214,0,0.8)] hover:-translate-y-0.5 hover:shadow-[0_18px_36px_-12px_rgba(244,214,0,0.9)] active:translate-y-0",
+                    "disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0",
+                    armed && "task-cta-pulse",
+                  )}
+                >
+                  {isSubmitting ? (
+                    <Loader2 className="size-5 animate-spin" strokeWidth={2.3} />
+                  ) : (
+                    <Send className="size-4 transition group-hover:translate-x-0.5" strokeWidth={2.3} />
+                  )}
+                  {isSubmitting
+                    ? "Mengumpulkan…"
+                    : reuploadMode
+                      ? "Kumpulkan Revisi"
+                      : "Kumpulkan Tugas"}
+                </button>
+
+                {reuploadMode ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setReuploadMode(false);
+                      setSelectedFile(null);
+                    }}
+                    disabled={isSubmitting}
+                    className="text-center text-xs font-semibold text-zinc-500 underline-offset-2 transition hover:text-zinc-800 hover:underline disabled:opacity-50 dark:text-zinc-400 dark:hover:text-zinc-200"
+                  >
+                    Batalkan revisi
+                  </button>
+                ) : null}
               </div>
             ) : null}
           </section>
@@ -522,6 +530,50 @@ export function TaskDetailView({ task, serverNowISO }: Props) {
           {task.feedback ? <MentorFeedbackCard feedback={task.feedback} /> : null}
         </aside>
       </div>
+
+      {/* Submit confirmation */}
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {reuploadMode ? "Kumpulkan revisi tugas?" : "Kumpulkan tugas?"}
+            </DialogTitle>
+            <DialogDescription>
+              {reuploadMode
+                ? "Berkas baru akan menggantikan pengumpulan sebelumnya. "
+                : "Pastikan berkas sudah benar — mentor akan meninjau hasil pekerjaanmu. "}
+              {selectedFile ? (
+                <span className="mt-2 flex items-center gap-1.5 font-medium text-foreground">
+                  <Paperclip
+                    className="size-3.5 shrink-0 text-[color:var(--color-brand-600)]"
+                    strokeWidth={2.2}
+                  />
+                  <span className="truncate">{selectedFile.name}</span>
+                </span>
+              ) : null}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setConfirmOpen(false)}
+              disabled={isSubmitting}
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              onClick={confirmSubmit}
+              disabled={!selectedFile || isSubmitting}
+              className="bg-[color:var(--color-brand-600)] text-white hover:bg-[color:var(--color-brand-700)]"
+            >
+              <Send className="size-4" strokeWidth={2.4} />
+              Ya, Kumpulkan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </StudentPageContainer>
   );
 }

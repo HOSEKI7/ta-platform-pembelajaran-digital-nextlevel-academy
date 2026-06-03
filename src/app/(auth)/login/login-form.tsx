@@ -10,13 +10,17 @@ import { toast } from "sonner";
 
 import { AuthInput, AuthPasswordInput } from "@/app/(auth)/_components/form-field";
 import { Button } from "@/components/ui/button";
-import { signIn, sendVerificationEmail } from "@/lib/auth-client";
+import { signIn, sendVerificationEmail, getSession } from "@/lib/auth-client";
+import { dashboardPathForRole } from "@/lib/role-routes";
 import { loginSchema, type LoginInput } from "@/lib/validators/auth";
 
 export function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const nextUrl = params.get("next") ?? "/dashboard";
+  // An explicit `?next=` (set by the proxy when bouncing an unauthenticated user
+  // off a protected page) is honored as-is; otherwise we land the user on their
+  // own role's dashboard rather than the student-only `/dashboard`.
+  const explicitNext = params.get("next");
 
   const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
 
@@ -31,10 +35,10 @@ export function LoginForm() {
 
   async function onSubmit(values: LoginInput) {
     setUnverifiedEmail(null);
-    const { error } = await signIn.email({
+    const { data, error } = await signIn.email({
       email: values.email,
       password: values.password,
-      callbackURL: nextUrl,
+      callbackURL: explicitNext ?? "/dashboard",
     });
 
     if (error) {
@@ -51,7 +55,14 @@ export function LoginForm() {
     }
 
     toast.success("Selamat datang kembali!");
-    router.push(nextUrl);
+    // Prefer the role from the sign-in response; fall back to a session read if
+    // it isn't present so the redirect is always role-correct.
+    let role = data?.user?.role;
+    if (!role) {
+      const session = await getSession();
+      role = session.data?.user?.role;
+    }
+    router.push(explicitNext ?? dashboardPathForRole(role));
     router.refresh();
   }
 

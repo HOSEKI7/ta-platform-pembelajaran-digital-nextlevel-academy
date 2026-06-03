@@ -180,7 +180,7 @@ function SummaryStat({
   tone: "emerald" | "red" | "brand";
 }) {
   return (
-    <div className="rounded-2xl border border-zinc-100 px-3 py-2.5 dark:border-[color:var(--color-surface-border)]">
+    <div className="rounded-2xl border border-zinc-200 px-3 py-2.5 dark:border-[color:var(--color-surface-border)]">
       <p className={cn("font-heading text-2xl font-extrabold leading-none", SUMMARY_TONE[tone])}>
         {value}
       </p>

@@ -43,12 +43,16 @@ export const CALENDAR_STATUS_STYLES: Record<CalendarDayStatus, string> = {
     "bg-emerald-500 text-white ring-1 ring-inset ring-emerald-600/20 dark:bg-emerald-500/90",
   TIDAK_HADIR:
     "bg-red-500 text-white ring-1 ring-inset ring-red-600/20 dark:bg-red-500/90",
-  BELUM: "bg-zinc-100 text-zinc-600 dark:bg-white/10 dark:text-zinc-300",
+  BELUM:
+    "bg-zinc-100 text-zinc-600 ring-1 ring-inset ring-zinc-300 dark:bg-white/10 dark:text-zinc-300 dark:ring-0",
   LIBUR: "bg-zinc-50 text-zinc-300 dark:bg-white/[0.02] dark:text-zinc-600",
   FUTURE:
-    "bg-transparent text-zinc-300 ring-1 ring-inset ring-zinc-100 dark:text-zinc-600 dark:ring-white/5",
+    "bg-transparent text-zinc-300 ring-1 ring-inset ring-zinc-200 dark:text-zinc-600 dark:ring-white/5",
+  // `ring-dashed` is not a valid Tailwind utility (rings are always solid) — a
+  // real dashed outline needs `border border-dashed`. Box-border keeps the
+  // aspect-square cell the same outer size as ring-based cells.
   LUAR_PERIODE:
-    "bg-transparent text-zinc-200 ring-1 ring-inset ring-dashed ring-zinc-100 dark:text-zinc-700 dark:ring-white/5",
+    "bg-transparent text-zinc-300 border border-dashed border-zinc-300 dark:text-zinc-700 dark:border-white/10",
 };
 
 export const STATUS_LEGEND: ReadonlyArray<{

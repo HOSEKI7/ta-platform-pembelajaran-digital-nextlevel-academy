@@ -61,7 +61,7 @@ export function AdminTopbar({ user, onOpenMobileNav }: Props) {
           )}
         />
 
-        <ProfileMenu user={user} />
+        <ProfileMenu user={user} settingsHref="/admin/settings" />
       </div>
     </header>
   );

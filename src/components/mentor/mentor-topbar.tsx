@@ -63,7 +63,7 @@ export function MentorTopbar({ user, context, onOpenMobileNav }: Props) {
 
         <Separator />
 
-        <ProfileMenu user={user} />
+        <ProfileMenu user={user} settingsHref="/mentor/settings" />
       </div>
     </header>
   );

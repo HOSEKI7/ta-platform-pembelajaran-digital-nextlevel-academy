@@ -14,3 +14,16 @@ export const upsertGradeSchema = z.object({
 });
 
 export type UpsertGradeInput = z.infer<typeof upsertGradeSchema>;
+
+/**
+ * Sanitize a raw grade-input string for an as-you-type number field: strips
+ * every non-digit (so letters/symbols never land), drops leading zeros, and
+ * clamps anything above 100 down to "100". Returns "" for an empty field so the
+ * user can clear it. Used by the mentor + admin final-grade dialogs.
+ */
+export function sanitizeGradeInput(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  if (digits === "") return "";
+  const n = Number(digits);
+  return n > 100 ? "100" : String(n);
+}

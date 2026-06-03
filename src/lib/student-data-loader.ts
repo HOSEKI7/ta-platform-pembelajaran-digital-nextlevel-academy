@@ -79,7 +79,6 @@ export async function loadInProgressCourses(
       },
     },
     orderBy: { enrolledAt: "desc" },
-    take: 6,
   });
 
   return {

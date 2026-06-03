@@ -23,6 +23,10 @@ type Props = {
     username?: string | null;
     image?: string | null;
   };
+  /** Settings route for the active role-surface. Defaults to the student
+   *  `/settings`; mentor/admin/magang pass their own (a bare `/settings` would
+   *  resolve into the `(student)` group and bounce non-students to `/`). */
+  settingsHref?: string;
 };
 
 function initialsOf(name: string) {
@@ -34,7 +38,7 @@ function initialsOf(name: string) {
     .join("");
 }
 
-export function ProfileMenu({ user }: Props) {
+export function ProfileMenu({ user, settingsHref = "/settings" }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -109,7 +113,7 @@ export function ProfileMenu({ user }: Props) {
         <DropdownMenuSeparator className="my-1 dark:bg-[color:var(--color-surface-border)]" />
 
         <DropdownMenuItem
-          onClick={() => router.push("/settings")}
+          onClick={() => router.push(settingsHref)}
           className="cursor-pointer gap-2 rounded-lg py-2 text-sm dark:focus:bg-white/[0.06]"
         >
           <Settings className="size-4" strokeWidth={2.2} />

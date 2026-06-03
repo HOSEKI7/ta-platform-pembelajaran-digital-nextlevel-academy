@@ -1,15 +1,30 @@
 "use client"
 
+import { usePathname } from "next/navigation"
+
 import { useTheme } from "@/components/providers/theme-provider"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
 import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon } from "lucide-react"
 
+/** The `(auth)` route group is always light (see ForceLightTheme); the global
+ *  theme state can still read "dark" (e.g. after logging out from a dark
+ *  dashboard), which would otherwise paint a dark toast on a light page. */
+const AUTH_PATHS = new Set([
+  "/login",
+  "/register",
+  "/forgot-password",
+  "/reset-password",
+  "/verify-email",
+])
+
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = "system" } = useTheme()
+  const pathname = usePathname()
+  const effectiveTheme = AUTH_PATHS.has(pathname) ? "light" : theme
 
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
+      theme={effectiveTheme as ToasterProps["theme"]}
       className="toaster group"
       icons={{
         success: (

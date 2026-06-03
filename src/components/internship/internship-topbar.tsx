@@ -63,7 +63,7 @@ export function InternshipTopbar({ user, context, onOpenMobileNav }: Props) {
 
         <Separator />
 
-        <ProfileMenu user={user} />
+        <ProfileMenu user={user} settingsHref="/internship/settings" />
       </div>
     </header>
   );

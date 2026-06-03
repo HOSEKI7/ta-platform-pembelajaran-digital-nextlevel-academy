@@ -790,8 +790,14 @@
 }
 .task-prose img {
   display: block;
+  /* Keep pasted/dropped images at a sensible scale: never wider than the
+     column, capped in height so a huge upload doesn't dominate, and `width:auto`
+     so a small image keeps its natural size instead of stretching. */
   max-width: 100%;
+  max-height: 24rem;
+  width: auto;
   height: auto;
+  object-fit: contain;
   margin: 1rem 0;
   border-radius: 0.75rem;
 }

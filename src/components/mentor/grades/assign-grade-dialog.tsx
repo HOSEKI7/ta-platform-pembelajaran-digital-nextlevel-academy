@@ -14,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { sanitizeGradeInput } from "@/lib/validations/mentor-grade";
 import type { MentorGradeRow } from "@/lib/mentor-types";
 
 type Props = {
@@ -71,13 +72,12 @@ export function AssignGradeDialog({
             </label>
             <Input
               id="final-grade"
-              type="number"
+              type="text"
               inputMode="numeric"
-              min={0}
-              max={100}
-              step={1}
+              pattern="[0-9]*"
+              maxLength={3}
               value={gradeText}
-              onChange={(e) => setGradeText(e.target.value)}
+              onChange={(e) => setGradeText(sanitizeGradeInput(e.target.value))}
               disabled={submitting}
               placeholder="mis. 85"
               className="h-10 text-base"
