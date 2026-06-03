@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
   }
 
   const userId = session.user.id;
-  const { courseId } = parsed.data;
+  const { courseId, recipientName } = parsed.data;
 
   try {
     const enrollment = await prisma.enrollment.findUnique({
@@ -69,10 +69,23 @@ export async function POST(request: NextRequest) {
       courseId,
       enrollmentId: enrollment.id,
     });
+    const current = await prisma.certificate.findUnique({
+      where: { id: issued.id },
+      select: { claimedAt: true, recipientName: true, imageUrl: true },
+    });
+
+    // Immutability: the printed name can be confirmed/corrected only while the
+    // certificate is unclaimed. Once claimed it is locked — re-claims are no-ops.
+    const alreadyClaimed = Boolean(current?.claimedAt);
+    const nameChanged =
+      !alreadyClaimed && recipientName !== (current?.recipientName ?? "");
 
     const certificate = await prisma.certificate.update({
       where: { id: issued.id },
-      data: { claimedAt: new Date() },
+      data: {
+        ...(alreadyClaimed ? {} : { claimedAt: new Date() }),
+        ...(nameChanged ? { recipientName } : {}),
+      },
       select: {
         id: true,
         certificateNo: true,
@@ -82,8 +95,9 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Ensure the PNG exists (no-op if already generated). Non-blocking.
-    if (!certificate.imageUrl) {
+    // Regenerate the PNG when the name changed; otherwise only when it's still
+    // missing. Non-blocking via after().
+    if (nameChanged || !certificate.imageUrl) {
       after(() => generateAndStoreCertificateImage(certificate.id));
     }
 
@@ -98,6 +112,7 @@ export async function POST(request: NextRequest) {
               ? certificate.expiresAt.toISOString()
               : null,
           },
+          nameChanged,
         },
       },
       { status: 200 },

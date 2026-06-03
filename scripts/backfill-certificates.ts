@@ -63,10 +63,25 @@ async function main() {
   `;
   console.log(`Stamped existing certificates as claimed: ${stampedRows}`);
 
+  // Step 1b — snapshot the recipient name for legacy rows. recipientName is the
+  // immutable name source; copy each certificate's current account name into it
+  // so renaming the account later no longer alters issued certificates.
+  const namedRows: number = await db.$executeRaw`
+    UPDATE "certificate" c SET "recipientName" = u."name"
+    FROM "user" u WHERE c."userId" = u."id" AND c."recipientName" IS NULL
+  `;
+  console.log(`Snapshotted recipientName for legacy certificates: ${namedRows}`);
+
   // Step 2 — issue certificates for completed-but-uncertified enrollments.
   const pending = await db.enrollment.findMany({
     where: { progressPct: { gte: 100 }, certificate: null },
-    select: { id: true, userId: true, courseId: true, completedAt: true },
+    select: {
+      id: true,
+      userId: true,
+      courseId: true,
+      completedAt: true,
+      user: { select: { name: true } },
+    },
   });
   console.log(`Enrollments needing a certificate: ${pending.length}`);
 
@@ -82,6 +97,7 @@ async function main() {
             courseId: e.courseId,
             enrollmentId: e.id,
             certificateNo: generateCertificateNo(),
+            recipientName: e.user.name,
             issuedAt,
             expiresAt,
             claimedAt: null,

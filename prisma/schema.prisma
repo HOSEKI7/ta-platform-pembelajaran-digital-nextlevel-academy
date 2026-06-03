@@ -607,6 +607,11 @@ model Certificate {
   courseId      String
   enrollmentId  String    @unique
   certificateNo String    @unique // format: NLA-XXXXXXXXXXXX (12 high-entropy chars)
+  // Immutable snapshot of the recipient's full name, captured at issuance and
+  // (optionally) confirmed/corrected at claim. Read by ALL render/display sites
+  // instead of `user.name`, so renaming the account never alters an issued
+  // certificate. Nullable only for legacy rows backfilled from user.name.
+  recipientName String?
   issuedAt      DateTime  @default(now())
   expiresAt     DateTime?
   // Permanent public CDN URL of the rendered PNG (Satori → Bunny cert zone,

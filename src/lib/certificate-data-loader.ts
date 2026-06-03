@@ -19,6 +19,7 @@ export type CertificateUnclaimedRowDTO = {
   certificateNo: string;
   courseId: string;
   courseTitle: string;
+  recipientName: string;
   issuedAt: string;
 };
 
@@ -74,7 +75,9 @@ export async function loadCertificateRows(
         id: true,
         certificateNo: true,
         courseId: true,
+        recipientName: true,
         issuedAt: true,
+        user: { select: { name: true } },
         course: { select: { title: true } },
       },
       orderBy: { issuedAt: "desc" },
@@ -104,6 +107,7 @@ export async function loadCertificateRows(
       certificateNo: r.certificateNo,
       courseId: r.courseId,
       courseTitle: r.course.title,
+      recipientName: r.recipientName ?? r.user.name,
       issuedAt: r.issuedAt.toISOString(),
     })),
     claimed: claimedRows.map((r) => ({
@@ -164,6 +168,7 @@ export const loadPublicCertificate = cache(async function loadPublicCertificate(
     select: {
       id: true,
       certificateNo: true,
+      recipientName: true,
       imageUrl: true,
       issuedAt: true,
       expiresAt: true,
@@ -204,7 +209,8 @@ export const loadPublicCertificate = cache(async function loadPublicCertificate(
     expiresAt: cert.expiresAt ? cert.expiresAt.toISOString() : null,
     isExpired: cert.expiresAt ? cert.expiresAt.getTime() <= now : false,
     recipient: {
-      name: cert.user.name,
+      // Immutable snapshot — never the live account name.
+      name: cert.recipientName ?? cert.user.name,
       username: cert.user.username,
       image: cert.user.image,
     },

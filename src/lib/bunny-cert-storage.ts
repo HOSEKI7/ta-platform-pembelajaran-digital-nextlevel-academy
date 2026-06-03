@@ -69,5 +69,9 @@ export async function uploadCertificatePng(
       `Bunny cert upload gagal: ${res.status} ${res.statusText}`,
     );
   }
-  return certificatePublicUrl(publicId);
+  // Versioned URL: the file at this path is overwritten on regeneration (e.g.
+  // the recipient name is corrected at claim). A `?v=` cache-buster guarantees
+  // the CDN/browser fetch the fresh bytes despite the immutable Cache-Control,
+  // while each version stays permanently cacheable.
+  return `${certificatePublicUrl(publicId)}?v=${Date.now()}`;
 }

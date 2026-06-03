@@ -75,12 +75,13 @@ export type ClaimCertificateResult = {
     issuedAt: string;
     expiresAt: string | null;
   };
+  nameChanged: boolean;
 };
 
 export function useClaimCertificateMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: { courseId: string }) =>
+    mutationFn: (input: { courseId: string; recipientName: string }) =>
       postJson<ClaimCertificateResult>(
         "/api/student/certificates/claim",
         input,

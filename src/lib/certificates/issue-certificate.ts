@@ -80,6 +80,13 @@ export async function ensureCertificateIssued(
 
   const issuedAt = new Date();
   const expiresAt = await computeCertExpiry(issuedAt);
+  // Snapshot the recipient name at issuance — read by every render/display site
+  // thereafter, so later account renames never alter an issued certificate.
+  const user = await prisma.user.findUnique({
+    where: { id: input.userId },
+    select: { name: true },
+  });
+  const recipientName = user?.name ?? "";
 
   for (let attempt = 0; attempt < MAX_CERT_NO_RETRIES; attempt += 1) {
     const certificateNo = generateCertificateNo();
@@ -90,6 +97,7 @@ export async function ensureCertificateIssued(
           courseId: input.courseId,
           enrollmentId: input.enrollmentId,
           certificateNo,
+          recipientName,
           issuedAt,
           expiresAt,
         },
@@ -114,6 +122,7 @@ export async function ensureCertificateIssued(
 
 type CertRenderRow = {
   certificateNo: string;
+  recipientName: string | null;
   issuedAt: Date;
   expiresAt: Date | null;
   user: { name: string };
@@ -122,7 +131,9 @@ type CertRenderRow = {
 
 function toImageInput(row: CertRenderRow): CertificateImageInput {
   return {
-    recipientName: row.user.name,
+    // Prefer the immutable snapshot; fall back to live name only for legacy
+    // rows not yet backfilled (transient — backfill populates them).
+    recipientName: row.recipientName ?? row.user.name,
     courseTitle: row.course.title,
     certificateNo: row.certificateNo,
     issuedAt: row.issuedAt,
@@ -145,6 +156,7 @@ export async function generateAndStoreCertificateImage(
     where: { id: certId },
     select: {
       certificateNo: true,
+      recipientName: true,
       issuedAt: true,
       expiresAt: true,
       user: { select: { name: true } },

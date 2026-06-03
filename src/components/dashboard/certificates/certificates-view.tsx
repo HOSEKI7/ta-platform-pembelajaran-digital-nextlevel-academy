@@ -415,6 +415,7 @@ function UnclaimedRow({ row }: { row: CertificateUnclaimedRowDTO }) {
         <ClaimCertificateButton
           courseId={row.courseId}
           courseTitle={row.courseTitle}
+          recipientName={row.recipientName}
         />
       </TableCell>
     </TableRow>
@@ -481,6 +482,7 @@ function MobileRows({
             <ClaimCertificateButton
               courseId={row.courseId}
               courseTitle={row.courseTitle}
+              recipientName={row.recipientName}
             />
           </div>
         </div>

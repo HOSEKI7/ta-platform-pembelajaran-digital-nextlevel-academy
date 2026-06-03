@@ -623,10 +623,18 @@ Setelah video ditandai selesai:
   dibuat idempotent; PNG dirender + di-upload ke Bunny secara non-blocking via
   `after()`, dengan **lazy regen** sebagai fallback bila gambar belum ada saat
   dibaca).
-- Tombol **Klaim** (di halaman "Sertifikat") kini **formalitas**: menstempel
-  `claimedAt` untuk memindahkan sertifikat dari grup "Belum Diklaim" ke
-  "Diterbitkan". Keabsahan tidak bergantung pada klaim maupun keberadaan file —
-  **selalu** divalidasi dari record DB.
+- **Nama penerima di-snapshot** ke `Certificate.recipientName` saat penerbitan
+  (dari nama akun saat itu). **Semua** titik render/tampilan membaca kolom ini —
+  bukan `user.name` — sehingga **mengganti nama akun tidak pernah mengubah
+  sertifikat yang sudah terbit** (celah keamanan yang ditutup). Pengguna tetap
+  bebas mengganti nama akun di Pengaturan.
+- Tombol **Klaim** (di halaman "Sertifikat") menampilkan **dialog konfirmasi
+  nama**: input nama lengkap ter-prefill dari snapshot, **boleh dikoreksi**. Saat
+  dikonfirmasi, nama dikunci ke `recipientName` dan `claimedAt` distempel
+  (memindahkan baris ke "Diterbitkan"); bila nama diubah, PNG **diregenerasi**
+  (URL ber-versi `?v=` untuk membusting cache). Setelah `claimedAt` terisi,
+  `recipientName` **immutable**. Validasi nama (huruf Latin + aksen, 2–80 char)
+  dibagi klien+server. Keabsahan **selalu** dari record DB, bukan keberadaan file.
 
 #### 6.6.2 Konten & Desain Sertifikat
 
@@ -636,7 +644,7 @@ Elemen wajib:
 | Field                       | Sumber Data                       | Keterangan                          |
 | --------------------------- | --------------------------------- | ----------------------------------- |
 | Logo NextLevel              | Aset brand                        | Logo resmi pada sertifikat          |
-| Nama Penerima               | Nama lengkap akun user            | —                                   |
+| Nama Penerima               | `Certificate.recipientName` (snapshot) | Immutable; dikonfirmasi saat klaim |
 | Nama Kursus                 | Judul kursus                      | —                                   |
 | Tanggal Terbit (Issue Date) | Tanggal penerbitan (100%)         | Format: DD/MM/YYYY                  |
 | Tanggal Kedaluwarsa         | Issue Date + konfigurasi global   | Opsional; tampil jika dikonfigurasi |
@@ -1776,9 +1784,10 @@ Certificate {
   courseId       UUID (FK → Course)
   enrollmentId   UUID (FK → Enrollment, unique)
   certificateNo  String (unique) — format: NLA-XXXXXXXXXXXX (12 char acak)
+  recipientName  String (nullable* — snapshot nama, immutable; *null hanya utk baris legacy yg di-backfill)
   issuedAt       DateTime
   expiresAt      DateTime (nullable)
-  imageUrl       String (nullable — permanent public CDN URL PNG di Bunny cert zone)
+  imageUrl       String (nullable — permanent public CDN URL PNG di Bunny cert zone, ber-versi ?v=)
   claimedAt      DateTime (nullable — null = terbit tapi belum diklaim/diakui)
 }
 ```

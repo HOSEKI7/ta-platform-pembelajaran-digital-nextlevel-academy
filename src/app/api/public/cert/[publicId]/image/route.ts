@@ -37,6 +37,7 @@ export async function GET(
       where: { certificateNo: certificateNoFromPublicId(publicId) },
       select: {
         certificateNo: true,
+        recipientName: true,
         issuedAt: true,
         expiresAt: true,
         imageUrl: true,
@@ -56,7 +57,7 @@ export async function GET(
     }
 
     const png = await renderCertificatePng({
-      recipientName: cert.user.name,
+      recipientName: cert.recipientName ?? cert.user.name,
       courseTitle: cert.course.title,
       certificateNo: cert.certificateNo,
       issuedAt: cert.issuedAt,

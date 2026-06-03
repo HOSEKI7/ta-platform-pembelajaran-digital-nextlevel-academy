@@ -29,6 +29,7 @@ export async function GET(
       where: { id },
       select: {
         certificateNo: true,
+        recipientName: true,
         issuedAt: true,
         expiresAt: true,
         imageUrl: true,

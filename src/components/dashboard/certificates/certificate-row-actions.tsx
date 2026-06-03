@@ -5,58 +5,47 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { BadgeCheck, Download, Loader2, Sparkles } from "lucide-react";
 
-import { useClaimCertificateMutation } from "@/hooks/use-certificates";
 import { publicIdFromCertificateNo } from "@/lib/certificates/cert-id";
 import { cn } from "@/lib/utils";
+
+import { ClaimCertificateDialog } from "./claim-certificate-dialog";
 
 type ClaimButtonProps = {
   courseId: string;
   courseTitle: string;
+  /** Snapshot name prefilled in the confirmation dialog. */
+  recipientName: string;
 };
 
 export function ClaimCertificateButton({
   courseId,
   courseTitle,
+  recipientName,
 }: ClaimButtonProps) {
-  const claim = useClaimCertificateMutation();
-
-  function handleClaim() {
-    claim.mutate(
-      { courseId },
-      {
-        onSuccess: (result) => {
-          toast.success(
-            `Sertifikat ${result.certificate.certificateNo} berhasil diterbitkan untuk "${courseTitle}".`,
-          );
-        },
-        onError: (err) => {
-          toast.error(
-            err instanceof Error ? err.message : "Gagal mengklaim sertifikat.",
-          );
-        },
-      },
-    );
-  }
+  const [open, setOpen] = useState(false);
 
   return (
-    <button
-      type="button"
-      onClick={handleClaim}
-      disabled={claim.isPending}
-      className={cn(
-        "inline-flex h-8 items-center gap-1.5 rounded-full px-3.5 text-[12px] font-bold text-white transition",
-        "bg-[color:var(--color-brand-500)] shadow-[0_8px_18px_-10px_rgba(43,114,234,0.7)]",
-        "hover:bg-[color:var(--color-brand-600)]",
-        "disabled:cursor-not-allowed disabled:opacity-70",
-      )}
-    >
-      {claim.isPending ? (
-        <Loader2 className="size-3.5 animate-spin" strokeWidth={2.4} />
-      ) : (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className={cn(
+          "inline-flex h-8 items-center gap-1.5 rounded-full px-3.5 text-[12px] font-bold text-white transition",
+          "bg-[color:var(--color-brand-500)] shadow-[0_8px_18px_-10px_rgba(43,114,234,0.7)]",
+          "hover:bg-[color:var(--color-brand-600)]",
+        )}
+      >
         <Sparkles className="size-3.5" strokeWidth={2.4} />
-      )}
-      <span>Klaim Sertifikat</span>
-    </button>
+        <span>Klaim Sertifikat</span>
+      </button>
+      <ClaimCertificateDialog
+        open={open}
+        onOpenChange={setOpen}
+        courseId={courseId}
+        courseTitle={courseTitle}
+        defaultName={recipientName}
+      />
+    </>
   );
 }
 
