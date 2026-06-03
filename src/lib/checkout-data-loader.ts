@@ -19,9 +19,9 @@ import { computeVoucherDiscount } from "@/lib/voucher-discount";
  * unit testing the rules straightforward later.
  */
 export type CheckoutPageData =
-  | { status: "ok"; course: CheckoutCourse }
+  | { status: "ok"; course: CheckoutCourse; lastPhone: string | null }
   | { status: "owned" }
-  | { status: "pending"; orderId: string }
+  | { status: "pending"; course: CheckoutCourse; resume: ResumeOrder }
   | { status: "not-found" };
 
 export type CheckoutCourse = {
@@ -36,6 +36,44 @@ export type CheckoutCourse = {
   instructor: string;
   category: { id: string; name: string };
 };
+
+/** Data needed to resume a live PENDING order (reopen the Snap popup). */
+export type ResumeOrder = {
+  orderId: string;
+  /** Stored Snap token to reopen `snap.pay(token)`. Null in the dev fallback. */
+  paymentToken: string | null;
+  /** ISO — 60-minute checkout deadline. */
+  expiresAt: string;
+  invoiceNumber: string | null;
+  pricing: { originalPrice: number; discountAmount: number; finalPrice: number };
+  voucher: { code: string; discountPct: number } | null;
+};
+
+function toCheckoutCourse(course: {
+  id: string;
+  title: string;
+  slug: string;
+  thumbnailUrl: string;
+  shortDescription: string | null;
+  price: number;
+  fakePrice: number | null;
+  estimatedDuration: number | null;
+  instructor: string;
+  category: { id: string; name: string };
+}): CheckoutCourse {
+  return {
+    id: course.id,
+    title: course.title,
+    slug: course.slug,
+    thumbnailUrl: course.thumbnailUrl,
+    shortDescription: course.shortDescription,
+    price: course.price,
+    fakePrice: course.fakePrice,
+    estimatedDuration: course.estimatedDuration,
+    instructor: course.instructor,
+    category: { id: course.category.id, name: course.category.name },
+  };
+}
 
 export async function loadCheckoutPageData(
   userId: string,
@@ -59,6 +97,7 @@ export async function loadCheckoutPageData(
   // Live-pending guard — block double-charge per CLAUDE.md. We only treat
   // an order as "live" if it's still within the 60-min expiry window;
   // expired orders are ignored and the student can start a fresh checkout.
+  // Resume reopens the Snap popup with the stored token (no new order).
   const pending = await prisma.order.findFirst({
     where: {
       userId,
@@ -66,25 +105,51 @@ export async function loadCheckoutPageData(
       status: "PENDING",
       expiresAt: { gt: new Date() },
     },
-    select: { id: true },
+    select: {
+      id: true,
+      paymentToken: true,
+      expiresAt: true,
+      paymentInvoiceId: true,
+      originalPrice: true,
+      discountAmount: true,
+      finalPrice: true,
+      voucher: { select: { code: true, discountPct: true } },
+    },
     orderBy: { createdAt: "desc" },
   });
-  if (pending) return { status: "pending", orderId: pending.id };
+  if (pending) {
+    return {
+      status: "pending",
+      course: toCheckoutCourse(course),
+      resume: {
+        orderId: pending.id,
+        paymentToken: pending.paymentToken,
+        expiresAt: pending.expiresAt.toISOString(),
+        invoiceNumber: pending.paymentInvoiceId,
+        pricing: {
+          originalPrice: pending.originalPrice,
+          discountAmount: pending.discountAmount,
+          finalPrice: pending.finalPrice,
+        },
+        voucher: pending.voucher
+          ? { code: pending.voucher.code, discountPct: pending.voucher.discountPct }
+          : null,
+      },
+    };
+  }
+
+  // Prefill the phone field from the user's most recent order that has one —
+  // a small convenience that also seeds data for the planned WhatsApp feature.
+  const lastWithPhone = await prisma.order.findFirst({
+    where: { userId, customerPhone: { not: null } },
+    select: { customerPhone: true },
+    orderBy: { createdAt: "desc" },
+  });
 
   return {
     status: "ok",
-    course: {
-      id: course.id,
-      title: course.title,
-      slug: course.slug,
-      thumbnailUrl: course.thumbnailUrl,
-      shortDescription: course.shortDescription,
-      price: course.price,
-      fakePrice: course.fakePrice,
-      estimatedDuration: course.estimatedDuration,
-      instructor: course.instructor,
-      category: { id: course.category.id, name: course.category.name },
-    },
+    course: toCheckoutCourse(course),
+    lastPhone: lastWithPhone?.customerPhone ?? null,
   };
 }
 

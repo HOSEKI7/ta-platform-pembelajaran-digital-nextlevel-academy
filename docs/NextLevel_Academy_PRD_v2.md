@@ -385,18 +385,18 @@ User klik "Beli Kursus"
   Tidak ↓
         │
         ▼
-Halaman/Modal Checkout
+Halaman Checkout (/checkout/[slug])
   - Ringkasan kursus & harga
   - Input kode voucher (opsional)
-  - Pilih metode pembayaran
-  - Tombol "Bayar Sekarang"
+  - Informasi pembeli (email/nama read-only + telepon opsional)
+  - Tombol "Checkout & Bayar Sekarang"
         │
         ▼
-Sistem membuat Order (status: PENDING)
-Timer 60 menit dimulai
+Sistem membuat Order (status: PENDING) + token Snap, Timer 60 menit dimulai
+Email "Menunggu Pembayaran" dikirim
         │
         ▼
-User menyelesaikan pembayaran via Midtrans
+Popup Snap terbuka → user PILIH METODE & bayar di dalam popup
         │
         ▼
 [Payment Gateway Webhook]
@@ -407,26 +407,21 @@ User menyelesaikan pembayaran via Midtrans
 
 #### 6.4.2 Halaman Checkout
 
+**Pemilihan metode pembayaran TIDAK lagi di halaman ini** — metode dipilih di dalam **popup Snap Midtrans**. Tidak ada halaman `/payment/[orderId]` terpisah; popup dibuka langsung dari `/checkout/[slug]`.
+
 **Komponen:**
 
-- Thumbnail + judul kursus.
-- Harga original.
-- Input field kode voucher + tombol "Terapkan".
-  - Jika valid: tampilkan potongan harga dan harga akhir.
-  - Jika tidak valid: tampilkan pesan error.
-- Harga final yang harus dibayar.
-- Pilihan metode pembayaran (QRIS, Transfer Bank, E-Wallet via Midtrans).
-- Timer countdown 60 menit (dimulai setelah klik "Bayar Sekarang").
-- Tombol "Bayar Sekarang".
+- Ringkasan Pesanan: thumbnail + judul kursus + harga original.
+- Input kode voucher + tombol "Terapkan" (valid → tampilkan potongan & harga akhir; tidak valid → pesan error).
+- Detail Pembayaran: harga original, diskon (jika ada), total akhir (IDR).
+- Informasi Pembeli: Email & Nama **read-only** (dari sesi); **Nomor Telepon opsional** (pemilih kode negara internasional, disimpan **E.164** di `Order.customerPhone` — groundwork untuk notifikasi WhatsApp pasca-checkout yang akan datang).
+- Checkbox persetujuan S&K + **teks kebijakan tanpa refund** di bawah tombol.
+- Tombol **"Checkout & Bayar Sekarang"** → membuat order PENDING (harga otoritatif server) + token Snap → membuka `snap.pay(token)`.
+- **Resume:** jika sudah ada order `PENDING` aktif untuk kursus yang sama, halaman ini masuk mode "Lanjutkan Pembayaran" (ringkasan terkunci + countdown) dan membuka kembali Snap dengan token tersimpan — tanpa membuat order baru.
 
 #### 6.4.3 Metode Pembayaran
 
-Terintegrasi dengan **Midtrans**:
-
-- QRIS
-- Virtual Account (Transfer Bank) — BCA, BNI, BRI, Mandiri, BSI, Seabank, Jago, dll.
-- E-Wallet — OVO, GoPay, DANA, ShopeePay
-- Metode lainnya
+Dipilih oleh pembeli **di dalam popup Snap** (bukan di halaman kita). Channel yang tampil = yang diaktifkan di dashboard Midtrans (Snap Preferences): QRIS, Virtual Account (BCA/BNI/BRI/Mandiri/CIMB/Permata/VA lain), Gerai Retail (Indomaret/Alfamart), Akulaku, dll. `Order.paymentMethod` diisi dari `payment_type` Midtrans setelah pembayaran (ditampilkan via label di invoice).
 
 #### 6.4.4 Status Transaksi
 
@@ -463,11 +458,10 @@ Seluruh riwayat transaksi tersimpan permanen, termasuk yang expired atau failed.
 - Saat membaca status (polling halaman pembayaran + loader transaksi), order `PENDING` di-rekonsiliasi via **Midtrans Get-Status API** (`reconcileOrder`): bila settlement/capture (dengan amount cocok) → jalur sukses idempoten yang sama (`SUCCESS` + Enrollment + email); bila deny/cancel/expire → `FAILED`/`EXPIRED`.
 - **Lazy-expiry**: order `PENDING` yang melewati 60 menit ditandai `EXPIRED` saat dibaca, walau cron/Midtrans tidak tersedia.
 
-#### 6.4.9 Pembatalan oleh Peserta
+#### 6.4.9 Email "Menunggu Pembayaran"
 
-- Peserta dapat **Batalkan Pembayaran** untuk order `PENDING` miliknya (mis. salah pilih metode), dari halaman detail transaksi maupun `/payment/[orderId]`, melalui dialog konfirmasi.
-- Efek: best-effort cancel transaksi di Midtrans, status → **`FAILED`** (memakai ulang status, tanpa enum baru) sehingga blokir double-purchase lepas; bila order memakai voucher, pemakaian voucher **dikembalikan** agar bisa dipakai ulang.
-- Setelah batal, peserta diarahkan ke detail transaksi dengan tombol **"Beli Lagi"** menuju checkout kursus yang sama.
+- Saat order `PENDING` berbayar dibuat, sistem mengirim email **"Menunggu Pembayaran"** (via `after()`, non-blocking) berisi nomor invoice, total, batas waktu 60 menit, dan tautan **Lanjutkan Pembayaran** ke `/checkout/[slug]` (membuka kembali popup Snap). Email "Pembayaran Berhasil" tetap dikirim saat `SUCCESS`.
+- _Catatan:_ fitur "Batalkan Pembayaran" yang sempat ada **dihapus** seiring refactor Snap popup (metode kini dipilih di dalam popup, jadi salah-pilih-metode tidak lagi relevan). Order `PENDING` cukup dibiarkan kedaluwarsa (60 menit) atau diselesaikan via resume.
 
 ---
 

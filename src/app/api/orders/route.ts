@@ -1,15 +1,14 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse, after, type NextRequest } from "next/server";
 
+import { OrderPendingEmail } from "@/emails/order-pending";
 import { Role } from "@/generated/prisma";
 import { requireRoleInRoute } from "@/lib/auth-server";
 import { validateVoucher } from "@/lib/checkout-data-loader";
 import { env } from "@/lib/env";
+import { idr } from "@/lib/format";
+import { formatDateID, formatTimeID } from "@/lib/format-date";
 import { generateInvoiceNumber } from "@/lib/invoice-number";
-import {
-  createSnapTransaction,
-  isMidtransConfigured,
-  mapPaymentMethodToSnap,
-} from "@/lib/midtrans";
+import { createSnapTransaction, isMidtransConfigured } from "@/lib/midtrans";
 import { fulfillOrderPaid } from "@/lib/payment/fulfillment";
 import { prisma } from "@/lib/prisma";
 import {
@@ -17,6 +16,7 @@ import {
   orderRateLimiter,
   tooManyRequestsResponse,
 } from "@/lib/rate-limit";
+import { sendEmail } from "@/lib/resend";
 import { createOrderSchema } from "@/lib/validators/checkout";
 
 export const dynamic = "force-dynamic";
@@ -29,14 +29,15 @@ const ORDER_EXPIRY_MS = ORDER_EXPIRY_MIN * 60 * 1000;
  *
  * Creates the student's order and starts the Midtrans Snap payment session
  * (PRD §6.4). All money is recomputed server-side — the client's numbers are
- * never trusted. Double-purchase is blocked at the backend (existing
- * Enrollment OR a live PENDING order).
+ * never trusted. The payment method is chosen INSIDE the Snap popup, so it isn't
+ * collected here. Double-purchase is blocked at the backend (existing Enrollment
+ * OR a live PENDING order).
  *
- * Returns `{ orderId, expiresAt, simulated, status }`:
- *   - `simulated: false` → Snap session created; client navigates to
- *     `/payment/:orderId` which reads the stored token and opens snap.pay().
+ * Returns `{ orderId, expiresAt, simulated, status, paymentToken }`:
+ *   - `simulated: false` → Snap session created; the checkout page opens
+ *     `snap.pay(paymentToken)` directly (no separate payment page).
  *   - `simulated: true`  → Midtrans not configured (dev). The order is PENDING;
- *     the payment page exposes a "simulate payment" button.
+ *     the checkout page exposes a "simulate payment" button.
  *   - `status: "SUCCESS"` → free order (100% voucher) fulfilled instantly; the
  *     client goes straight to the course.
  */
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
   }
 
   const userId = session.user.id;
-  const { courseId, paymentMethod, voucherCode } = parsed.data;
+  const { courseId, voucherCode, customerPhone } = parsed.data;
 
   try {
     const course = await prisma.course.findUnique({
@@ -138,11 +139,11 @@ export async function POST(request: NextRequest) {
         discountAmount,
         finalPrice,
         invoiceNumber,
-        paymentMethod,
+        customerPhone,
         expiresAt,
       });
       if (!result.ok) return conflictResponse(result);
-      await fulfillOrderPaid(result.order.id, { paymentMethod, paidAt: new Date() });
+      await fulfillOrderPaid(result.order.id, { paymentMethod: "free", paidAt: new Date() });
       return NextResponse.json(
         { data: { orderId: result.order.id, status: "SUCCESS", slug: course.slug } },
         { status: 201 },
@@ -151,7 +152,8 @@ export async function POST(request: NextRequest) {
 
     // ---- Paid order with Midtrans configured ------------------------------
     if (isMidtransConfigured()) {
-      // Snap first: if it fails we persist nothing (no consumed voucher).
+      // Snap first: if it fails we persist nothing (no consumed voucher). The
+      // buyer picks the method inside the popup, so no `enabled_payments`.
       let snap: { token: string; redirectUrl: string };
       try {
         snap = await createSnapTransaction({
@@ -160,7 +162,7 @@ export async function POST(request: NextRequest) {
           itemId: course.id,
           itemName: course.title,
           customer: { name: session.user.name, email: session.user.email },
-          enabledPayments: mapPaymentMethodToSnap(paymentMethod) ?? undefined,
+          customerPhone,
           finishUrl: `${env.appUrl()}/transactions`,
           expiryMinutes: ORDER_EXPIRY_MIN,
         });
@@ -179,7 +181,7 @@ export async function POST(request: NextRequest) {
         discountAmount,
         finalPrice,
         invoiceNumber,
-        paymentMethod,
+        customerPhone,
         expiresAt,
         paymentToken: snap.token,
         paymentRedirectUrl: snap.redirectUrl,
@@ -187,13 +189,31 @@ export async function POST(request: NextRequest) {
       // A racing request won — the orphaned Snap transaction just expires.
       if (!result.ok) return conflictResponse(result);
 
+      sendPendingEmailAfterResponse({
+        to: session.user.email,
+        name: session.user.name,
+        courseTitle: course.title,
+        slug: course.slug,
+        orderId: result.order.id,
+        invoiceNumber,
+        finalPrice,
+        expiresAt: result.order.expiresAt,
+      });
+
       return NextResponse.json(
-        { data: { orderId: result.order.id, expiresAt: result.order.expiresAt, simulated: false } },
+        {
+          data: {
+            orderId: result.order.id,
+            expiresAt: result.order.expiresAt,
+            simulated: false,
+            paymentToken: snap.token,
+          },
+        },
         { status: 201 },
       );
     }
 
-    // ---- Dev fallback: no gateway — PENDING order, simulate on payment page
+    // ---- Dev fallback: no gateway — PENDING order, simulate on checkout page
     const result = await createOrderTx({
       userId,
       course,
@@ -201,10 +221,22 @@ export async function POST(request: NextRequest) {
       discountAmount,
       finalPrice,
       invoiceNumber,
-      paymentMethod,
+      customerPhone,
       expiresAt,
     });
     if (!result.ok) return conflictResponse(result);
+
+    sendPendingEmailAfterResponse({
+      to: session.user.email,
+      name: session.user.name,
+      courseTitle: course.title,
+      slug: course.slug,
+      orderId: result.order.id,
+      invoiceNumber,
+      finalPrice,
+      expiresAt: result.order.expiresAt,
+    });
+
     return NextResponse.json(
       { data: { orderId: result.order.id, expiresAt: result.order.expiresAt, simulated: true } },
       { status: 201 },
@@ -239,7 +271,8 @@ async function createOrderTx(args: {
   discountAmount: number;
   finalPrice: number;
   invoiceNumber: string;
-  paymentMethod: string;
+  /** E.164 buyer phone snapshot, or undefined. `paymentMethod` is set later from Midtrans. */
+  customerPhone?: string;
   expiresAt: Date;
   paymentToken?: string;
   paymentRedirectUrl?: string;
@@ -282,7 +315,9 @@ async function createOrderTx(args: {
         finalPrice: args.finalPrice,
         status: "PENDING",
         paymentInvoiceId: args.invoiceNumber,
-        paymentMethod: args.paymentMethod,
+        // paymentMethod is left null at creation — it's filled with the Midtrans
+        // payment_type once the buyer pays in the Snap popup.
+        customerPhone: args.customerPhone ?? null,
         paymentToken: args.paymentToken ?? null,
         paymentRedirectUrl: args.paymentRedirectUrl ?? null,
         expiresAt: args.expiresAt,
@@ -301,6 +336,44 @@ async function createOrderTx(args: {
     }
 
     return { ok: true, order: created };
+  });
+}
+
+/**
+ * Sends the "Menunggu Pembayaran" email after the response is sent (via `after`)
+ * so a slow/failed Resend call never delays or fails order creation. Links back to
+ * the checkout page, which resumes the Snap popup for this pending order.
+ */
+function sendPendingEmailAfterResponse(args: {
+  to: string;
+  name: string;
+  courseTitle: string;
+  slug: string;
+  orderId: string;
+  invoiceNumber: string;
+  finalPrice: number;
+  expiresAt: Date;
+}): void {
+  after(async () => {
+    try {
+      const appUrl = env.appUrl();
+      const iso = args.expiresAt.toISOString();
+      await sendEmail({
+        to: args.to,
+        subject: `Menunggu pembayaran — ${args.courseTitle}`,
+        react: OrderPendingEmail({
+          name: args.name,
+          courseTitle: args.courseTitle,
+          resumeUrl: `${appUrl}/checkout/${args.slug}`,
+          transactionUrl: `${appUrl}/transactions/${args.orderId}`,
+          invoiceNumber: args.invoiceNumber,
+          amountLabel: idr.format(args.finalPrice),
+          expiresAtLabel: `${formatDateID(iso)} ${formatTimeID(iso)} WIB`,
+        }),
+      });
+    } catch (err) {
+      console.error("[POST /api/orders] pending email failed", err);
+    }
   });
 }
 

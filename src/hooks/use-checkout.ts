@@ -19,8 +19,10 @@ export type CreatedOrder = {
   orderId: string;
   /** Present for paid orders (PENDING). */
   expiresAt?: string;
-  /** True when Midtrans is not configured — payment page offers a dev simulate. */
+  /** True when Midtrans is not configured — checkout offers a dev simulate. */
   simulated?: boolean;
+  /** Snap token to open the popup immediately on the checkout page. */
+  paymentToken?: string;
   /** "SUCCESS" only for free orders fulfilled instantly. */
   status?: "SUCCESS";
   /** Course slug — returned for free orders so the client can jump to the course. */

@@ -10,9 +10,10 @@ import { env } from "@/lib/env";
  * Server-side Midtrans Snap integration (PRD §6.4).
  *
  * We use **Snap** (popup) rather than Core API: Midtrans hosts the actual
- * payment instructions UI, which keeps PCI scope and per-channel edge cases out
- * of our codebase. Our own `/payment/[orderId]` page provides the branding,
- * order summary and 60-minute countdown, then launches `snap.pay(token)`.
+ * payment-method selection + instructions UI, which keeps PCI scope and
+ * per-channel edge cases out of our codebase. Our `/checkout/[slug]` page
+ * provides the branding, order summary and 60-minute countdown, then launches
+ * `snap.pay(token)` (no separate payment page).
  *
  * The Server Key never leaves the server. Only the client key is exposed
  * (NEXT_PUBLIC_MIDTRANS_CLIENT_KEY) for snap.js.
@@ -51,8 +52,8 @@ export type CreateSnapInput = {
   itemId: string;
   itemName: string;
   customer: { name: string; email: string };
-  /** Snap `enabled_payments` codes; omit to show every channel. */
-  enabledPayments?: string[];
+  /** Optional buyer phone (E.164). Forwarded to Snap `customer_details.phone`. */
+  customerPhone?: string;
   /** Where Snap redirects after the user finishes (used by redirect-mode channels). */
   finishUrl: string;
   /** Minutes until the Snap transaction expires (matches our Order.expiresAt). */
@@ -87,16 +88,15 @@ export async function createSnapTransaction(
       first_name: firstName || "Peserta",
       last_name: rest.join(" ") || undefined,
       email: input.customer.email,
+      phone: input.customerPhone || undefined,
     },
     expiry: { unit: "minutes", duration: input.expiryMinutes },
     callbacks: { finish: input.finishUrl },
     custom_field1: input.orderId,
   };
 
-  if (input.enabledPayments && input.enabledPayments.length > 0) {
-    parameter.enabled_payments = input.enabledPayments;
-  }
-
+  // No `enabled_payments`: the buyer picks the method inside the Snap popup, so
+  // Snap shows every channel activated in the Midtrans dashboard.
   const result = await snap.createTransaction(parameter);
   return { token: result.token, redirectUrl: result.redirect_url };
 }
@@ -126,38 +126,6 @@ export function verifyMidtransSignature(args: {
   const b = Buffer.from(args.signatureKey, "utf8");
   if (a.length !== b.length) return false;
   return timingSafeEqual(a, b);
-}
-
-/**
- * Maps a checkout payment-method id (see src/lib/payment-methods.ts) to its
- * Snap `enabled_payments` code.
- *
- * Snap only exposes dedicated VA channels for BCA/BNI/BRI/CIMB/Permata and
- * `echannel` (Mandiri Bill). The "Bank Lainnya" option (`other_va`) is a
- * generic VA payable from any bank, for banks without a dedicated channel.
- * Unknown ids return `null`, leaving `enabled_payments` unset so Snap shows
- * every active channel.
- *
- * Note: channels must be activated in the Midtrans dashboard (MAP) or Snap
- * won't display them even when listed here.
- */
-const SNAP_PAYMENT_MAP: Record<string, string> = {
-  qris: "qris",
-  bca_va: "bca_va",
-  bri_va: "bri_va",
-  bni_va: "bni_va",
-  mandiri_va: "echannel", // Mandiri Bill via Snap
-  permata_va: "permata_va",
-  cimb_va: "cimb_va",
-  other_va: "other_va",
-  indomaret: "indomaret",
-  alfamart: "alfamart",
-  akulaku: "akulaku",
-};
-
-export function mapPaymentMethodToSnap(methodId: string): string[] | null {
-  const code = SNAP_PAYMENT_MAP[methodId];
-  return code ? [code] : null;
 }
 
 /** The fields of a Midtrans status payload we act on during reconciliation. */
@@ -198,19 +166,6 @@ export async function fetchMidtransTransactionStatus(
   } catch (err) {
     console.warn(`[midtrans] status lookup failed for order_id=${invoiceNumber}`, err);
     return null;
-  }
-}
-
-/**
- * Best-effort cancel of a pending Snap transaction so it can no longer be paid.
- * Swallows errors (e.g. the transaction already expired/settled at Midtrans) —
- * the order is flipped locally regardless.
- */
-export async function cancelMidtransTransaction(invoiceNumber: string): Promise<void> {
-  try {
-    await getSnap().transaction.cancel(invoiceNumber);
-  } catch (err) {
-    console.warn(`[midtrans] cancel failed for order_id=${invoiceNumber}`, err);
   }
 }
 

@@ -11,8 +11,10 @@ export const dynamic = "force-dynamic";
 /**
  * GET /api/payment/orders/[id]/status
  *
- * Lightweight, owner-scoped order status used by the payment page to poll for
- * webhook-driven updates. Returns `{ status, expiresAt }`.
+ * Lightweight, owner-scoped order status used by the checkout/transaction pages
+ * to poll for updates. Reconciles a PENDING order against Midtrans (or lazily
+ * expires it) so polling reflects the real status even when the webhook never
+ * reached us. Returns `{ status, expiresAt }`.
  */
 export async function GET(
   _request: Request,
@@ -38,8 +40,6 @@ export async function GET(
     return NextResponse.json({ error: "Pesanan tidak ditemukan." }, { status: 404 });
   }
 
-  // Reconcile against Midtrans (or lazily expire) so polling reflects the real
-  // status even when the webhook never reached us.
   const status =
     order.status === "PENDING" ? await reconcileOrder(order) : order.status;
 

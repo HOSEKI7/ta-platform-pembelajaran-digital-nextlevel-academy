@@ -1,6 +1,7 @@
 import type { TransactionDetailDTO, TransactionStatus } from "@/lib/transaction-data-loader";
 import { formatDateID, formatTimeID } from "@/lib/format-date";
 import { idr } from "@/lib/format";
+import { formatMidtransPaymentType } from "@/lib/midtrans-payment-type";
 
 /**
  * Self-contained purchase invoice. Rendered on the detail page AND captured
@@ -90,7 +91,7 @@ export function InvoiceCard({ tx, customer }: Props) {
               label="Tanggal Bayar"
               value={tx.paidAt ? dt(tx.paidAt) : "—"}
             />
-            <MetaLine label="Metode" value={tx.paymentMethod ?? "—"} />
+            <MetaLine label="Metode" value={formatMidtransPaymentType(tx.paymentMethod)} />
           </div>
         </div>
 

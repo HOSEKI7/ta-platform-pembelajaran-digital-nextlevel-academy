@@ -13,7 +13,6 @@ import { cn } from "@/lib/utils";
 
 import { InvoiceCard } from "./invoice-card";
 import {
-  CancelPaymentButton,
   ContinuePaymentButton,
   PendingCountdown,
 } from "./transaction-detail-actions";
@@ -112,8 +111,7 @@ export function TransactionDetailView({ tx, customer }: Props) {
         {tx.status === "PENDING" ? (
           <>
             <PendingStatusWatcher orderId={tx.id} />
-            <ContinuePaymentButton orderId={tx.id} />
-            <CancelPaymentButton orderId={tx.id} />
+            <ContinuePaymentButton slug={tx.course.slug} />
             <div className="flex justify-center">
               <PendingCountdown expiresAt={tx.expiresAt} onExpire={handleExpire} />
             </div>

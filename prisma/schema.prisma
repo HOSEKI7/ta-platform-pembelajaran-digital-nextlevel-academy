@@ -550,6 +550,10 @@ model Order {
   // re-charging. Null in the dev fallback (no gateway call) and for free orders.
   paymentToken       String?
   paymentRedirectUrl String?
+  // Optional buyer phone (E.164) snapshot captured at checkout. Groundwork for a
+  // planned post-checkout WhatsApp notification (not built yet); wa.me/WhatsApp
+  // APIs need E.164.
+  customerPhone    String?
   expiresAt        DateTime
   paidAt           DateTime?
   createdAt        DateTime    @default(now())

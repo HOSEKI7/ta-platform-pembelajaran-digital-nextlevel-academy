@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { Role } from "@/generated/prisma";
 import { requireRole } from "@/lib/auth-server";
 import { loadCheckoutPageData } from "@/lib/checkout-data-loader";
+import { env } from "@/lib/env";
 
 import { CheckoutForm } from "./checkout-form";
 
@@ -27,8 +28,30 @@ export default async function CheckoutPage({ params }: { params: Params }) {
 
   if (result.status === "not-found") notFound();
   if (result.status === "owned") redirect("/dashboard?owned=1");
-  // A live PENDING order already exists — resume payment instead of re-checkout.
-  if (result.status === "pending") redirect(`/payment/${result.orderId}`);
 
-  return <CheckoutForm course={result.course} />;
+  const clientKey = env.midtrans.clientKey() ?? "";
+  const isProduction = env.midtrans.isProduction();
+
+  // A live PENDING order already exists — resume it (reopen Snap) in place.
+  if (result.status === "pending") {
+    return (
+      <CheckoutForm
+        course={result.course}
+        clientKey={clientKey}
+        isProduction={isProduction}
+        resume={result.resume}
+        customer={{ name: session.user.name, email: session.user.email }}
+      />
+    );
+  }
+
+  return (
+    <CheckoutForm
+      course={result.course}
+      clientKey={clientKey}
+      isProduction={isProduction}
+      lastPhone={result.lastPhone}
+      customer={{ name: session.user.name, email: session.user.email }}
+    />
+  );
 }
