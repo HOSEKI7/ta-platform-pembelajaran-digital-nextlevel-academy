@@ -13,11 +13,12 @@ type Props = {
   step: PlayerStep;
   course: PlayerCourse;
   noteContent: string;
+  onNoteSaved: (stepId: string, content: string) => void;
 };
 
 type TabValue = "deskripsi" | "catatan";
 
-export function StepTabs({ step, course, noteContent }: Props) {
+export function StepTabs({ step, course, noteContent, onNoteSaved }: Props) {
   const [value, setValue] = useState<TabValue>("deskripsi");
   const [prevStepId, setPrevStepId] = useState(step.id);
 
@@ -45,7 +46,11 @@ export function StepTabs({ step, course, noteContent }: Props) {
         </TabsContent>
 
         <TabsContent value="catatan" className="pt-2">
-          <StepNotes stepId={step.id} initialContent={noteContent} />
+          <StepNotes
+            stepId={step.id}
+            initialContent={noteContent}
+            onNoteSaved={onNoteSaved}
+          />
         </TabsContent>
       </Tabs>
     </div>

@@ -13,10 +13,15 @@ import {
 type Props = {
   stepId: string;
   initialContent: string;
+  onNoteSaved: (stepId: string, content: string) => void;
 };
 
-export function StepNotes({ stepId, initialContent }: Props) {
-  const { value, setValue, saveState } = useStepNotes(stepId, initialContent);
+export function StepNotes({ stepId, initialContent, onNoteSaved }: Props) {
+  const { value, setValue, saveState } = useStepNotes(
+    stepId,
+    initialContent,
+    onNoteSaved,
+  );
   const labelId = useId();
   const hintId = useId();
 

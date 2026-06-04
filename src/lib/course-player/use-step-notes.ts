@@ -35,7 +35,11 @@ function beaconSave(stepId: string, content: string): void {
   }
 }
 
-export function useStepNotes(stepId: string, initialContent: string) {
+export function useStepNotes(
+  stepId: string,
+  initialContent: string,
+  onNoteSaved?: (stepId: string, content: string) => void,
+) {
   const [value, setValueState] = useState(initialContent);
   const [saveState, setSaveState] = useState<NotesSaveState>("idle");
 
@@ -43,6 +47,14 @@ export function useStepNotes(stepId: string, initialContent: string) {
   const valueRef = useRef(initialContent); // latest typed value
   const savedValueRef = useRef(initialContent); // last value known persisted
   const stepIdRef = useRef(stepId);
+
+  // Keep the latest "saved" callback in a ref so the effects below can notify
+  // the parent (which hoists the notes map) without re-subscribing or growing
+  // their dependency arrays.
+  const onSavedRef = useRef(onNoteSaved);
+  useEffect(() => {
+    onSavedRef.current = onNoteSaved;
+  });
 
   const { mutate } = useMutation<void, Error, { stepId: string; content: string }>({
     mutationFn: async ({ stepId: sid, content }) => {
@@ -57,6 +69,9 @@ export function useStepNotes(stepId: string, initialContent: string) {
       }
     },
     onSuccess: (_data, { stepId: savedStepId, content }) => {
+      // Reflect the persisted value back into the parent's notes map so a tab
+      // remount / step revisit reads the fresh value (not the stale loader one).
+      onSavedRef.current?.(savedStepId, content);
       if (stepIdRef.current !== savedStepId) return; // moved on already
       savedValueRef.current = content;
       // Only flip to "saved" when nothing newer is pending.
@@ -92,20 +107,22 @@ export function useStepNotes(stepId: string, initialContent: string) {
   // the previous step's pending edit, then load the new step's server value.
   useEffect(() => {
     const prevStepId = stepIdRef.current;
-    if (prevStepId !== stepId) {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-        timerRef.current = null;
-      }
-      if (valueRef.current !== savedValueRef.current) {
-        beaconSave(prevStepId, valueRef.current);
-      }
+    // Same step — this fire is the parent's notes map updating after our own
+    // save (initialContent changed). Don't clobber live edits or reset the
+    // "Tersimpan" indicator; only re-init when the step actually changes.
+    if (prevStepId === stepId) return;
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    if (valueRef.current !== savedValueRef.current) {
+      beaconSave(prevStepId, valueRef.current);
+      onSavedRef.current?.(prevStepId, valueRef.current);
     }
     stepIdRef.current = stepId;
     valueRef.current = initialContent;
     savedValueRef.current = initialContent;
     // External-sync setState: bridging server-provided content into state.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setValueState(initialContent);
     setSaveState("idle");
   }, [stepId, initialContent]);
@@ -120,6 +137,7 @@ export function useStepNotes(stepId: string, initialContent: string) {
       }
       if (valueRef.current !== savedValueRef.current) {
         beaconSave(stepIdRef.current, valueRef.current);
+        onSavedRef.current?.(stepIdRef.current, valueRef.current);
         savedValueRef.current = valueRef.current;
       }
     };

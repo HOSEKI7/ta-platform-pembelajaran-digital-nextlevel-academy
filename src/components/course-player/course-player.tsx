@@ -29,12 +29,21 @@ type CompleteResponse = {
 };
 
 export function CoursePlayer({ data }: Props) {
-  const { course, completedStepIds, embedUrls, quizStates, notes } = data;
+  const { course, completedStepIds, embedUrls, quizStates } = data;
   const { state, select, complete, hydrate, goNext } = usePlayerState({
     course,
     completedStepIds,
   });
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Client-side source of truth for note content. Seeded once from the loader,
+  // then kept fresh on every save so a tab remount (base-ui unmounts the hidden
+  // panel) or a step revisit reads the latest value instead of the stale
+  // loader snapshot.
+  const [notes, setNotes] = useState<Record<string, string>>(() => data.notes);
+  const handleNoteSaved = useCallback((stepId: string, content: string) => {
+    setNotes((prev) => (prev[stepId] === content ? prev : { ...prev, [stepId]: content }));
+  }, []);
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -151,6 +160,7 @@ export function CoursePlayer({ data }: Props) {
               step={activeStep}
               course={course}
               noteContent={notes[activeStep.id] ?? ""}
+              onNoteSaved={handleNoteSaved}
             />
           </div>
 
