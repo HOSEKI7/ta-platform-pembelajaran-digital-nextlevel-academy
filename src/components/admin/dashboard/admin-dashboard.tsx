@@ -33,6 +33,7 @@ const STATUS_LABEL: Record<string, string> = {
   PENDING: "Pending",
   FAILED: "Gagal",
   EXPIRED: "Kedaluwarsa",
+  CANCELED: "Dibatalkan",
 };
 
 /**

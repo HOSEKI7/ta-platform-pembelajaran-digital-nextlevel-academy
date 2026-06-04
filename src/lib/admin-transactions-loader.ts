@@ -90,6 +90,7 @@ export async function loadAdminTransactionsPage(
 const ADMIN_ACTION_META: Record<string, string> = {
   ORDER_ACCEPT: "Pembayaran diterima admin",
   ORDER_CANCEL: "Pembayaran dibatalkan admin",
+  ORDER_CANCEL_SELF: "Pembayaran dibatalkan peserta",
   ORDER_DELETE: "Transaksi dihapus admin",
 };
 

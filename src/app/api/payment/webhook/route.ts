@@ -94,9 +94,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true }, { status: 200 });
     }
 
-    // 5. Immutability: SUCCESS is terminal.
-    if (order.status === "SUCCESS") {
-      await finish("already success");
+    // 5. Immutability: a terminal order is never changed. Besides SUCCESS, this
+    // guards a CANCELED order (student self-cancel) — a late "cancel"/"expire"
+    // notification must not overwrite it — as well as already-FAILED/EXPIRED.
+    if (order.status !== "PENDING") {
+      await finish(`already terminal: ${order.status}`);
       return NextResponse.json({ received: true }, { status: 200 });
     }
 

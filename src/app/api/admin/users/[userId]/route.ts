@@ -111,10 +111,11 @@ export async function PATCH(
           },
         });
       } else if (role === Role.MENTOR) {
+        const gender = input.gender ?? null;
         await tx.mentorProfile.upsert({
           where: { userId },
-          create: { userId, classId: newClassId! },
-          update: { classId: newClassId! },
+          create: { userId, classId: newClassId!, gender },
+          update: { classId: newClassId!, gender },
         });
       }
     });

@@ -24,6 +24,7 @@ const STATUS_PILL: Record<
   PENDING: { label: "MENUNGGU PEMBAYARAN", color: "#b45309", bg: "#fffbeb" },
   FAILED: { label: "GAGAL", color: "#b91c1c", bg: "#fef2f2" },
   EXPIRED: { label: "KEDALUWARSA", color: "#52525b", bg: "#f4f4f5" },
+  CANCELED: { label: "DIBATALKAN", color: "#be123c", bg: "#fff1f2" },
 };
 
 function dt(iso: string): string {

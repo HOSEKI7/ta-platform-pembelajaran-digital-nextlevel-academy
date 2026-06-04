@@ -1,37 +1,22 @@
-# Perbaikan penamaan Bidang & Kelas (Admin Panel)
+# Task: Gender opsional untuk Mentor + sapaan Pak/Bu di dashboard
 
-Keputusan user: **normalisasi data DB** (bukan hanya tampilan) + kolom gabungan
-`[Batch] - [Bidang] - [Kelas]` di tabel Tugas/Nilai/Absensi **tetap**.
+Keputusan user: simpan di `MentorProfile` · radio di form Tambah + Edit · opsi Laki-laki/Perempuan (boleh kosong).
 
-Akar masalah: nama tersimpan berprefix — `Field.name` = "Batch 1 - Web Programming",
-`Class.name` = "Batch 1 - Web Programming - A". Target: `Field.name` polos
-("Web Programming"), `Class.name` komposit dari variabel
-("Batch 1 2026 - Web Programming - A").
+## Langkah
 
-## Tugas
+- [x] 1. Schema: `enum Gender { MALE FEMALE }` + `gender Gender?` di `MentorProfile` (`prisma/schema.prisma`)
+- [x] 2. Validasi: tambah `gender` (z.enum string, optional) ke `createUserSchema` & `editUserSchema` (`validations/admin-user.ts`)
+- [x] 3. Write helper: `gender` di `CreateManagedUserInput` + `mentorProfile.create` (`admin-user-write.ts`)
+- [x] 4. API create: teruskan `gender` ke `createManagedUser` (`api/admin/users/route.ts`)
+- [x] 5. API edit: set `gender` di `mentorProfile.upsert` create+update (`api/admin/users/[userId]/route.ts`)
+- [x] 6. Edit loader: select + return `gender` dari `mentorProfile` (`admin-users-loader.ts`)
+- [x] 7. Komponen radio gender bersama (`admin/users/form/gender-radio.tsx`)
+- [x] 8. Form Tambah: radio gender saat role MENTOR (`create-user-view.tsx`)
+- [x] 9. Form Edit: radio gender saat role MENTOR (`edit-user-view.tsx`)
+- [x] 10. Loader dashboard: baca `gender`, hitung `honorific` Pak/Bu -> `MentorDashboardData` (`mentor-data-loader.ts` + `mentor-types.ts`)
+- [x] 11. Dashboard page + MentorDashboard + MentorHero: render sapaan (`page.tsx`, `mentor-dashboard.tsx`, `mentor-hero.tsx`)
+- [x] 12. Verifikasi: `npx tsc --noEmit` + reminder `prisma generate && db push`
 
-- [x] Helper bersama `src/lib/internship-naming.ts` (`classLetter`, `internshipClassLabel`) — aman di server & client
-- [x] Skrip migrasi `scripts/normalize-internship-names.ts` (idempotent, hapus duplikat-kosong)
-- [x] Refactor loader admin pakai helper (build label dari variabel, tanpa strip):
-  - [x] `admin-internship-attendance-loader.ts`
-  - [x] `admin-internship-grades-loader.ts`
-  - [x] `admin-internship-tasks-loader.ts` (3 titik)
-  - [x] `admin-internship-config-loader.ts` (dedupe `classLetter`)
-  - [x] `admin-internship-config-write.ts` (dedupe `classLetter`)
-- [x] Dropdown filter Kelas → tampilkan huruf saja (`classLetter`):
-  - [x] `admin-attendance-view.tsx`
-  - [x] `admin-grades-view.tsx`
-  - [x] `admin-tasks-view.tsx`
-- [x] Tabel Pengguna: **hapus kolom Kelas**
-  - [x] `users-table.tsx` (desktop + mobile + helper `ClassValue`)
-  - [x] `admin-users-loader.ts` (buang `classLabel` dari list + rapikan join; perbaiki `loadClassOptions` label)
-  - [x] `admin-users-query.ts` (buang `classLabel` dari `AdminUserRow`)
-- [x] Perbaiki seed agar konsisten (field polos):
-  - [x] `prisma/seed.ts`
-  - [x] `scripts/seed-internship-data.ts`
-- [x] Jalankan migrasi (applied + idempotent) + `tsc --noEmit` + lint (0 error)
-- [x] Update PRD (§5/§6.11.4) + CLAUDE.md
-
-## Hasil verifikasi
-- DB ternormalisasi: Field "Web Programming", Class "Batch 1 2026 - Web Programming - A" (2 peserta/3 mentor/6 tugas terjaga); orphan kosong dibuang.
-- `tsc --noEmit` bersih; eslint 0 error (hanya warning `watch()` benign pra-ada).
+## Catatan
+- Sapaan hanya tampil bila gender terisi ("jika telah dipilih").
+- `prisma generate && db push` diperlukan setelah ubah schema (ingatkan user).

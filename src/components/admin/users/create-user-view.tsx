@@ -30,6 +30,7 @@ import { Field } from "@/components/admin/courses/form/field";
 import { SectionCard } from "@/components/admin/courses/form/section-card";
 
 import { ClassSelect } from "./form/class-select";
+import { GenderRadio } from "./form/gender-radio";
 import { PasswordInput } from "./form/password-input";
 
 type Props = { classOptions: ClassOption[] };
@@ -59,6 +60,7 @@ export function CreateUserView({ classOptions }: Props) {
   const role = useWatch({ control, name: "role" });
   const needsClass = role === Role.PESERTA_MAGANG || role === Role.MENTOR;
   const isMagang = role === Role.PESERTA_MAGANG;
+  const isMentor = role === Role.MENTOR;
 
   const submit = handleSubmit((values) => {
     createMutation.mutate(values, {
@@ -200,6 +202,27 @@ export function CreateUserView({ classOptions }: Props) {
                   className="h-11 rounded-xl"
                   disabled={busy}
                   {...register("institution")}
+                />
+              </Field>
+            ) : null}
+
+            {isMentor ? (
+              <Field
+                label="Jenis Kelamin"
+                optional
+                error={errors.gender?.message}
+                hint="Dipakai untuk sapaan “Pak/Bu” di dashboard mentor."
+              >
+                <Controller
+                  control={control}
+                  name="gender"
+                  render={({ field }) => (
+                    <GenderRadio
+                      value={field.value}
+                      onChange={field.onChange}
+                      disabled={busy}
+                    />
+                  )}
                 />
               </Field>
             ) : null}

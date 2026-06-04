@@ -11,6 +11,7 @@ import { useOrderStatusQuery } from "@/hooks/use-order-status";
 import type { TransactionDetailDTO } from "@/lib/transaction-data-loader";
 import { cn } from "@/lib/utils";
 
+import { CancelPaymentButton } from "./cancel-payment-dialog";
 import { InvoiceCard } from "./invoice-card";
 import {
   ContinuePaymentButton,
@@ -117,8 +118,20 @@ export function TransactionDetailView({ tx, customer }: Props) {
             </div>
             <Note tone="pending">
               Selesaikan pembayaran sebelum batas waktu 60 menit. Lewat dari itu,
-              pesanan otomatis kedaluwarsa.
+              pesanan otomatis kedaluwarsa. Salah pilih metode? Batalkan saja, lalu
+              checkout ulang.
             </Note>
+            <CancelPaymentButton orderId={tx.id} courseTitle={tx.course.title} />
+          </>
+        ) : null}
+
+        {tx.status === "CANCELED" ? (
+          <>
+            <Note tone="muted">
+              Pembayaran dibatalkan dan tidak ada biaya yang ditagihkan. Kamu bisa
+              membeli kembali kursus ini kapan saja.
+            </Note>
+            <BuyAgainButton slug={tx.course.slug} />
           </>
         ) : null}
 

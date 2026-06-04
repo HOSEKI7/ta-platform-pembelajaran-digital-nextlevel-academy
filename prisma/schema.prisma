@@ -32,6 +32,13 @@ enum Role {
   ADMINISTRATOR
 }
 
+// Jenis kelamin (opsional) — dipakai mentor untuk sapaan sopan "Pak/Bu" di
+// dashboard. Sengaja tak punya nilai "unspecified": kosong = NULL pada kolom.
+enum Gender {
+  MALE
+  FEMALE
+}
+
 enum CourseStatus {
   DRAFT
   PUBLISHED
@@ -57,6 +64,9 @@ enum OrderStatus {
   SUCCESS
   FAILED
   EXPIRED
+  // Dibatalkan oleh peserta sendiri dari halaman detail transaksi (mis. salah
+  // pilih metode) — beda dari FAILED (penolakan gateway/admin) agar riwayat jelas.
+  CANCELED
 }
 
 enum VoucherAudience {
@@ -293,6 +303,8 @@ model MentorProfile {
   id      String @id @default(cuid())
   userId  String @unique
   classId String
+  // Opsional — saat diisi, dashboard menyapa mentor dengan "Pak"/"Bu".
+  gender  Gender?
 
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   class Class @relation(fields: [classId], references: [id])

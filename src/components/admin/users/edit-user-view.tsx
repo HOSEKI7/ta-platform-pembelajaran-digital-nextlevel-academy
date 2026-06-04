@@ -30,6 +30,7 @@ import { Field } from "@/components/admin/courses/form/field";
 import { SectionCard } from "@/components/admin/courses/form/section-card";
 
 import { ClassSelect } from "./form/class-select";
+import { GenderRadio } from "./form/gender-radio";
 import { PasswordInput } from "./form/password-input";
 import { UserRoleBadge } from "./user-role-badge";
 import { SetTempPasswordDialog } from "./set-temp-password-dialog";
@@ -48,6 +49,7 @@ export function EditUserView({ user, classOptions }: Props) {
 
   const needsClass = user.role === Role.PESERTA_MAGANG || user.role === Role.MENTOR;
   const isMagang = user.role === Role.PESERTA_MAGANG;
+  const isMentor = user.role === Role.MENTOR;
   const isStudent = user.role === Role.PESERTA_DIDIK;
 
   const form = useForm<EditUserInput>({
@@ -59,6 +61,7 @@ export function EditUserView({ user, classOptions }: Props) {
       username: user.username ?? "",
       classId: user.classId ?? "",
       institution: user.institution ?? "",
+      gender: user.gender ?? undefined,
       newPassword: "",
     },
   });
@@ -208,6 +211,27 @@ export function EditUserView({ user, classOptions }: Props) {
                   className="h-11 rounded-xl"
                   disabled={busy}
                   {...register("institution")}
+                />
+              </Field>
+            ) : null}
+
+            {isMentor ? (
+              <Field
+                label="Jenis Kelamin"
+                optional
+                error={errors.gender?.message}
+                hint="Dipakai untuk sapaan “Pak/Bu” di dashboard mentor."
+              >
+                <Controller
+                  control={control}
+                  name="gender"
+                  render={({ field }) => (
+                    <GenderRadio
+                      value={field.value}
+                      onChange={field.onChange}
+                      disabled={busy}
+                    />
+                  )}
                 />
               </Field>
             ) : null}

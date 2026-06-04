@@ -63,6 +63,8 @@ export type MentorActiveTask = {
 
 export type MentorDashboardData = {
   context: MentorContext;
+  /** Polite honorific from the mentor's gender ("Pak"/"Bu"), or null when unset. */
+  honorific: string | null;
   menteeCount: number;
   attendance: MentorAttendanceToday;
   /** The mentor's own attendance today (dashboard hero check-in CTA). */

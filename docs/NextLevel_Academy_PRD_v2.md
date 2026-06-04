@@ -392,11 +392,12 @@ Halaman Checkout (/checkout/[slug])
   - Tombol "Checkout & Bayar Sekarang"
         │
         ▼
-Sistem membuat Order (status: PENDING) + token Snap, Timer 60 menit dimulai
+Sistem membuat Order (status: PENDING) + token Snap
+Countdown (page-expiry, default 60 mnt) dimulai SEJAK POPUP TERBUKA
 Email "Menunggu Pembayaran" dikirim
         │
         ▼
-Popup Snap terbuka → user PILIH METODE & bayar di dalam popup
+Popup Snap terbuka → user bebas BUKA/GANTI metode & bayar di dalam popup
         │
         ▼
 [Payment Gateway Webhook]
@@ -417,11 +418,13 @@ Popup Snap terbuka → user PILIH METODE & bayar di dalam popup
 - Informasi Pembeli: Email & Nama **read-only** (dari sesi); **Nomor Telepon opsional** (pemilih kode negara internasional, disimpan **E.164** di `Order.customerPhone` — groundwork untuk notifikasi WhatsApp pasca-checkout yang akan datang).
 - Checkbox persetujuan S&K + **teks kebijakan tanpa refund** di bawah tombol.
 - Tombol **"Checkout & Bayar Sekarang"** → membuat order PENDING (harga otoritatif server) + token Snap → membuka `snap.pay(token)`.
-- **Resume:** jika sudah ada order `PENDING` aktif untuk kursus yang sama, halaman ini masuk mode "Lanjutkan Pembayaran" (ringkasan terkunci + countdown) dan membuka kembali Snap dengan token tersimpan — tanpa membuat order baru.
+- **Resume:** jika sudah ada order `PENDING` aktif untuk kursus yang sama, halaman ini masuk mode "Lanjutkan Pembayaran" (ringkasan terkunci + countdown) dan membuka kembali Snap dengan token tersimpan — tanpa membuat order baru. _(Dari halaman **detail transaksi**, tombol "Lanjutkan Pembayaran" membuka popup Snap **langsung** tanpa ke checkout — lihat §6.4.10.)_
 
 #### 6.4.3 Metode Pembayaran
 
-Dipilih oleh pembeli **di dalam popup Snap** (bukan di halaman kita). Channel yang tampil = yang diaktifkan di dashboard Midtrans (Snap Preferences): QRIS, Virtual Account (BCA/BNI/BRI/Mandiri/CIMB/Permata/VA lain), Gerai Retail (Indomaret/Alfamart), Akulaku, dll. `Order.paymentMethod` diisi dari `payment_type` Midtrans setelah pembayaran (ditampilkan via label di invoice).
+Dipilih oleh pembeli **di dalam popup Snap** (bukan di halaman kita), dan pembeli **bebas berpindah/membuka metode apa pun** selama halaman popup belum kedaluwarsa — tidak ada lagi "terkunci" ke satu metode. Channel yang tampil = yang diaktifkan di dashboard Midtrans (Snap Preferences): QRIS, Virtual Account (BCA/BNI/BRI/Mandiri/CIMB/Permata/VA lain), Gerai Retail (Indomaret/Alfamart), Akulaku, dll. `Order.paymentMethod` diisi dari `payment_type` Midtrans setelah pembayaran (ditampilkan via label di invoice).
+
+**Batas waktu (page-expiry):** durasi popup terbuka dipakai parameter Snap **`page_expiry`** (bukan `expiry`/custom_expiry), dihitung **sejak popup muncul**. Durasi dari env `MIDTRANS_PAGE_EXPIRY_MINUTES` (default **60 mnt**) dan menjadi basis `Order.expiresAt` + countdown — keduanya selalu konsisten. Status (`pending`/`settlement`/`expire`) tetap dibaca dari Midtrans Get-Status (§6.4.8).
 
 #### 6.4.4 Status Transaksi
 
@@ -431,6 +434,7 @@ Dipilih oleh pembeli **di dalam popup Snap** (bukan di halaman kita). Channel ya
 | `SUCCESS` | Pembayaran dikonfirmasi, kursus aktif | Hijau           |
 | `FAILED`  | Pembayaran gagal dari payment gateway | Merah           |
 | `EXPIRED` | Melewati batas waktu 60 menit         | Abu-abu         |
+| `CANCELED` | Dibatalkan oleh peserta sendiri dari detail transaksi | Rose |
 
 Seluruh riwayat transaksi tersimpan permanen, termasuk yang expired atau failed.
 
@@ -456,12 +460,23 @@ Seluruh riwayat transaksi tersimpan permanen, termasuk yang expired atau failed.
 
 - Webhook adalah jalur real-time, tetapi **tidak diandalkan sebagai satu-satunya sumber** update (di lokal/tanpa public URL webhook tidak sampai → order mandek `PENDING`).
 - Saat membaca status (polling halaman pembayaran + loader transaksi), order `PENDING` di-rekonsiliasi via **Midtrans Get-Status API** (`reconcileOrder`): bila settlement/capture (dengan amount cocok) → jalur sukses idempoten yang sama (`SUCCESS` + Enrollment + email); bila deny/cancel/expire → `FAILED`/`EXPIRED`.
-- **Lazy-expiry**: order `PENDING` yang melewati 60 menit ditandai `EXPIRED` saat dibaca, walau cron/Midtrans tidak tersedia.
+- **Lazy-expiry**: order `PENDING` yang melewati `Order.expiresAt` (page-expiry) ditandai `EXPIRED` saat dibaca, walau cron/Midtrans tidak tersedia.
 
 #### 6.4.9 Email "Menunggu Pembayaran"
 
-- Saat order `PENDING` berbayar dibuat, sistem mengirim email **"Menunggu Pembayaran"** (via `after()`, non-blocking) berisi nomor invoice, total, batas waktu 60 menit, dan tautan **Lanjutkan Pembayaran** ke `/checkout/[slug]` (membuka kembali popup Snap). Email "Pembayaran Berhasil" tetap dikirim saat `SUCCESS`.
-- _Catatan:_ fitur "Batalkan Pembayaran" yang sempat ada **dihapus** seiring refactor Snap popup (metode kini dipilih di dalam popup, jadi salah-pilih-metode tidak lagi relevan). Order `PENDING` cukup dibiarkan kedaluwarsa (60 menit) atau diselesaikan via resume.
+- Saat order `PENDING` berbayar dibuat, sistem mengirim email **"Menunggu Pembayaran"** (via `after()`, non-blocking) berisi nomor invoice, total, batas waktu (timestamp aktual), dan tautan **Lanjutkan Pembayaran** ke `/checkout/[slug]` (membuka kembali popup Snap). Email "Pembayaran Berhasil" tetap dikirim saat `SUCCESS`.
+#### 6.4.11 Batalkan Pembayaran oleh Peserta
+
+- Pada detail transaksi (`/transactions/[id]`), order `PENDING` punya tombol **Batalkan Pembayaran** (dengan dialog konfirmasi). Tujuannya: peserta yang salah pilih metode (atau berubah pikiran) bisa langsung **checkout ulang** tanpa menunggu order kedaluwarsa 60 menit.
+- Aksi ini scoped ke pemilik order (`POST /api/orders/[orderId]/cancel`), hanya berlaku untuk status `PENDING`, dan mengubah status menjadi **`CANCELED`** — **dibedakan dari `FAILED`** (penolakan gateway/admin) agar riwayat jelas. Tidak ada enrollment dan tidak ada notifikasi (peserta sendiri yang melakukannya); dicatat di `AuditLog` (`ORDER_CANCEL_SELF`).
+- Sebelum menulis `CANCELED`, sistem **best-effort** memanggil Midtrans `transaction.cancel` agar instrumen bayar yang mungkin sudah terbit (VA/QR) ikut dibatalkan dan tidak terlanjur dibayar setelah checkout ulang. Kegagalan panggilan ini non-fatal — status lokal adalah sumber kebenaran.
+- Order `CANCELED` (seperti `FAILED`/`EXPIRED`) tidak menghalangi pembuatan order baru karena guard double-purchase hanya memblokir order `PENDING` yang masih hidup. Webhook/rekonsiliasi yang datang terlambat tidak menimpa order terminal (hanya order `PENDING` yang dimutasikan).
+- _Catatan sejarah:_ fitur ini sempat dihapus saat refactor Snap popup (metode dipilih di dalam popup), lalu **diperkenalkan kembali** untuk kasus salah-pilih-metode agar checkout ulang tidak perlu menunggu expiry.
+
+#### 6.4.10 Lanjutkan Pembayaran dari Detail Transaksi
+
+- Pada halaman detail transaksi `/transactions/[id]` berstatus `PENDING`, tombol **"Lanjutkan Pembayaran"** membuka **popup Snap langsung di halaman itu** (memuat `snap.js`, `snap.pay(token)` dengan token tersimpan) — **tidak** mengarahkan ke `/checkout`. Setelah popup ditutup, halaman di-`refresh` dan status terbaca ulang via reconcile/polling.
+- Untuk order dev-fallback (tanpa token Midtrans), tombol memicu simulasi pembayaran.
 
 ---
 
@@ -1163,7 +1178,7 @@ Jika ada yang tidak lolos validasi, sistem menampilkan pesan error spesifik dan 
 
 - Tabel seluruh transaksi **Peserta Didik** (`/admin/transactions`): kolom ID,
   Tanggal (WIB), Pengguna (nama+email), Kursus, Jumlah (IDR), Status, dan aksi
-  **Detail**. Semua status ditampilkan (PENDING/SUCCESS/FAILED/EXPIRED).
+  **Detail**. Semua status ditampilkan (PENDING/SUCCESS/FAILED/EXPIRED/CANCELED).
 - **Search** by ID transaksi, nama/email pengguna, atau judul kursus (insensitive,
   satu kotak), **sort** berdasarkan tanggal (Terbaru/Terlama), dan **filter status**.
   State filter/sort/search/halaman tersimpan di URL.
@@ -1587,8 +1602,11 @@ MentorProfile {
   id      UUID (PK)
   userId  UUID (FK → User, unique)
   classId UUID (FK → Class)
+  gender  Enum {MALE, FEMALE} (opsional — null = tak diisi)
 }
 ```
+
+> **Sapaan sopan mentor.** `gender` bersifat opsional dan dipilih admin saat membuat/mengedit akun mentor (radio Laki-laki/Perempuan, boleh dikosongkan). Dashboard mentor menyapa dengan honorifik **"Pak"** (MALE) / **"Bu"** (FEMALE) sebelum nama (username/first name) — mis. "Selamat pagi, Pak Budi". Jika gender belum diisi, sapaan tampil tanpa honorifik.
 
 ### 9.4 Batch
 
@@ -1770,7 +1788,7 @@ Order {
   originalPrice Integer
   discountAmount Integer
   finalPrice    Integer
-  status        Enum: PENDING | SUCCESS | FAILED | EXPIRED
+  status        Enum: PENDING | SUCCESS | FAILED | EXPIRED | CANCELED
   paymentInvoiceId String (nullable — ID invoice dari Midtrans)
   paymentMethod String (nullable)
   expiresAt     DateTime

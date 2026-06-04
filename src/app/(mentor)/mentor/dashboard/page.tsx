@@ -37,6 +37,7 @@ export default async function MentorDashboardPage() {
   return (
     <MentorDashboard
       firstName={displayName}
+      honorific={data.honorific}
       serverNowISO={serverNowISO}
       window={INTERNSHIP_CHECKIN_WINDOW}
       data={data}

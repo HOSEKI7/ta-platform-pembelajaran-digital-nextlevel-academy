@@ -35,6 +35,11 @@ const STATUS_META: Record<
     className:
       "bg-zinc-100 text-zinc-600 ring-zinc-200 dark:bg-white/5 dark:text-zinc-400 dark:ring-[color:var(--color-surface-border)]",
   },
+  CANCELED: {
+    label: "Dibatalkan",
+    className:
+      "bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-500/15 dark:text-rose-300 dark:ring-rose-500/30",
+  },
 };
 
 /** Relative WIB label computed against a fixed `nowISO` so SSR/CSR match. */

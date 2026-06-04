@@ -132,7 +132,7 @@ export async function loadUserForEdit(userId: string) {
       mustChangePassword: true,
       createdAt: true,
       internshipProfile: { select: { classId: true, institution: true } },
-      mentorProfile: { select: { classId: true } },
+      mentorProfile: { select: { classId: true, gender: true } },
     },
   });
   if (!user) return null;
@@ -150,6 +150,7 @@ export async function loadUserForEdit(userId: string) {
     classId:
       user.internshipProfile?.classId ?? user.mentorProfile?.classId ?? null,
     institution: user.internshipProfile?.institution ?? null,
+    gender: user.mentorProfile?.gender ?? null,
   };
 }
 

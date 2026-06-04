@@ -3,7 +3,7 @@ import "server-only";
 import { randomBytes } from "node:crypto";
 import { hashPassword } from "better-auth/crypto";
 
-import { Role } from "@/generated/prisma";
+import { Role, type Gender } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -37,6 +37,8 @@ export type CreateManagedUserInput = {
   password: string;
   classId?: string;
   institution?: string | null;
+  /** Mentor-only; honored only when role is MENTOR. */
+  gender?: Gender | null;
 };
 
 export type CreateUserResult =
@@ -131,7 +133,7 @@ export async function createManagedUser(
         });
       } else if (input.role === Role.MENTOR) {
         await tx.mentorProfile.create({
-          data: { userId, classId: input.classId! },
+          data: { userId, classId: input.classId!, gender: input.gender ?? null },
         });
       }
     });

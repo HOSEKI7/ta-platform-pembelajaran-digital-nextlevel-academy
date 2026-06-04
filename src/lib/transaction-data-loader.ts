@@ -8,7 +8,12 @@ import type {
 } from "@/lib/validators/transactions";
 
 /** Mirrors the Prisma `OrderStatus` enum (PRD §6.4.4). */
-export type TransactionStatus = "PENDING" | "SUCCESS" | "FAILED" | "EXPIRED";
+export type TransactionStatus =
+  | "PENDING"
+  | "SUCCESS"
+  | "FAILED"
+  | "EXPIRED"
+  | "CANCELED";
 
 export type TransactionRowDTO = {
   /** Order id — shown verbatim as the "ID Transaksi". */

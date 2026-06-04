@@ -3,7 +3,8 @@ import { cn } from "@/lib/utils";
 
 /**
  * Single source of truth for transaction-status styling (PRD §6.4.4):
- * PENDING = kuning, SUCCESS = hijau, FAILED = merah, EXPIRED = abu.
+ * PENDING = kuning, SUCCESS = hijau, FAILED = merah, EXPIRED = abu,
+ * CANCELED = rose (batal-sendiri, beda warna dari "Gagal").
  * Shared by the list table and the detail page so colours never drift.
  */
 export const STATUS_META: Record<
@@ -41,6 +42,12 @@ export const STATUS_META: Record<
     dot: "bg-zinc-400",
     pill: "bg-zinc-100 text-zinc-600 ring-zinc-500/20 dark:bg-white/5 dark:text-zinc-400 dark:ring-white/10",
     accent: "from-zinc-300 to-zinc-400",
+  },
+  CANCELED: {
+    label: "Dibatalkan",
+    dot: "bg-rose-500",
+    pill: "bg-rose-50 text-rose-700 ring-rose-600/20 dark:bg-rose-500/10 dark:text-rose-300 dark:ring-rose-400/20",
+    accent: "from-rose-400 to-rose-500",
   },
 };
 

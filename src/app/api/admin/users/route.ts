@@ -75,6 +75,7 @@ export async function POST(req: Request) {
     password: parsed.data.password,
     classId: parsed.data.classId,
     institution: parsed.data.institution ?? null,
+    gender: parsed.data.gender ?? null,
   });
 
   if (!result.ok) {

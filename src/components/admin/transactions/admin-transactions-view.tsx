@@ -34,6 +34,7 @@ const STATUS_LABELS: Record<StatusFilter, string> = {
   SUCCESS: "Berhasil",
   FAILED: "Gagal",
   EXPIRED: "Kedaluwarsa",
+  CANCELED: "Dibatalkan",
 };
 
 const SORT_LABELS: Record<SortOption, string> = {

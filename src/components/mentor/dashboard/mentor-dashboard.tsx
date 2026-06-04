@@ -19,6 +19,8 @@ import { MentorHero } from "./mentor-hero";
 
 type Props = {
   firstName: string;
+  /** Polite honorific ("Pak"/"Bu") prepended to the greeting, or null. */
+  honorific: string | null;
   serverNowISO: string;
   window: AttendanceWindow;
   data: MentorDashboardData;
@@ -32,6 +34,7 @@ type Props = {
  */
 export function MentorDashboard({
   firstName,
+  honorific,
   serverNowISO,
   window,
   data,
@@ -75,6 +78,7 @@ export function MentorDashboard({
     <StudentPageContainer>
       <MentorHero
         firstName={firstName}
+        honorific={honorific}
         serverNowISO={serverNowISO}
         context={data.context}
         window={window}

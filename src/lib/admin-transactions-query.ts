@@ -22,6 +22,7 @@ export const STATUS_FILTERS = [
   "SUCCESS",
   "FAILED",
   "EXPIRED",
+  "CANCELED",
 ] as const;
 export type StatusFilter = (typeof STATUS_FILTERS)[number];
 

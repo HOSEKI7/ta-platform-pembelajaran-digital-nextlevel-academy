@@ -169,6 +169,28 @@ export async function fetchMidtransTransactionStatus(
   }
 }
 
+/**
+ * Cancels a still-cancelable Midtrans transaction (Core API `transaction.cancel`,
+ * exposed on the same Snap client as `transaction.status`).
+ *
+ * Used when a buyer aborts a PENDING order so any charge instrument already
+ * issued in the Snap popup (VA number, QR) is voided server-side and can't be
+ * paid after the buyer starts a fresh checkout. Best-effort: returns `false`
+ * (never throws) on any error — e.g. the transaction was never created (404),
+ * already expired, or already settled. Local order state is the source of truth.
+ *
+ * `invoiceNumber` is our `paymentInvoiceId` (== Midtrans `order_id`).
+ */
+export async function cancelMidtransTransaction(invoiceNumber: string): Promise<boolean> {
+  try {
+    await getSnap().transaction.cancel(invoiceNumber);
+    return true;
+  } catch (err) {
+    console.warn(`[midtrans] cancel failed for order_id=${invoiceNumber}`, err);
+    return false;
+  }
+}
+
 export type NormalizedStatus = "SUCCESS" | "PENDING" | "FAILED" | "EXPIRED" | "ignore";
 
 /**

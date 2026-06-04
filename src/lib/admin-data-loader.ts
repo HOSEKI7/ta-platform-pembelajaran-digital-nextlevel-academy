@@ -28,7 +28,13 @@ const ROLE_LABEL: Record<Role, string> = {
 };
 
 /** Fixed display order for the per-status transaction breakdown. */
-const STATUS_ORDER: OrderStatusLiteral[] = ["SUCCESS", "PENDING", "FAILED", "EXPIRED"];
+const STATUS_ORDER: OrderStatusLiteral[] = [
+  "SUCCESS",
+  "PENDING",
+  "FAILED",
+  "EXPIRED",
+  "CANCELED",
+];
 
 type MonthBucket = { year: number; month: number; key: string; label: string };
 

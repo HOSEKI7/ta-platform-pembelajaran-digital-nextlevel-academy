@@ -36,6 +36,8 @@ function toMinutes(hhmm: string): number {
 
 type Props = {
   firstName: string;
+  /** Polite honorific ("Pak"/"Bu") from the mentor's gender, or null when unset. */
+  honorific: string | null;
   /** ISO timestamp captured on the server so the first client render matches. */
   serverNowISO: string;
   context: MentorContext;
@@ -57,6 +59,7 @@ type Props = {
  */
 export function MentorHero({
   firstName,
+  honorific,
   serverNowISO,
   context,
   window,
@@ -131,7 +134,7 @@ export function MentorHero({
                   "linear-gradient(120deg, #fff 0%, var(--color-brand-accent-soft) 100%)",
               }}
             >
-              {firstName}
+              {honorific ? `${honorific} ${firstName}` : firstName}
             </span>
           </h1>
           <p className="mt-2 max-w-md text-sm leading-relaxed text-white/75">

@@ -1,6 +1,16 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  experimental: {
+    optimizePackageImports: [
+      "lucide-react",
+      "@radix-ui/react-icons",
+      "@tiptap/react",
+      "@tiptap/starter-kit",
+      "recharts",
+      "date-fns",
+    ],
+  },
   // Sharp ships a native binary — keep it external so the bundler doesn't try
   // to trace/inline it. Required for the server-side certificate PNG renderer.
   // ioredis is a Node-only client (net sockets) used by the rate limiter; keep

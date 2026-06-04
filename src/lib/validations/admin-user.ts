@@ -52,6 +52,15 @@ const institutionField = z
   .trim()
   .max(INSTITUTION_MAX, `Institusi maksimal ${INSTITUTION_MAX} karakter.`);
 
+/**
+ * Mentor gender (optional) — drives the polite "Pak/Bu" greeting on the mentor
+ * dashboard. Defined as a string union (not the Prisma enum) to keep this module
+ * Prisma-free in the client bundle. An empty/absent value means "not set".
+ */
+export const GENDER_VALUES = ["MALE", "FEMALE"] as const;
+export type GenderValue = (typeof GENDER_VALUES)[number];
+const genderField = z.enum(GENDER_VALUES);
+
 /** Roles an admin may create (PRD §6.11.4 — no ADMINISTRATOR via UI). */
 export const CREATABLE_ROLE_VALUES = [
   Role.PESERTA_DIDIK,
@@ -72,6 +81,8 @@ export const createUserSchema = z
     password: passwordComplexity,
     classId: z.string().trim().optional(),
     institution: institutionField.optional(),
+    // Mentor-only & optional; ignored server-side for non-mentor roles.
+    gender: genderField.optional(),
   })
   .superRefine((v, ctx) => {
     if (needsClass(v.role) && !v.classId) {
@@ -98,6 +109,8 @@ export const editUserSchema = z
     username: z.union([usernameField, z.literal("")]).optional(),
     classId: z.string().trim().optional(),
     institution: institutionField.optional(),
+    // Mentor-only & optional; ignored server-side for non-mentor roles.
+    gender: genderField.optional(),
     newPassword: z.union([passwordComplexity, z.literal("")]).optional(),
   })
   .superRefine((v, ctx) => {

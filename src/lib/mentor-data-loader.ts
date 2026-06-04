@@ -75,7 +75,15 @@ type MentorProfileRow = {
   batchName: string;
   startDate: Date;
   endDate: Date;
+  gender: "MALE" | "FEMALE" | null;
 };
+
+/** Polite Indonesian honorific from gender; null keeps the greeting plain. */
+export function honorificForGender(gender: "MALE" | "FEMALE" | null): string | null {
+  if (gender === "MALE") return "Pak";
+  if (gender === "FEMALE") return "Bu";
+  return null;
+}
 
 async function fetchMentorProfile(
   userId: string,
@@ -84,6 +92,7 @@ async function fetchMentorProfile(
     where: { userId },
     select: {
       classId: true,
+      gender: true,
       class: {
         select: {
           name: true,
@@ -105,6 +114,7 @@ async function fetchMentorProfile(
     batchName: p.class.field.batch.name,
     startDate: p.class.field.batch.startDate,
     endDate: p.class.field.batch.endDate,
+    gender: p.gender,
   };
 }
 
@@ -649,6 +659,7 @@ export async function loadMentorDashboard(
 
   return {
     context: toContext(p, menteeCount),
+    honorific: honorificForGender(p.gender),
     menteeCount,
     attendance,
     selfAttendance,

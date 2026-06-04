@@ -10,7 +10,7 @@ export type OrderStatusDTO = {
   expiresAt: string;
 };
 
-const TERMINAL: TransactionStatus[] = ["SUCCESS", "FAILED", "EXPIRED"];
+const TERMINAL: TransactionStatus[] = ["SUCCESS", "FAILED", "EXPIRED", "CANCELED"];
 
 async function fetchOrderStatus(orderId: string): Promise<OrderStatusDTO> {
   const res = await fetch(`/api/payment/orders/${orderId}/status`, {

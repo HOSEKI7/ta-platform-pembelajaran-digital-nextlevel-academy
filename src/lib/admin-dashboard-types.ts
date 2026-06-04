@@ -8,7 +8,12 @@
  * the generated client into a client bundle.
  */
 
-export type OrderStatus = "SUCCESS" | "PENDING" | "FAILED" | "EXPIRED";
+export type OrderStatus =
+  | "SUCCESS"
+  | "PENDING"
+  | "FAILED"
+  | "EXPIRED"
+  | "CANCELED";
 
 /** A single month bucket for the trend charts (e.g. `{ month: "Jun", value: 12 }`). */
 export type MonthlyPoint = {
