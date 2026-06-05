@@ -5,8 +5,8 @@ import { Role } from "@/generated/prisma";
 import { requireRole } from "@/lib/auth-server";
 import { getQueryClient } from "@/lib/query-client";
 import { loadAdminAccounts } from "@/lib/admin-accounts-loader";
+import { adminAccountsKey } from "@/lib/admin-accounts-query";
 
-import { adminAccountsKey } from "@/hooks/use-admin-accounts";
 import { AdminAccountsView } from "@/components/admin/admins/admin-accounts-view";
 import { StudentPageContainer } from "@/components/dashboard/shared/student-page-container";
 

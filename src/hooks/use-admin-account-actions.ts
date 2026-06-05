@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { adminAccountsKey } from "@/hooks/use-admin-accounts";
+import { adminAccountsKey } from "@/lib/admin-accounts-query";
 import type { InviteAdminInput } from "@/lib/validations/admin-invite";
 
 async function parseError(res: Response, fallback: string): Promise<string> {

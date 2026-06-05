@@ -3,8 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import type { AdminAccountsData } from "@/lib/admin-accounts-loader";
-
-export const adminAccountsKey = ["admin", "admins"] as const;
+import { adminAccountsKey } from "@/lib/admin-accounts-query";
 
 async function fetchAdminAccounts(): Promise<AdminAccountsData> {
   const res = await fetch("/api/admin/admins", {
