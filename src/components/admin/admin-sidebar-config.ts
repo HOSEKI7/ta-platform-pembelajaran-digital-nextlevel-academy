@@ -13,6 +13,7 @@ import {
   Medal,
   Receipt,
   Settings,
+  ShieldCheck,
   SlidersHorizontal,
   Sparkles,
   Ticket,
@@ -95,6 +96,7 @@ export const ADMIN_NAV_ITEMS: AdminNavEntry[] = [
       { href: "/admin/internship/work-config", label: "Konfigurasi Jam Kerja dan Libur", icon: CalendarClock },
     ],
   },
+  { kind: "leaf", href: "/admin/admins", label: "Akun Admin", icon: ShieldCheck },
   { kind: "leaf", href: "/admin/settings", label: "Pengaturan", icon: Settings },
 ];
 

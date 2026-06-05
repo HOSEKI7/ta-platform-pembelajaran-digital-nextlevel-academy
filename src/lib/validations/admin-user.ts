@@ -24,13 +24,13 @@ export const passwordComplexity = z
   .regex(/[a-z]/, "Password harus mengandung minimal satu huruf kecil.")
   .regex(/\d/, "Password harus mengandung minimal satu angka.");
 
-const nameField = z
+export const nameField = z
   .string()
   .trim()
   .min(NAME_MIN, `Nama lengkap minimal ${NAME_MIN} karakter.`)
   .max(NAME_MAX, `Nama lengkap maksimal ${NAME_MAX} karakter.`);
 
-const emailField = z
+export const emailField = z
   .string()
   .trim()
   .min(1, "Email wajib diisi.")

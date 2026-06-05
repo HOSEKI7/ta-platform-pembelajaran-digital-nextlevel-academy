@@ -172,6 +172,7 @@ model User {
   vouchersUsable          Voucher[]         @relation("VoucherAllowedUser")
   platformSettingsUpdated PlatformSetting[] @relation("PlatformSettingEditor")
   auditLogs               AuditLog[]
+  adminInvitesSent        AdminInvite[]     @relation("AdminInviteInviter")
 
   @@index([role])
   @@index([isActive])
@@ -228,6 +229,32 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
+}
+
+// Single-use email invitation to onboard a new ADMINISTRATOR (PRD §6.11.12).
+// An existing admin creates the invite; the recipient sets their own password
+// via a public accept page. The User row is created only when the invite is
+// accepted, so pending invites never pollute the user list. Only the SHA-256
+// hash of the token is stored — the plaintext lives solely in the emailed link.
+model AdminInvite {
+  id             String    @id @default(cuid())
+  email          String
+  name           String?
+  tokenHash      String    @unique // sha256 hex of the plaintext token in the link
+  invitedById    String
+  expiresAt      DateTime // createdAt + ADMIN_INVITE_EXPIRY_HOURS (default 24h)
+  acceptedAt     DateTime?
+  acceptedUserId String? // the User created on acceptance
+  revokedAt      DateTime?
+  revokedById    String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  invitedBy User @relation("AdminInviteInviter", fields: [invitedById], references: [id])
+
+  @@index([email])
+  @@index([expiresAt])
+  @@map("admin_invite")
 }
 
 // -----------------------------------------------------------------------------

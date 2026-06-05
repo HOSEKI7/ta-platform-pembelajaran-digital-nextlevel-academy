@@ -64,4 +64,13 @@ export const env = {
   },
 
   cronSecret: () => readOptional("CRON_SECRET"),
+
+  adminInvite: {
+    /** Validity window for an admin invitation link, in hours (default 24). */
+    expiryHours: () => {
+      const raw = readOptional("ADMIN_INVITE_EXPIRY_HOURS");
+      const n = raw ? Number(raw) : Number.NaN;
+      return Number.isFinite(n) && n > 0 ? n : 24;
+    },
+  },
 } as const;

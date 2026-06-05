@@ -62,6 +62,8 @@ function buildLimiter(config: LimiterConfig): RateLimiterAbstract {
 const globalForLimiters = globalThis as unknown as {
   orderRateLimiter?: RateLimiterAbstract;
   voucherRateLimiter?: RateLimiterAbstract;
+  adminInviteRateLimiter?: RateLimiterAbstract;
+  adminInviteAcceptRateLimiter?: RateLimiterAbstract;
 };
 
 /** Order creation — heaviest side effects (Midtrans Snap + Resend email + DB). */
@@ -80,6 +82,24 @@ export const voucherRateLimiter: RateLimiterAbstract =
     keyPrefix: "rl:voucher",
     points: 30,
     durationSec: 60,
+  }));
+
+/** Admin invite creation — sends email + writes DB (keyed by inviting admin). */
+export const adminInviteRateLimiter: RateLimiterAbstract =
+  globalForLimiters.adminInviteRateLimiter ??
+  (globalForLimiters.adminInviteRateLimiter = buildLimiter({
+    keyPrefix: "rl:admin-invite",
+    points: 10,
+    durationSec: 60 * 60,
+  }));
+
+/** Public invite acceptance — token guessing is the abuse vector (keyed by IP). */
+export const adminInviteAcceptRateLimiter: RateLimiterAbstract =
+  globalForLimiters.adminInviteAcceptRateLimiter ??
+  (globalForLimiters.adminInviteAcceptRateLimiter = buildLimiter({
+    keyPrefix: "rl:admin-invite-accept",
+    points: 20,
+    durationSec: 60 * 10,
   }));
 
 export type RateLimitOutcome =
