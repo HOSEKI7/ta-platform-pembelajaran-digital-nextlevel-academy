@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Quote } from "lucide-react";
 
 import { SiteContainer } from "@/components/public/site-container";
@@ -5,6 +6,8 @@ import { SiteContainer } from "@/components/public/site-container";
 type Props = {
   instructor: string;
   bio: string;
+  /** Resolved (signed/passthrough) instructor photo URL; empty → initials. */
+  instructorImg?: string;
 };
 
 function initialsOf(name: string) {
@@ -16,7 +19,7 @@ function initialsOf(name: string) {
     .join("");
 }
 
-export function CourseMentorBlock({ instructor, bio }: Props) {
+export function CourseMentorBlock({ instructor, bio, instructorImg }: Props) {
   return (
     <section id="mentor" className="relative py-16 sm:py-20 scroll-mt-24">
       <SiteContainer>
@@ -36,8 +39,18 @@ export function CourseMentorBlock({ instructor, bio }: Props) {
               strokeWidth={1.5}
             />
             <div className="relative flex flex-col gap-6 sm:flex-row sm:items-start">
-              <div className="grid size-20 shrink-0 place-items-center rounded-2xl bg-[color:var(--color-brand-accent)] font-heading text-2xl font-extrabold text-[color:var(--color-brand-900)] shadow-[0_18px_36px_-16px_rgba(244,214,0,0.8)]">
-                {initialsOf(instructor) || "NL"}
+              <div className="relative grid size-20 shrink-0 place-items-center overflow-hidden rounded-2xl bg-[color:var(--color-brand-accent)] font-heading text-2xl font-extrabold text-[color:var(--color-brand-900)] shadow-[0_18px_36px_-16px_rgba(244,214,0,0.8)]">
+                {instructorImg ? (
+                  <Image
+                    src={instructorImg}
+                    alt={instructor}
+                    fill
+                    sizes="80px"
+                    className="object-cover"
+                  />
+                ) : (
+                  (initialsOf(instructor) || "NL")
+                )}
               </div>
               <div className="min-w-0 flex-1">
                 <h3 className="font-heading text-xl font-extrabold leading-tight text-zinc-900 sm:text-2xl">

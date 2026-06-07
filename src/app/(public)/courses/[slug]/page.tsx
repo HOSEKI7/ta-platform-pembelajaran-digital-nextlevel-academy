@@ -106,6 +106,7 @@ export default async function CourseDetailPage({ params }: Props) {
 
   const totalSteps = course.sprints.reduce((acc, s) => acc + s.steps.length, 0);
   const thumbnailUrl = resolveCourseImageUrl(course.thumbnailUrl);
+  const instructorImg = resolveCourseImageUrl(course.instructorImg);
 
   // "Daftar Kursus" routing:
   //  - student (logged in) → catalog with the course's preview popup auto-open
@@ -137,7 +138,11 @@ export default async function CourseDetailPage({ params }: Props) {
       />
       <CourseAbout description={course.description} />
       <CourseBenefitsBlock benefits={course.benefits} />
-      <CourseMentorBlock instructor={course.instructor} bio={course.instructorBio} />
+      <CourseMentorBlock
+        instructor={course.instructor}
+        bio={course.instructorBio}
+        instructorImg={instructorImg}
+      />
       <CourseCurriculum
         sprints={course.sprints.map((s) => ({
           id: s.id,

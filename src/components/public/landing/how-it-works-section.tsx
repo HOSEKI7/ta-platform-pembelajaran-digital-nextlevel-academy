@@ -56,24 +56,16 @@ export function HowItWorksSection() {
                 col_w = (container - 3 * 32) / 4
                 right_offset = col_w - 28 = container/4 - 24 - 28
                              = 25% - 52px
-              Previously we used `inset-x-12`, which stopped the rail near the
-              third icon and left the last step orphaned. */}
-          <svg
+              This MUST be a plain <div> (border-top dashed), NOT an <svg>: an
+              absolutely-positioned SVG is a replaced element, so with no
+              explicit `width` it falls back to its intrinsic ~300px and the
+              `right` offset is ignored — the rail then dead-ends near step 01
+              regardless of the calc(). A <div> is non-replaced, so left+right
+              correctly resolve its width and the rail spans all four steps. */}
+          <div
             aria-hidden
-            className="pointer-events-none absolute left-7 right-[calc(25%_-_3.25rem)] top-7 hidden text-[color:var(--color-brand-300)] md:block"
-            height="2"
-            preserveAspectRatio="none"
-          >
-            <line
-              x1="0"
-              y1="1"
-              x2="100%"
-              y2="1"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeDasharray="6 8"
-            />
-          </svg>
+            className="pointer-events-none absolute left-7 right-[calc(25%_-_3.25rem)] top-7 hidden border-t-2 border-dashed border-[color:var(--color-brand-300)] md:block"
+          />
 
           <ol className="grid gap-8 sm:grid-cols-2 md:grid-cols-4">
             {STEPS.map(({ icon: Icon, title, body }, idx) => (
