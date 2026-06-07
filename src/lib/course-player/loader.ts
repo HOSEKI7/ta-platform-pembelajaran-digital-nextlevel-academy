@@ -1,6 +1,7 @@
 import "server-only";
 
 import { signBunnyEmbedUrl } from "@/lib/bunny";
+import { resolveCourseImageUrl } from "@/lib/bunny-storage";
 import { prisma } from "@/lib/prisma";
 
 import type {
@@ -104,7 +105,11 @@ export async function loadCoursePlayer(
           questions: st.quiz.questions.map((q) => ({
             id: q.id,
             question: q.question,
-            questionImageUrl: q.questionImageUrl,
+            // Stored as a Bunny object-path (or legacy external URL) — must be
+            // resolved/signed for rendering, exactly like the admin loader.
+            questionImageUrl: q.questionImageUrl
+              ? resolveCourseImageUrl(q.questionImageUrl) || null
+              : null,
             options: coerceOptions(q.options),
             order: q.order,
             // NOTE: `q.answer` deliberately omitted — server-only.

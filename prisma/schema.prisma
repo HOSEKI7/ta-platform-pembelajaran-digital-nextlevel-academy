@@ -451,7 +451,6 @@ model Step {
 
   progresses StepProgress[]
   notes      StepNote[]
-  expLogs    ExpLog[]       @relation("ExpLogStep")
 
   @@index([sprintId, order])
   @@map("step")
@@ -786,11 +785,13 @@ model ExpLog {
   userId    String
   amount    Int
   source    ExpSource
-  refId     String // Step.id or Course.id depending on source
+  // Polymorphic reference: Step.id (VIDEO_WATCH / QUIZ_PASS) or Course.id
+  // (COURSE_COMPLETE). Intentionally NOT a foreign key — a single FK can't point
+  // at two tables, and forcing it to Step broke course-completion awards.
+  refId     String
   createdAt DateTime  @default(now())
 
-  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  step Step? @relation("ExpLogStep", fields: [refId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "exp_log_step_fk")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Idempotency guard: each (user, source, refId) tuple may only award EXP once.
   @@unique([userId, source, refId])
