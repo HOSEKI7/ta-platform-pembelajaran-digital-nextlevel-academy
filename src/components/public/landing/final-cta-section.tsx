@@ -2,12 +2,15 @@ import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
 
 import { SiteContainer } from "../site-container";
+import { CountUp } from "./count-up";
 
 export function FinalCtaSection() {
   return (
     <section className="relative py-20 sm:py-24">
       <SiteContainer>
         <div
+          data-reveal
+          data-from="scale"
           className="relative isolate overflow-hidden rounded-[36px] px-8 py-16 text-white sm:px-14 sm:py-20"
           style={{
             background:
@@ -51,14 +54,14 @@ export function FinalCtaSection() {
                   href="/register"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group inline-flex items-center justify-center gap-2 rounded-full bg-[color:var(--color-brand-accent)] px-6 py-3.5 text-sm font-bold text-[color:var(--color-brand-900)] shadow-[0_18px_40px_-14px_rgba(244,214,0,0.8)] transition hover:translate-y-[-2px]"
+                  className="group inline-flex items-center justify-center gap-2 rounded-full bg-[color:var(--color-brand-accent)] px-6 py-3.5 text-sm font-bold text-[color:var(--color-brand-900)] shadow-[0_18px_40px_-14px_rgba(244,214,0,0.8)] transition duration-300 hover:translate-y-[-2px] hover:shadow-[0_22px_46px_-14px_rgba(244,214,0,0.95)] active:scale-[0.98]"
                 >
                   Daftar Gratis Sekarang
                   <ArrowRight className="size-4 transition group-hover:translate-x-0.5" />
                 </Link>
                 <Link
                   href="/courses"
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-white/15 px-6 py-3.5 text-sm font-semibold text-white ring-1 ring-white/30 backdrop-blur transition hover:bg-white/20"
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-white/15 px-6 py-3.5 text-sm font-semibold text-white ring-1 ring-white/30 backdrop-blur transition duration-300 hover:bg-white/20 active:scale-[0.98]"
                 >
                   <Sparkles className="size-4 text-[color:var(--color-brand-accent)]" />
                   Eksplor kursus
@@ -74,15 +77,16 @@ export function FinalCtaSection() {
                   <span className="font-mono text-[color:var(--color-brand-700)]">#NLA-DEMO</span>
                 </div>
                 <div className="mt-3 flex items-baseline justify-between">
-                  <span className="font-heading text-3xl font-extrabold">+ 240 XP</span>
+                  <span className="font-heading text-3xl font-extrabold">
+                    + <CountUp value={240} /> XP
+                  </span>
                   <span className="text-xs font-semibold text-[color:var(--color-success)]">
                     Lv 7 → Lv 8
                   </span>
                 </div>
                 <div className="mt-4 h-2 overflow-hidden rounded-full bg-zinc-100">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-[color:var(--color-brand-500)] to-[color:var(--color-brand-700)]"
-                    style={{ width: "72%" }}
+                    className="landing-bar-fill h-full w-[72%] rounded-full bg-gradient-to-r from-[color:var(--color-brand-500)] to-[color:var(--color-brand-700)]"
                   />
                 </div>
                 <ul className="mt-4 space-y-2 text-xs text-zinc-600">

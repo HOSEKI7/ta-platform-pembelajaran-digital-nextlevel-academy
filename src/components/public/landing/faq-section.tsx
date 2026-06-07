@@ -41,7 +41,7 @@ export function FaqSection() {
     <section id="faq" className="relative py-20 sm:py-24">
       <SiteContainer>
         <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] lg:items-start">
-          <div className="lg:sticky lg:top-28">
+          <div data-reveal data-from="left" className="lg:sticky lg:top-28">
             <span className="inline-flex items-center gap-2 rounded-full bg-[color:var(--color-brand-50)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-brand-700)] ring-1 ring-[color:var(--color-brand-100)]">
               <span className="size-1 rounded-full bg-[color:var(--color-brand-accent)]" />
               FAQ
@@ -66,6 +66,8 @@ export function FaqSection() {
               <AccordionItem
                 key={f.q}
                 value={`item-${i}`}
+                data-reveal
+                style={{ "--reveal-delay": `${i * 70}ms` } as React.CSSProperties}
                 className="overflow-hidden rounded-2xl border-0 bg-white ring-1 ring-zinc-200 transition has-[[data-panel-open]]:ring-[color:var(--color-brand-300)] has-[[data-panel-open]]:shadow-[0_24px_50px_-30px_rgba(35,65,137,0.35)]"
               >
                 <AccordionTrigger

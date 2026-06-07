@@ -37,7 +37,7 @@ export function HighlightsSection() {
   return (
     <section className="relative py-20 sm:py-24">
       <SiteContainer>
-        <div className="mx-auto max-w-3xl text-center">
+        <div data-reveal className="mx-auto max-w-3xl text-center">
           <span className="inline-flex items-center gap-2 rounded-full bg-[color:var(--color-brand-50)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-brand-700)] ring-1 ring-[color:var(--color-brand-100)]">
             <span className="size-1 rounded-full bg-[color:var(--color-brand-accent)]" />
             Kenapa NextLevel
@@ -52,10 +52,12 @@ export function HighlightsSection() {
         </div>
 
         <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {HIGHLIGHTS.map(({ icon: Icon, title, body, accent }) => (
+          {HIGHLIGHTS.map(({ icon: Icon, title, body, accent }, i) => (
             <article
               key={title}
-              className="group relative isolate overflow-hidden rounded-3xl bg-white p-7 ring-1 ring-zinc-200/80 transition hover:-translate-y-1 hover:ring-[color:var(--color-brand-300)] hover:shadow-[0_30px_50px_-30px_rgba(35,65,137,0.35)]"
+              data-reveal
+              style={{ "--reveal-delay": `${i * 90}ms` } as React.CSSProperties}
+              className="group relative isolate overflow-hidden rounded-3xl bg-white p-7 ring-1 ring-zinc-200/80 transition duration-300 hover:-translate-y-1 hover:ring-[color:var(--color-brand-300)] hover:shadow-[0_30px_50px_-30px_rgba(35,65,137,0.35)]"
             >
               {/* Yellow corner tab */}
               <span

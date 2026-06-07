@@ -29,7 +29,10 @@ export function HowItWorksSection() {
   return (
     <section className="relative py-20 sm:py-24">
       <SiteContainer>
-        <div className="flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-end">
+        <div
+          data-reveal
+          className="flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-end"
+        >
           <div className="max-w-xl">
             <span className="inline-flex items-center gap-2 rounded-full bg-[color:var(--color-brand-50)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-brand-700)] ring-1 ring-[color:var(--color-brand-100)]">
               <span className="size-1 rounded-full bg-[color:var(--color-brand-accent)]" />
@@ -76,8 +79,13 @@ export function HowItWorksSection() {
 
           <ol className="grid gap-8 sm:grid-cols-2 md:grid-cols-4">
             {STEPS.map(({ icon: Icon, title, body }, idx) => (
-              <li key={title} className="relative">
-                <div className="relative grid size-14 place-items-center rounded-2xl bg-white shadow-[0_18px_36px_-18px_rgba(35,65,137,0.35)] ring-1 ring-zinc-200">
+              <li
+                key={title}
+                data-reveal
+                style={{ "--reveal-delay": `${idx * 110}ms` } as React.CSSProperties}
+                className="group relative"
+              >
+                <div className="relative grid size-14 place-items-center rounded-2xl bg-white shadow-[0_18px_36px_-18px_rgba(35,65,137,0.35)] ring-1 ring-zinc-200 transition duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_24px_44px_-18px_rgba(35,65,137,0.5)] group-hover:ring-[color:var(--color-brand-300)]">
                   <Icon className="size-6 text-[color:var(--color-brand-700)]" strokeWidth={2.1} />
                   <span className="absolute -right-2 -top-2 grid size-7 place-items-center rounded-full bg-[color:var(--color-brand-accent)] font-mono text-[11px] font-bold text-[color:var(--color-brand-900)] shadow-[0_6px_14px_-6px_rgba(244,214,0,0.8)]">
                     0{idx + 1}

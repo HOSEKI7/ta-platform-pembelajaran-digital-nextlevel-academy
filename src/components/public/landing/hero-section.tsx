@@ -6,16 +6,18 @@ import { ArrowRight, BookOpenCheck, Sparkles, Tag, Trophy } from "lucide-react";
 import { publicApi } from "@/lib/server-fetch";
 
 import { SiteContainer } from "../site-container";
+import { CountUp } from "./count-up";
+import { HeroParallax } from "./hero-parallax";
 import { HeroStatsSkeleton } from "./landing-skeletons";
-
-const numId = new Intl.NumberFormat("id-ID");
 
 export function HeroSection() {
   return (
     <section className="relative isolate flex overflow-hidden pt-10 pb-24 sm:pt-14 lg:min-h-[calc(100svh-68px)] lg:items-center lg:pt-20 lg:pb-24">
+      <HeroParallax />
       {/* Atmosphere: layered background */}
       <div
         aria-hidden
+        data-parallax="0.08"
         className="absolute inset-0 -z-10"
         style={{
           background:
@@ -26,6 +28,7 @@ export function HeroSection() {
       />
       <div
         aria-hidden
+        data-parallax="0.18"
         className="absolute inset-x-0 top-0 -z-10 h-[420px] opacity-[0.18]"
         style={{
           backgroundImage:
@@ -50,7 +53,7 @@ export function HeroSection() {
               <span className="block">Belajar.</span>
               <span className="block">Naik Level.</span>
               <span className="relative inline-block">
-                <span className="bg-gradient-to-br from-[color:var(--color-brand-700)] to-[color:var(--color-brand-500)] bg-clip-text text-transparent">
+                <span className="landing-gradient-pan bg-clip-text text-transparent [background-image:linear-gradient(110deg,var(--color-brand-700),var(--color-brand-500),var(--color-brand-accent),var(--color-brand-500),var(--color-brand-700))]">
                   Bersertifikat.
                 </span>
                 {/* Yellow underline-strike SVG */}
@@ -81,14 +84,14 @@ export function HeroSection() {
                 href="/register"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[color:var(--color-brand-500)] px-6 text-sm font-semibold text-white shadow-[0_18px_40px_-14px_rgba(43,114,234,0.7)] transition hover:-translate-y-0.5 hover:bg-[color:var(--color-brand-600)]"
+                className="group inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[color:var(--color-brand-500)] px-6 text-sm font-semibold text-white shadow-[0_18px_40px_-14px_rgba(43,114,234,0.7)] transition duration-300 hover:-translate-y-0.5 hover:bg-[color:var(--color-brand-600)] hover:shadow-[0_22px_48px_-14px_rgba(43,114,234,0.85)] active:scale-[0.98]"
               >
                 Mulai Gratis
                 <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
               <Link
                 href="/courses"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-zinc-200 bg-white px-6 text-sm font-semibold text-zinc-800 transition hover:border-[color:var(--color-brand-300)] hover:text-[color:var(--color-brand-700)]"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-zinc-200 bg-white px-6 text-sm font-semibold text-zinc-800 transition duration-300 hover:-translate-y-0.5 hover:border-[color:var(--color-brand-300)] hover:text-[color:var(--color-brand-700)] active:scale-[0.98]"
               >
                 <BookOpenCheck className="size-4" />
                 Lihat Kursus
@@ -214,8 +217,7 @@ async function HeroStats() {
           Course tersedia
         </dt>
         <dd className="mt-1 font-heading text-3xl font-extrabold text-zinc-900">
-          {numId.format(courseCount)}
-          <span className="text-[color:var(--color-brand-accent)]">+</span>
+          <CountUp value={courseCount} suffix="+" />
         </dd>
       </div>
       <div>
@@ -223,8 +225,7 @@ async function HeroStats() {
           Peserta terdaftar
         </dt>
         <dd className="mt-1 font-heading text-3xl font-extrabold text-zinc-900">
-          {numId.format(learnerCount)}
-          <span className="text-[color:var(--color-brand-accent)]">+</span>
+          <CountUp value={learnerCount} suffix="+" />
         </dd>
       </div>
     </dl>

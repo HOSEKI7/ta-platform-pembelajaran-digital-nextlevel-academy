@@ -3,15 +3,16 @@ import { Suspense } from "react";
 import { publicApi } from "@/lib/server-fetch";
 
 import { SiteContainer } from "../site-container";
+import { CountUp } from "./count-up";
 import { StatsStripSkeleton } from "./landing-skeletons";
-
-const numId = new Intl.NumberFormat("id-ID");
 
 export function StatsStripSection() {
   return (
     <section className="relative py-12">
       <SiteContainer>
         <div
+          data-reveal
+          data-from="scale"
           className="relative isolate overflow-hidden rounded-3xl px-8 py-10 text-white sm:px-12"
           style={{
             background:
@@ -50,12 +51,17 @@ async function StatsStripData() {
     completionRate: number;
   }>("/api/public/stats");
 
-  const items: { num: string; label: string }[] = [
-    { num: `${numId.format(data.learners)}+`, label: "Peserta aktif" },
-    { num: `${numId.format(data.courses)}+`, label: "Kursus dirilis" },
-    { num: `${numId.format(data.enrollments)}+`, label: "Enrollment aktif" },
+  const items: { num: React.ReactNode; label: string }[] = [
+    { num: <CountUp value={data.learners} suffix="+" />, label: "Peserta aktif" },
+    { num: <CountUp value={data.courses} suffix="+" />, label: "Kursus dirilis" },
+    { num: <CountUp value={data.enrollments} suffix="+" />, label: "Enrollment aktif" },
     {
-      num: data.enrollments > 0 ? `${data.completionRate}%` : "—",
+      num:
+        data.enrollments > 0 ? (
+          <CountUp value={data.completionRate} suffix="%" />
+        ) : (
+          "—"
+        ),
       label: "Completion rate",
     },
   ];

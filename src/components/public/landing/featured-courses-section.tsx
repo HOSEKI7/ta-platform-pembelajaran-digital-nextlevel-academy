@@ -12,7 +12,10 @@ export function FeaturedCoursesSection() {
   return (
     <section id="courses" className="relative py-20 sm:py-24">
       <SiteContainer>
-        <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-end">
+        <div
+          data-reveal
+          className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-end"
+        >
           <div>
             <span className="inline-flex items-center gap-2 rounded-full bg-[color:var(--color-brand-50)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-brand-700)] ring-1 ring-[color:var(--color-brand-100)]">
               <span className="size-1 rounded-full bg-[color:var(--color-brand-accent)]" />
@@ -58,8 +61,15 @@ async function FeaturedCoursesData() {
       data-testid="featured-courses"
       className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
     >
-      {courses.map((course) => (
-        <CourseCard key={course.id} course={course} />
+      {courses.map((course, i) => (
+        <div
+          key={course.id}
+          data-reveal
+          style={{ "--reveal-delay": `${(i % 3) * 90}ms` } as React.CSSProperties}
+          className="flex"
+        >
+          <CourseCard course={course} className="w-full" />
+        </div>
       ))}
     </div>
   );
