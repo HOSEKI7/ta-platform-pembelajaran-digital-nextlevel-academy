@@ -60,7 +60,7 @@ export function HowItWorksSection() {
               third icon and left the last step orphaned. */}
           <svg
             aria-hidden
-            className="pointer-events-none absolute left-7 right-[calc(25%-3.25rem)] top-7 hidden text-[color:var(--color-brand-300)] md:block"
+            className="pointer-events-none absolute left-7 right-[calc(25%_-_3.25rem)] top-7 hidden text-[color:var(--color-brand-300)] md:block"
             height="2"
             preserveAspectRatio="none"
           >

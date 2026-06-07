@@ -1,5 +1,6 @@
 import "server-only";
 
+import { resolveCourseImageUrl } from "@/lib/bunny-storage";
 import { prisma } from "@/lib/prisma";
 import { Role, type Prisma } from "@/generated/prisma";
 import type {
@@ -249,7 +250,7 @@ export async function loadAdminTransactionDetail(
     course: {
       title: order.course.title,
       slug: order.course.slug,
-      thumbnailUrl: order.course.thumbnailUrl,
+      thumbnailUrl: resolveCourseImageUrl(order.course.thumbnailUrl),
       instructor: order.course.instructor,
       categoryName: order.course.category.name,
     },

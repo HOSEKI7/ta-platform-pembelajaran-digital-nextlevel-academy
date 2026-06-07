@@ -35,10 +35,12 @@ export function LoginForm() {
 
   async function onSubmit(values: LoginInput) {
     setUnverifiedEmail(null);
+    // No `callbackURL`: Better Auth would hard-redirect there on success, and a
+    // static `/dashboard` lands non-students in the (student) group → bounced to
+    // `/` by requireRole(PESERTA_DIDIK). We navigate role-aware below instead.
     const { data, error } = await signIn.email({
       email: values.email,
       password: values.password,
-      callbackURL: explicitNext ?? "/dashboard",
     });
 
     if (error) {

@@ -15,6 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { LogoutConfirmDialog } from "@/components/dashboard/logout-confirm-dialog";
 
 type Props = {
   user: {
@@ -41,6 +42,7 @@ function initialsOf(name: string) {
 export function ProfileMenu({ user, settingsHref = "/settings" }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const displayName = user.username ?? user.name.split(" ")[0];
 
@@ -59,6 +61,7 @@ export function ProfileMenu({ user, settingsHref = "/settings" }: Props) {
   }
 
   return (
+    <>
     <DropdownMenu>
       <DropdownMenuTrigger
         aria-label="Menu profil"
@@ -122,7 +125,7 @@ export function ProfileMenu({ user, settingsHref = "/settings" }: Props) {
 
         <DropdownMenuItem
           disabled={loading}
-          onClick={handleSignOut}
+          onClick={() => setConfirmOpen(true)}
           className="cursor-pointer gap-2 rounded-lg py-2 text-sm text-[color:var(--color-error)] focus:bg-red-50 focus:text-[color:var(--color-error)] dark:focus:bg-red-500/10"
         >
           <LogOut className="size-4" strokeWidth={2.2} />
@@ -130,5 +133,13 @@ export function ProfileMenu({ user, settingsHref = "/settings" }: Props) {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+
+    <LogoutConfirmDialog
+      open={confirmOpen}
+      onOpenChange={setConfirmOpen}
+      loading={loading}
+      onConfirm={handleSignOut}
+    />
+    </>
   );
 }

@@ -54,7 +54,7 @@ export function InProgressGridSkeleton({ count = 3 }: { count?: number }) {
 export function RecommendedCardSkeleton() {
   return (
     <article className="flex h-full flex-col overflow-hidden rounded-3xl bg-white ring-1 ring-zinc-200 dark:bg-[color:var(--color-surface-card)] dark:ring-[color:var(--color-surface-border)]">
-      <Block className="aspect-[16/10] w-full rounded-none rounded-t-3xl" />
+      <Block className="aspect-[16/9] w-full rounded-none rounded-t-3xl" />
       <div className="flex flex-1 flex-col gap-2 p-4">
         <Shimmer className="h-4 w-4/5 rounded" />
         <Shimmer className="h-3 w-2/3 rounded" />

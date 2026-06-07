@@ -164,7 +164,7 @@ export function CourseHero({
           {/* RIGHT: image card */}
           <div className="relative">
             <div className="relative overflow-hidden rounded-3xl bg-white shadow-[0_40px_80px_-30px_rgba(35,65,137,0.45)] ring-1 ring-zinc-200">
-              <div className="relative aspect-[16/10]">
+              <div className="relative aspect-[16/9]">
                 <Image
                   src={thumbnailUrl}
                   alt={title}

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { Role } from "@/generated/prisma";
 import { getSession } from "@/lib/auth-server";
+import { resolveCourseImageUrl } from "@/lib/bunny-storage";
 import { prisma } from "@/lib/prisma";
 import { dashboardHrefFor } from "@/components/public/public-nav-config";
 
@@ -50,7 +51,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     course.description.slice(0, 200).replace(/\s+\S*$/, "") + "…";
 
   const canonical = `/courses/${course.slug}`;
-  const ogImage = course.thumbnailUrl;
+  const ogImage = resolveCourseImageUrl(course.thumbnailUrl);
 
   return {
     title: course.title,
@@ -103,6 +104,7 @@ export default async function CourseDetailPage({ params }: Props) {
   if (!course) notFound();
 
   const totalSteps = course.sprints.reduce((acc, s) => acc + s.steps.length, 0);
+  const thumbnailUrl = resolveCourseImageUrl(course.thumbnailUrl);
 
   // "Daftar Kursus" routing:
   //  - student (logged in) → catalog with the course's preview popup auto-open
@@ -118,12 +120,12 @@ export default async function CourseDetailPage({ params }: Props) {
 
   return (
     <>
-      <CourseJsonLd siteUrl={siteUrl} course={course} />
+      <CourseJsonLd siteUrl={siteUrl} course={{ ...course, thumbnailUrl }} />
       <CourseHero
         title={course.title}
         shortDescription={course.shortDescription}
         description={course.description}
-        thumbnailUrl={course.thumbnailUrl}
+        thumbnailUrl={thumbnailUrl}
         category={course.category}
         instructor={course.instructor}
         price={course.price}

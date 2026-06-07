@@ -28,6 +28,10 @@ const nextConfig: NextConfig = {
       // and badge logos. Safe to remove once real assets land in Supabase
       // Storage and the seed file is updated.
       { protocol: "https", hostname: "placehold.co" },
+      // Bunny.net CDN pull zones (storage / cert / stream). Admin-uploaded
+      // course thumbnails are signed Pull-Zone URLs (e.g. internship-files.b-cdn.net)
+      // resolved via `resolveCourseImageUrl`; next/image must allowlist the host.
+      { protocol: "https", hostname: "**.b-cdn.net" },
     ],
   },
 };

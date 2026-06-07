@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { resolveCourseImageUrl } from "@/lib/bunny-storage";
 import { prisma } from "@/lib/prisma";
 
 export const revalidate = 60;
@@ -24,7 +25,7 @@ export async function GET() {
             id: c.id,
             title: c.title,
             slug: c.slug,
-            thumbnailUrl: c.thumbnailUrl,
+            thumbnailUrl: resolveCourseImageUrl(c.thumbnailUrl),
             price: c.price,
             fakePrice: c.fakePrice,
             estimatedDuration: c.estimatedDuration,

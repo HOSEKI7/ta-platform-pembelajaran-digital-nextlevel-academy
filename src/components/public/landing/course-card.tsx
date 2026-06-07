@@ -48,7 +48,7 @@ export function CourseCard({ course, className }: Props) {
         className,
       )}
     >
-      <Link href={`/courses/${course.slug}`} className="relative block aspect-[16/10] overflow-hidden">
+      <Link href={`/courses/${course.slug}`} className="relative block aspect-[16/9] overflow-hidden">
         <Image
           src={course.thumbnailUrl}
           alt={course.title}

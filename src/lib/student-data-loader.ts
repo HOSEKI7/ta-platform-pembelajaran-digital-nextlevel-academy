@@ -1,5 +1,6 @@
 import "server-only";
 
+import { resolveCourseImageUrl } from "@/lib/bunny-storage";
 import { prisma } from "@/lib/prisma";
 import { type ExpProgress, expProgress } from "@/lib/game-formula";
 
@@ -89,7 +90,7 @@ export async function loadInProgressCourses(
         id: r.course.id,
         title: r.course.title,
         slug: r.course.slug,
-        thumbnailUrl: r.course.thumbnailUrl,
+        thumbnailUrl: resolveCourseImageUrl(r.course.thumbnailUrl),
         instructor: r.course.instructor,
         estimatedDuration: r.course.estimatedDuration,
         category: { name: r.course.category.name },
@@ -164,7 +165,7 @@ export async function loadMyCourses(
         id: r.course.id,
         title: r.course.title,
         slug: r.course.slug,
-        thumbnailUrl: r.course.thumbnailUrl,
+        thumbnailUrl: resolveCourseImageUrl(r.course.thumbnailUrl),
         instructor: r.course.instructor,
         estimatedDuration: r.course.estimatedDuration,
         category: { name: r.course.category.name },
@@ -225,7 +226,7 @@ export async function loadRecommendedCourses(
       id: c.id,
       title: c.title,
       slug: c.slug,
-      thumbnailUrl: c.thumbnailUrl,
+      thumbnailUrl: resolveCourseImageUrl(c.thumbnailUrl),
       shortDescription: c.shortDescription,
       price: c.price,
       fakePrice: c.fakePrice,

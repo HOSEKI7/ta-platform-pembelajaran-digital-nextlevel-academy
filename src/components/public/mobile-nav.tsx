@@ -19,6 +19,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { LogoutConfirmDialog } from "@/components/dashboard/logout-confirm-dialog";
 
 import { PUBLIC_NAV_LINKS, dashboardHrefFor, roleLabel } from "./public-nav-config";
 
@@ -43,22 +44,29 @@ function initialsOf(name: string) {
 
 export function MobileNav({ user }: Props) {
   const [open, setOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
   async function handleSignOut() {
+    setLoading(true);
     try {
       await signOut();
       toast.success("Berhasil keluar");
+      setConfirmOpen(false);
       setOpen(false);
       router.push("/login");
       router.refresh();
     } catch {
       toast.error("Gagal keluar, coba lagi");
+    } finally {
+      setLoading(false);
     }
   }
 
   return (
+    <>
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger
         aria-label="Buka menu"
@@ -189,7 +197,7 @@ export function MobileNav({ user }: Props) {
                 </Link>
                 <button
                   type="button"
-                  onClick={handleSignOut}
+                  onClick={() => setConfirmOpen(true)}
                   className="inline-flex h-11 items-center justify-center gap-2 rounded-full text-sm font-semibold text-[color:var(--color-error)] ring-1 ring-red-100 transition hover:bg-red-50"
                 >
                   <LogOut className="size-4" /> Keluar
@@ -221,5 +229,13 @@ export function MobileNav({ user }: Props) {
         </div>
       </SheetContent>
     </Sheet>
+
+    <LogoutConfirmDialog
+      open={confirmOpen}
+      onOpenChange={setConfirmOpen}
+      loading={loading}
+      onConfirm={handleSignOut}
+    />
+    </>
   );
 }

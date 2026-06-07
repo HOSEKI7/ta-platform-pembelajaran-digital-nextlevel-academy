@@ -6,6 +6,7 @@ import {
   CERT_PUBLIC_ID_REGEX,
   certificateNoFromPublicId,
 } from "@/lib/certificates/generate-certificate-no";
+import { resolveCourseImageUrl } from "@/lib/bunny-storage";
 import { resolveCertificateImageUrl } from "@/lib/certificates/issue-certificate";
 import { prisma } from "@/lib/prisma";
 import type {
@@ -217,7 +218,7 @@ export const loadPublicCertificate = cache(async function loadPublicCertificate(
     course: {
       title: cert.course.title,
       slug: cert.course.slug,
-      thumbnailUrl: cert.course.thumbnailUrl,
+      thumbnailUrl: resolveCourseImageUrl(cert.course.thumbnailUrl),
       instructor: cert.course.instructor,
       instructorImg: cert.course.instructorImg,
       estimatedDuration: cert.course.estimatedDuration,

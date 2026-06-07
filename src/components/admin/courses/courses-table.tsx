@@ -34,7 +34,7 @@ function rowDelay(index: number): string {
 function CourseCell({ course }: { course: AdminCourseRow }) {
   return (
     <div className="flex min-w-0 items-center gap-3">
-      <span className="relative aspect-[16/10] w-16 shrink-0 overflow-hidden rounded-lg bg-zinc-100 ring-1 ring-zinc-200 dark:bg-white/5 dark:ring-[color:var(--color-surface-border)]">
+      <span className="relative aspect-[16/9] w-16 shrink-0 overflow-hidden rounded-lg bg-zinc-100 ring-1 ring-zinc-200 dark:bg-white/5 dark:ring-[color:var(--color-surface-border)]">
         {course.thumbnailUrl ? (
           <Image
             src={course.thumbnailUrl}

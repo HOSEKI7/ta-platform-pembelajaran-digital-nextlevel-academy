@@ -1,5 +1,6 @@
 import "server-only";
 
+import { resolveCourseImageUrl } from "@/lib/bunny-storage";
 import { reconcileOrder } from "@/lib/payment/reconcile";
 import { prisma } from "@/lib/prisma";
 import type {
@@ -216,7 +217,7 @@ export async function loadTransactionDetail(
     course: {
       title: order.course.title,
       slug: order.course.slug,
-      thumbnailUrl: order.course.thumbnailUrl,
+      thumbnailUrl: resolveCourseImageUrl(order.course.thumbnailUrl),
       instructor: order.course.instructor,
       categoryName: order.course.category.name,
     },

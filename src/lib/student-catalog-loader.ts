@@ -1,5 +1,6 @@
 import "server-only";
 
+import { resolveCourseImageUrl } from "@/lib/bunny-storage";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/generated/prisma";
 
@@ -122,7 +123,7 @@ export async function loadStudentCatalogPage(
       id: c.id,
       title: c.title,
       slug: c.slug,
-      thumbnailUrl: c.thumbnailUrl,
+      thumbnailUrl: resolveCourseImageUrl(c.thumbnailUrl),
       shortDescription: c.shortDescription,
       price: c.price,
       fakePrice: c.fakePrice,
@@ -164,7 +165,7 @@ export async function loadCatalogCoursePreview(
     id: course.id,
     title: course.title,
     slug: course.slug,
-    thumbnailUrl: course.thumbnailUrl,
+    thumbnailUrl: resolveCourseImageUrl(course.thumbnailUrl),
     shortDescription: course.shortDescription,
     price: course.price,
     fakePrice: course.fakePrice,

@@ -77,7 +77,7 @@ export function CatalogCourseCard({ course, className }: Props) {
         className="absolute inset-0 z-30 cursor-pointer rounded-3xl bg-transparent focus:outline-none"
       />
 
-      <div className="relative block aspect-[16/10] overflow-hidden">
+      <div className="relative block aspect-[16/9] overflow-hidden">
         <Image
           src={course.thumbnailUrl}
           alt={course.title}

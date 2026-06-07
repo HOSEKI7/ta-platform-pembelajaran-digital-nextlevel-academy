@@ -1,5 +1,6 @@
 import "server-only";
 
+import { resolveCourseImageUrl } from "@/lib/bunny-storage";
 import { prisma } from "@/lib/prisma";
 import type { VoucherDiscountType } from "@/generated/prisma";
 import { computeVoucherDiscount } from "@/lib/voucher-discount";
@@ -65,7 +66,7 @@ function toCheckoutCourse(course: {
     id: course.id,
     title: course.title,
     slug: course.slug,
-    thumbnailUrl: course.thumbnailUrl,
+    thumbnailUrl: resolveCourseImageUrl(course.thumbnailUrl),
     shortDescription: course.shortDescription,
     price: course.price,
     fakePrice: course.fakePrice,

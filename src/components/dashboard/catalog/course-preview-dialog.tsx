@@ -72,7 +72,7 @@ export function CoursePreviewDialog({ course, open, onOpenChange }: Props) {
         )}
       >
         {/* Hero thumbnail */}
-        <div className="relative block aspect-[16/10] w-full overflow-hidden">
+        <div className="relative block aspect-[16/9] w-full overflow-hidden">
           <Image
             src={course.thumbnailUrl}
             alt={course.title}
