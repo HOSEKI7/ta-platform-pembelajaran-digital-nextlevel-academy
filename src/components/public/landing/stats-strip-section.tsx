@@ -5,14 +5,14 @@ import { publicApi } from "@/lib/server-fetch";
 import { SiteContainer } from "../site-container";
 import { CountUp } from "./count-up";
 import { StatsStripSkeleton } from "./landing-skeletons";
+import { Reveal } from "./reveal";
 
 export function StatsStripSection() {
   return (
     <section className="relative py-12">
       <SiteContainer>
-        <div
-          data-reveal
-          data-from="scale"
+        <Reveal
+          from="scale"
           className="relative isolate overflow-hidden rounded-3xl px-8 py-10 text-white sm:px-12"
           style={{
             background:
@@ -37,7 +37,7 @@ export function StatsStripSection() {
           <Suspense fallback={<StatsStripSkeleton />}>
             <StatsStripData />
           </Suspense>
-        </div>
+        </Reveal>
       </SiteContainer>
     </section>
   );

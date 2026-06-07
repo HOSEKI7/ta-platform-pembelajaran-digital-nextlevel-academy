@@ -3,14 +3,14 @@ import { ArrowRight, Sparkles } from "lucide-react";
 
 import { SiteContainer } from "../site-container";
 import { CountUp } from "./count-up";
+import { Reveal } from "./reveal";
 
 export function FinalCtaSection() {
   return (
     <section className="relative py-20 sm:py-24">
       <SiteContainer>
-        <div
-          data-reveal
-          data-from="scale"
+        <Reveal
+          from="scale"
           className="relative isolate overflow-hidden rounded-[36px] px-8 py-16 text-white sm:px-14 sm:py-20"
           style={{
             background:
@@ -108,7 +108,7 @@ export function FinalCtaSection() {
               </div>
             </div>
           </div>
-        </div>
+        </Reveal>
       </SiteContainer>
     </section>
   );

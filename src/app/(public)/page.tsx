@@ -7,7 +7,6 @@ import { FinalCtaSection } from "@/components/public/landing/final-cta-section";
 import { HeroSection } from "@/components/public/landing/hero-section";
 import { HighlightsSection } from "@/components/public/landing/highlights-section";
 import { HowItWorksSection } from "@/components/public/landing/how-it-works-section";
-import { ScrollReveal } from "@/components/public/landing/scroll-reveal";
 import { StatsStripSection } from "@/components/public/landing/stats-strip-section";
 import { TestimonialsSection } from "@/components/public/landing/testimonials-section";
 import { LandingJsonLd } from "@/components/public/landing/landing-jsonld";
@@ -72,7 +71,6 @@ export default function HomePage() {
   return (
     <>
       <LandingJsonLd siteUrl={siteUrl} />
-      <ScrollReveal />
       <HeroSection />
       <HighlightsSection />
       <HowItWorksSection />

@@ -7,15 +7,13 @@ import { publicApi } from "@/lib/server-fetch";
 import { SiteContainer } from "../site-container";
 import { CourseCard, type CourseCardData } from "./course-card";
 import { FeaturedCoursesSkeleton } from "./landing-skeletons";
+import { Reveal } from "./reveal";
 
 export function FeaturedCoursesSection() {
   return (
     <section id="courses" className="relative py-20 sm:py-24">
       <SiteContainer>
-        <div
-          data-reveal
-          className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-end"
-        >
+        <Reveal className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-end">
           <div>
             <span className="inline-flex items-center gap-2 rounded-full bg-[color:var(--color-brand-50)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-brand-700)] ring-1 ring-[color:var(--color-brand-100)]">
               <span className="size-1 rounded-full bg-[color:var(--color-brand-accent)]" />
@@ -37,7 +35,7 @@ export function FeaturedCoursesSection() {
             Lihat semua kursus
             <ArrowRight className="size-4 transition group-hover:translate-x-0.5" />
           </Link>
-        </div>
+        </Reveal>
 
         <Suspense fallback={<FeaturedCoursesSkeleton />}>
           <FeaturedCoursesData />
@@ -62,14 +60,9 @@ async function FeaturedCoursesData() {
       className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
     >
       {courses.map((course, i) => (
-        <div
-          key={course.id}
-          data-reveal
-          style={{ "--reveal-delay": `${(i % 3) * 90}ms` } as React.CSSProperties}
-          className="flex"
-        >
+        <Reveal key={course.id} delay={(i % 3) * 90} className="flex">
           <CourseCard course={course} className="w-full" />
-        </div>
+        </Reveal>
       ))}
     </div>
   );

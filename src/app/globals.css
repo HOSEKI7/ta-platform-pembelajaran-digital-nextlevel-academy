@@ -429,8 +429,9 @@
 
 /* ---------------------------------------------------------------------------
    Landing — scroll reveal, marquee & ambient motion
-   GPU-only (transform + opacity). Driven by `scroll-reveal.tsx` which adds
-   `reveal-ready` to <html> and flips [data-reveal] → [data-reveal="in"].
+   GPU-only (transform + opacity). Driven by the `<Reveal>` component
+   (`reveal.tsx` + `useScrollReveal` hook) which adds `reveal-ready` to <html>
+   and flips [data-reveal] → [data-reveal="in"].
    --------------------------------------------------------------------------- */
 
 /* Hidden base state applies ONLY after JS is alive (anti-FOUC: no-JS users see
