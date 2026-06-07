@@ -138,7 +138,7 @@ export function BadgeFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-xl overflow-y-auto">
+      <DialogContent className="max-h-[90vh] w-full max-w-xl overflow-x-hidden overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {mode === "create" ? "Tambah Badge" : "Edit Badge"}
@@ -150,7 +150,7 @@ export function BadgeFormDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onValid)} className="flex flex-col gap-5">
+        <form onSubmit={handleSubmit(onValid)} className="flex min-w-0 flex-col gap-5">
           {/* Trigger */}
           <Field label="Trigger" error={errors.trigger?.message}>
             <Controller

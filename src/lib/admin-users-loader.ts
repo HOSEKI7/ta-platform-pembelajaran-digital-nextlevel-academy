@@ -26,7 +26,9 @@ export async function loadAdminUsersPage(
 
   const where: Prisma.UserWhereInput = {
     deletedAt: null,
-    ...(role !== "all" ? { role } : {}),
+    // Administrator accounts are managed on `/admin/admins`, never listed here.
+    // A specific non-admin role filter narrows further; "all" still hides admins.
+    role: role !== "all" ? role : { not: "ADMINISTRATOR" },
     ...(status === "active"
       ? { isActive: true }
       : status === "inactive"

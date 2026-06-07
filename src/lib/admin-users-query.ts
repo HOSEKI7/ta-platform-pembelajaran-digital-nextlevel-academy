@@ -12,13 +12,16 @@ import type { Role } from "@/generated/prisma";
 
 export const PAGE_SIZE = 10;
 
-/** Role dropdown values — "all" is the unfiltered default. */
+/**
+ * Role dropdown values — "all" is the unfiltered default. Administrator accounts
+ * are managed on the dedicated `/admin/admins` page (PRD §6.11.12) and are never
+ * listed here, so `ADMINISTRATOR` is intentionally excluded from this filter.
+ */
 export const ROLE_FILTERS = [
   "all",
   "PESERTA_DIDIK",
   "PESERTA_MAGANG",
   "MENTOR",
-  "ADMINISTRATOR",
 ] as const;
 export type RoleFilter = (typeof ROLE_FILTERS)[number];
 

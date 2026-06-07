@@ -42,7 +42,9 @@ import { ToggleStatusDialog } from "./toggle-status-dialog";
 
 const ROLE_FILTER_LABELS: Record<RoleFilter, string> = {
   all: "Semua Role",
-  ...ROLE_LABELS,
+  PESERTA_DIDIK: ROLE_LABELS.PESERTA_DIDIK,
+  PESERTA_MAGANG: ROLE_LABELS.PESERTA_MAGANG,
+  MENTOR: ROLE_LABELS.MENTOR,
 };
 
 const STATUS_FILTER_LABELS: Record<StatusFilter, string> = {
