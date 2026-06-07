@@ -220,7 +220,7 @@ export const loadPublicCertificate = cache(async function loadPublicCertificate(
       slug: cert.course.slug,
       thumbnailUrl: resolveCourseImageUrl(cert.course.thumbnailUrl),
       instructor: cert.course.instructor,
-      instructorImg: cert.course.instructorImg,
+      instructorImg: resolveCourseImageUrl(cert.course.instructorImg),
       estimatedDuration: cert.course.estimatedDuration,
       categoryName: cert.course.category.name,
     },
