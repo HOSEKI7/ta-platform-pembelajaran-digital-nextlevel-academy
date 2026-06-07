@@ -102,14 +102,17 @@ export async function awardExp(
 ): Promise<AwardExpResult> {
   const { userId, amount, source, refId } = args;
 
-  try {
-    await db.expLog.create({ data: { userId, amount, source, refId } });
-  } catch (err) {
-    if (isUniqueConstraintError(err)) {
-      // Already awarded for this (user, source, refId) — no double grant.
-      return { awarded: 0, leveledUp: false, newLevel: null };
-    }
-    throw err;
+  // `createMany({ skipDuplicates })` → Postgres `ON CONFLICT DO NOTHING`: atomic
+  // idempotency that NEVER raises. A plain `create` + catch-P2002 would abort the
+  // surrounding `$transaction` (Postgres 25P02) on the duplicate, poisoning every
+  // later statement. `count === 0` means this (user, source, refId) was already
+  // awarded → skip the profile increment.
+  const res = await db.expLog.createMany({
+    data: [{ userId, amount, source, refId }],
+    skipDuplicates: true,
+  });
+  if (res.count === 0) {
+    return { awarded: 0, leveledUp: false, newLevel: null };
   }
 
   const { leveledUp, newLevel } = await applyExpGain(db, userId, amount);
@@ -151,25 +154,28 @@ async function applyExpGain(
 // Badges
 // -----------------------------------------------------------------------------
 
-/** Creates a UserBadge per badge, idempotent via unique([userId, badgeId]). */
+/**
+ * Creates a UserBadge per badge, idempotent via unique([userId, badgeId]).
+ *
+ * Uses `createMany({ skipDuplicates })` (Postgres `ON CONFLICT DO NOTHING`) — a
+ * per-row `create` + catch-P2002 would abort the surrounding `$transaction`
+ * (Postgres 25P02) the moment the student already holds one of these badges,
+ * which then 500s the whole request. `createMany` never raises on conflicts.
+ */
 async function awardBadges(
   db: Db,
   userId: string,
   badges: { id: string; name: string }[],
 ): Promise<void> {
-  for (const badge of badges) {
-    try {
-      await db.userBadge.create({
-        data: { userId, badgeId: badge.id, badgeSnapshot: badge.name },
-      });
-    } catch (err) {
-      if (isUniqueConstraintError(err)) {
-        // Already earned — fine.
-        continue;
-      }
-      throw err;
-    }
-  }
+  if (badges.length === 0) return;
+  await db.userBadge.createMany({
+    data: badges.map((badge) => ({
+      userId,
+      badgeId: badge.id,
+      badgeSnapshot: badge.name,
+    })),
+    skipDuplicates: true,
+  });
 }
 
 /** Awards every LEVEL_REACHED badge with `threshold <= level`. */

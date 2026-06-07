@@ -1,12 +1,22 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Loader2, Send } from "lucide-react";
 import { toast } from "sonner";
 
 import type { PlayerStep, QuizStepState } from "@/lib/course-player/types";
 import { useQuiz } from "@/lib/course-player/use-quiz";
 import { studentKeys } from "@/lib/student-query-keys";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 import { QuizIntro } from "./quiz-intro";
 import { QuizQuestionSlide } from "./quiz-question-slide";
@@ -43,6 +53,9 @@ type Props = {
 export function QuizRunner({ step, quizState, isLast, onSubmitted, onNext }: Props) {
   const queryClient = useQueryClient();
   const quiz = step.quiz!; // VideoStage guarantees this before mounting.
+
+  // Confirmation gate before a (attempt-consuming) submission.
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const {
     phase,
@@ -184,7 +197,10 @@ export function QuizRunner({ step, quizState, isLast, onSubmitted, onNext }: Pro
   // disables interactions + shows the spinner on the submit button).
   const submitting = phase.kind === "submitting";
   const answers = phase.answers;
-  const index = phase.kind === "active" ? phase.index : 0;
+  // Keep the active slide index while submitting so the submit slide stays put
+  // (with its spinner) instead of flickering back to question 1.
+  const index =
+    phase.kind === "active" || phase.kind === "submitting" ? phase.index : 0;
   const question = quiz.questions[index]!;
   const total = quiz.questions.length;
   const isFirst = index === 0;
@@ -192,26 +208,74 @@ export function QuizRunner({ step, quizState, isLast, onSubmitted, onNext }: Pro
   const allAnswered = quiz.questions.every((q) => answers.has(q.id));
   const answeredByIndex = quiz.questions.map((q) => answers.has(q.id));
 
+  // Submit opens a confirmation; confirming fires the mutation. On success the
+  // reducer flips to the "result" phase (handled above), so the result screen
+  // shows immediately — no extra navigation needed.
   const handleSubmit = () => {
     if (!allAnswered || submitting) return;
+    setConfirmOpen(true);
+  };
+  const handleConfirmSubmit = () => {
+    setConfirmOpen(false);
     mutation.mutate(answers);
   };
 
   return (
-    <QuizQuestionSlide
-      question={question}
-      index={index}
-      total={total}
-      selectedIndex={answers.get(question.id)}
-      allAnswered={allAnswered}
-      answeredByIndex={answeredByIndex}
-      isFirst={isFirst}
-      isLast={isLastSlide}
-      submitting={submitting}
-      onSelect={select}
-      onPrev={prevSlide}
-      onNext={nextSlide}
-      onSubmit={handleSubmit}
-    />
+    <>
+      <QuizQuestionSlide
+        question={question}
+        index={index}
+        total={total}
+        selectedIndex={answers.get(question.id)}
+        allAnswered={allAnswered}
+        answeredByIndex={answeredByIndex}
+        isFirst={isFirst}
+        isLast={isLastSlide}
+        submitting={submitting}
+        onSelect={select}
+        onPrev={prevSlide}
+        onNext={nextSlide}
+        onSubmit={handleSubmit}
+      />
+
+      <Dialog
+        open={confirmOpen}
+        onOpenChange={(open) => {
+          if (!submitting) setConfirmOpen(open);
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Kirim jawaban kuis?</DialogTitle>
+            <DialogDescription>
+              Pastikan semua jawaban sudah benar. Setelah dikirim, jawaban tidak
+              dapat diubah lagi dan percobaan ini akan dihitung.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setConfirmOpen(false)}
+              disabled={submitting}
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              onClick={handleConfirmSubmit}
+              disabled={submitting}
+            >
+              {submitting ? (
+                <Loader2 className="size-4 animate-spin" strokeWidth={2.6} />
+              ) : (
+                <Send className="size-4" strokeWidth={2.4} />
+              )}
+              {submitting ? "Mengirim…" : "Kirim Jawaban"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

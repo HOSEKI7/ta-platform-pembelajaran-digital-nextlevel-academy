@@ -10,7 +10,7 @@ import { useCallback, useReducer } from "react";
 export type QuizPhase =
   | { kind: "intro" }
   | { kind: "active"; index: number; answers: Map<string, number> }
-  | { kind: "submitting"; answers: Map<string, number> }
+  | { kind: "submitting"; index: number; answers: Map<string, number> }
   | {
       kind: "result";
       score: number;
@@ -61,7 +61,9 @@ function reducer(state: QuizPhase, action: QuizAction): QuizPhase {
 
     case "submitStart":
       if (state.kind !== "active") return state;
-      return { kind: "submitting", answers: state.answers };
+      // Keep the current slide index so the submit slide stays put (spinner)
+      // instead of flickering back to question 1 during the request.
+      return { kind: "submitting", index: state.index, answers: state.answers };
 
     case "submitSuccess":
       return {
@@ -76,9 +78,10 @@ function reducer(state: QuizPhase, action: QuizAction): QuizPhase {
 
     case "submitError":
       if (state.kind !== "submitting") return state;
-      // Drop back to the active phase, preserving entered answers so the
-      // student doesn't have to re-pick everything after a network blip.
-      return { kind: "active", index: 0, answers: state.answers };
+      // Drop back to the active phase on the SAME slide, preserving entered
+      // answers so the student can just retry the submit after a network blip
+      // (no bounce back to question 1).
+      return { kind: "active", index: state.index, answers: state.answers };
 
     case "retry":
       return { kind: "intro" };
