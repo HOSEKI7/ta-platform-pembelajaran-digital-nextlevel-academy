@@ -1,13 +1,9 @@
+import { RichTextContent } from "@/components/internship/tasks/rich-text-content";
 import { SiteContainer } from "@/components/public/site-container";
 
 type Props = { description: string };
 
 export function CourseAbout({ description }: Props) {
-  const paragraphs = description
-    .split(/\n+/)
-    .map((p) => p.trim())
-    .filter(Boolean);
-
   return (
     <section id="tentang" className="relative py-16 sm:py-20 scroll-mt-24">
       <SiteContainer>
@@ -22,20 +18,13 @@ export function CourseAbout({ description }: Props) {
             </h2>
           </div>
 
-          <div className="space-y-5 text-[15px] leading-[1.85] text-zinc-700">
-            {paragraphs.map((p, idx) => (
-              <p
-                key={idx}
-                className={
-                  idx === 0
-                    ? "first-letter:float-left first-letter:mr-3 first-letter:font-heading first-letter:text-6xl first-letter:font-extrabold first-letter:leading-[0.85] first-letter:text-[color:var(--color-brand-700)]"
-                    : undefined
-                }
-              >
-                {p}
-              </p>
-            ))}
-          </div>
+          {/* Description is rich-text HTML from the admin editor; render it through
+              the shared `.task-prose` renderer so formatting (headings, lists,
+              bold, quotes) shows correctly instead of leaking raw tags. */}
+          <RichTextContent
+            html={description}
+            className="text-zinc-700 [&_h2]:text-zinc-900 [&_h3]:text-zinc-900"
+          />
         </div>
       </SiteContainer>
     </section>

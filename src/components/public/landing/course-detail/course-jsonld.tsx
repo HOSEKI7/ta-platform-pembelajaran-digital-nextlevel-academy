@@ -5,6 +5,8 @@
  * surface the course in education-related rich results.
  */
 
+import { htmlToPlainText } from "@/lib/html-text";
+
 type Props = {
   siteUrl: string;
   course: {
@@ -24,7 +26,9 @@ type Props = {
 
 export function CourseJsonLd({ siteUrl, course }: Props) {
   const url = `${siteUrl}/courses/${course.slug}`;
-  const description = course.shortDescription ?? course.description.slice(0, 240);
+  // Description is rich-text HTML; strip tags so structured data stays clean.
+  const description =
+    course.shortDescription ?? htmlToPlainText(course.description).slice(0, 240);
 
   const json = {
     "@context": "https://schema.org",

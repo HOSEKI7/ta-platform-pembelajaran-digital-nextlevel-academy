@@ -28,6 +28,7 @@ type PasswordRule = {
   test: (v: string) => boolean;
 };
 
+/** Mandatory rules (PRD §6.1.1) — these gate submission. */
 const RULES: PasswordRule[] = [
   { label: "Minimal 8 karakter", test: (v) => v.length >= 8 },
   { label: "Mengandung huruf besar (A–Z)", test: (v) => /[A-Z]/.test(v) },
@@ -35,10 +36,13 @@ const RULES: PasswordRule[] = [
   { label: "Mengandung angka (0–9)", test: (v) => /\d/.test(v) },
 ];
 
+/** Optional bonus — not required, but lights up the 5th strength bar. */
+const SPECIAL_CHAR_RE = /[^A-Za-z0-9]/;
+
 function strengthOf(value: string) {
   const passed = RULES.filter((r) => r.test(value)).length;
-  // Add bonus tick when value is long + has a symbol.
-  const bonus = value.length >= 12 && /[^A-Za-z0-9]/.test(value) ? 1 : 0;
+  // 5th bar is a bonus for adding a special character.
+  const bonus = SPECIAL_CHAR_RE.test(value) ? 1 : 0;
   return Math.min(passed + bonus, 5);
 }
 
@@ -63,6 +67,18 @@ export function SecurityForm() {
   const ruleStatus = useMemo(
     () => RULES.map((r) => ({ ...r, ok: r.test(next) })),
     [next],
+  );
+  // Mandatory rules + the optional special-character bonus (does not gate submit).
+  const checklistItems = useMemo(
+    () => [
+      ...ruleStatus.map((r) => ({ label: r.label, ok: r.ok, optional: false })),
+      {
+        label: "Karakter spesial (mis. ! @ # $)",
+        ok: SPECIAL_CHAR_RE.test(next),
+        optional: true,
+      },
+    ],
+    [ruleStatus, next],
   );
   const score = strengthOf(next);
   const meter = STRENGTH_LABELS[score];
@@ -145,7 +161,7 @@ export function SecurityForm() {
               <StrengthMeter score={score} label={meter.label} tone={meter.tone} />
             </div>
 
-            <ChecklistCard rules={ruleStatus} />
+            <ChecklistCard items={checklistItems} />
           </div>
 
           <PasswordField
@@ -366,9 +382,9 @@ function StrengthMeter({
 }
 
 function ChecklistCard({
-  rules,
+  items,
 }: {
-  rules: { label: string; ok: boolean }[];
+  items: { label: string; ok: boolean; optional: boolean }[];
 }) {
   return (
     <div className="rounded-2xl bg-zinc-50/80 p-3 ring-1 ring-zinc-200 dark:bg-white/[0.025] dark:ring-[color:var(--color-surface-border)]">
@@ -376,7 +392,7 @@ function ChecklistCard({
         Syarat password
       </p>
       <ul className="flex flex-col gap-1.5">
-        {rules.map((r) => (
+        {items.map((r) => (
           <li
             key={r.label}
             className={cn(
@@ -396,7 +412,14 @@ function ChecklistCard({
             >
               {r.ok ? <Check className="size-2.5" strokeWidth={3} /> : null}
             </span>
-            {r.label}
+            <span>
+              {r.label}
+              {r.optional ? (
+                <span className="ml-1 font-medium text-zinc-400 dark:text-zinc-500">
+                  · opsional
+                </span>
+              ) : null}
+            </span>
           </li>
         ))}
       </ul>

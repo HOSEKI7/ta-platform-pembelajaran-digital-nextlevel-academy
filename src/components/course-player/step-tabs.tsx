@@ -35,7 +35,7 @@ export function StepTabs({ step, course, noteContent, onNoteSaved }: Props) {
       <Tabs value={value} onValueChange={(v) => setValue(v as TabValue)}>
         <TabsList
           variant="line"
-          className="mb-5 h-auto w-full justify-start overflow-x-auto rounded-none border-b border-[color:var(--player-hairline)] pb-2"
+          className="mb-5 h-auto w-full flex-wrap justify-start rounded-none border-b border-[color:var(--player-hairline)] pb-2.5"
         >
           <TabTrigger value="deskripsi" icon={BookOpen} label="Deskripsi" />
           <TabTrigger value="catatan" icon={PenLine} label="Catatan" />

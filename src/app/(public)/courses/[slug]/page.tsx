@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Role } from "@/generated/prisma";
 import { getSession } from "@/lib/auth-server";
 import { resolveCourseImageUrl } from "@/lib/bunny-storage";
+import { htmlToPlainText } from "@/lib/html-text";
 import { prisma } from "@/lib/prisma";
 import { dashboardHrefFor } from "@/components/public/public-nav-config";
 
@@ -48,7 +49,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const description =
     course.shortDescription?.trim() ||
-    course.description.slice(0, 200).replace(/\s+\S*$/, "") + "…";
+    htmlToPlainText(course.description).slice(0, 200).replace(/\s+\S*$/, "") + "…";
 
   const canonical = `/courses/${course.slug}`;
   const ogImage = resolveCourseImageUrl(course.thumbnailUrl);

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ChevronRight, Clock } from "lucide-react";
 
 import { SiteContainer } from "@/components/public/site-container";
+import { htmlToPlainText } from "@/lib/html-text";
 
 import { EnrollButton } from "./enroll-button";
 
@@ -28,10 +29,14 @@ const idr = new Intl.NumberFormat("id-ID", {
 
 function summary(short: string | null, long: string): string {
   if (short && short.trim().length > 0) return short;
-  // Fallback: first ~180 chars of long description, cut at sentence boundary.
-  const truncated = long.slice(0, 200);
+  // Fallback: first ~180 chars of the long description as plain text (it is
+  // rich-text HTML), cut at a sentence boundary so no tags leak into the hero.
+  const plain = htmlToPlainText(long);
+  const truncated = plain.slice(0, 200);
   const lastDot = truncated.lastIndexOf(". ");
-  return lastDot > 60 ? truncated.slice(0, lastDot + 1) : truncated + (long.length > 200 ? "…" : "");
+  return lastDot > 60
+    ? truncated.slice(0, lastDot + 1)
+    : truncated + (plain.length > 200 ? "…" : "");
 }
 
 function durationText(min: number | null): string {
