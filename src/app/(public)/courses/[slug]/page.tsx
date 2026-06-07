@@ -151,7 +151,6 @@ export default async function CourseDetailPage({ params }: Props) {
           steps: s.steps.map((step) => ({
             id: step.id,
             title: step.title,
-            description: step.description,
             type: step.type,
             order: step.order,
           })),

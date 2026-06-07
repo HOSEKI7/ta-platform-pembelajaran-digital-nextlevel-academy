@@ -11,7 +11,6 @@ import { SiteContainer } from "@/components/public/site-container";
 type Step = {
   id: string;
   title: string;
-  description: string;
   type: "VIDEO" | "QUIZ";
   order: number;
 };
@@ -81,7 +80,7 @@ export function CourseCurriculum({ sprints }: Props) {
                     return (
                       <li
                         key={step.id}
-                        className="flex gap-4 rounded-xl bg-zinc-50/60 p-4 ring-1 ring-zinc-100"
+                        className="flex items-center gap-4 rounded-xl bg-zinc-50/60 p-4 ring-1 ring-zinc-100"
                       >
                         <div className="flex shrink-0 flex-col items-center gap-2">
                           <span className="font-mono text-[11px] font-bold text-[color:var(--color-brand-700)]">
@@ -112,9 +111,6 @@ export function CourseCurriculum({ sprints }: Props) {
                               {step.type === "VIDEO" ? "Video" : "Kuis"}
                             </span>
                           </div>
-                          <p className="mt-1.5 text-sm leading-relaxed text-zinc-600">
-                            {step.description}
-                          </p>
                         </div>
                       </li>
                     );
