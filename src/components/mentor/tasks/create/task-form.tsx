@@ -33,6 +33,8 @@ export type TaskFormSubmit = {
   values: CreateTaskInput;
   file: File | null;
   attachmentAction: AttachmentAction;
+  /** Newly attached description image (uploaded server-side on save). */
+  descriptionImage: File | null;
 };
 
 type Props = {
@@ -46,8 +48,6 @@ type Props = {
   initial?: TaskFormInitial;
   onSubmit: (payload: TaskFormSubmit) => void;
   onCancel: () => void;
-  /** Inline-image upload endpoint forwarded to the editor (default: mentor). */
-  imageUploadUrl?: string;
 };
 
 function splitDeadline(wib: string): { date: string; time: string } {
@@ -74,12 +74,12 @@ export function TaskForm({
   initial,
   onSubmit,
   onCancel,
-  imageUploadUrl,
 }: Props) {
   const initialDeadline = splitDeadline(initial?.deadlineWib ?? "");
   const hasExisting = Boolean(initial?.attachment);
 
   const [file, setFile] = useState<File | null>(null);
+  const [descriptionImage, setDescriptionImage] = useState<File | null>(null);
   const [dateISO, setDateISO] = useState(initialDeadline.date);
   const [time, setTime] = useState(initialDeadline.time);
   const [attachmentAction, setAttachmentAction] =
@@ -112,7 +112,7 @@ export function TaskForm({
   const submit = handleSubmit((values) => {
     let action = attachmentAction;
     if (action === "replace" && !file) action = "keep";
-    onSubmit({ values, file, attachmentAction: action });
+    onSubmit({ values, file, attachmentAction: action, descriptionImage });
   });
 
   return (
@@ -137,7 +137,7 @@ export function TaskForm({
         <TaskDescriptionEditor
           initialHTML={initial?.description}
           disabled={submitting}
-          imageUploadUrl={imageUploadUrl}
+          onPendingImageChange={setDescriptionImage}
           onChange={(html) => setValue("description", html, { shouldValidate: true })}
         />
       </Field>

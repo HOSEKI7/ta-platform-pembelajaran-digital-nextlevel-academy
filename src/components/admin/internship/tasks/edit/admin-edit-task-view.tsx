@@ -48,7 +48,6 @@ export function AdminEditTaskView({ data, minISO, maxISO }: Props) {
         submitting={mutation.isPending}
         submitLabel="Simpan Perubahan"
         submittingLabel="Menyimpan…"
-        imageUploadUrl="/api/admin/internship/tasks/images"
         initial={{
           title: task.title,
           description: task.descriptionHtml,
@@ -56,9 +55,9 @@ export function AdminEditTaskView({ data, minISO, maxISO }: Props) {
           attachment: task.attachment,
         }}
         onCancel={() => router.push(detailHref)}
-        onSubmit={({ values, file, attachmentAction }) =>
+        onSubmit={({ values, file, attachmentAction, descriptionImage }) =>
           mutation.mutate(
-            { ...values, file, attachmentAction },
+            { ...values, file, attachmentAction, descriptionImage },
             {
               onSuccess: () => {
                 toast.success("Perubahan tersimpan.");

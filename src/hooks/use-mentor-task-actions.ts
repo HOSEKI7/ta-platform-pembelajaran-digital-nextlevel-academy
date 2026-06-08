@@ -26,6 +26,7 @@ async function putTask(
   fd.append("deadline", payload.deadline);
   fd.append("attachmentAction", payload.attachmentAction);
   if (payload.file) fd.append("file", payload.file);
+  if (payload.descriptionImage) fd.append("descriptionImage", payload.descriptionImage);
 
   const res = await fetch(`/api/mentor/tasks/${taskId}`, {
     method: "PUT",

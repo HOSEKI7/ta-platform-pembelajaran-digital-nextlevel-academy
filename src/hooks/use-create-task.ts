@@ -12,6 +12,8 @@ export type CreateTaskPayload = {
   deadline: string;
   /** Optional supporting attachment (PDF/DOCX/ZIP). */
   file: File | null;
+  /** Newly attached description image — uploaded server-side on save. */
+  descriptionImage?: File | null;
 };
 
 async function postTask(payload: CreateTaskPayload): Promise<{ id: string }> {
@@ -20,6 +22,7 @@ async function postTask(payload: CreateTaskPayload): Promise<{ id: string }> {
   fd.append("description", payload.description);
   fd.append("deadline", payload.deadline);
   if (payload.file) fd.append("file", payload.file);
+  if (payload.descriptionImage) fd.append("descriptionImage", payload.descriptionImage);
 
   const res = await fetch("/api/mentor/tasks", { method: "POST", body: fd });
   const body = (await res.json().catch(() => null)) as

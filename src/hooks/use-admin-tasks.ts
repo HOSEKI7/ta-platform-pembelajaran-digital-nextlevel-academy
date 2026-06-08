@@ -75,6 +75,8 @@ type UpdateTaskVars = {
   deadline: string;
   file: File | null;
   attachmentAction: AttachmentAction;
+  /** Newly attached description image — uploaded server-side on save. */
+  descriptionImage: File | null;
 };
 
 /** Edit an existing task (multipart; mirrors the mentor edit). */
@@ -88,6 +90,7 @@ export function useAdminUpdateTaskMutation(taskId: string) {
       fd.append("deadline", vars.deadline);
       fd.append("attachmentAction", vars.attachmentAction);
       if (vars.file) fd.append("file", vars.file);
+      if (vars.descriptionImage) fd.append("descriptionImage", vars.descriptionImage);
 
       const res = await fetch(`/api/admin/internship/tasks/${taskId}`, {
         method: "PUT",

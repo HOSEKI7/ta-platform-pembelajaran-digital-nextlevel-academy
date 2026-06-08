@@ -5,7 +5,7 @@ import { NotificationType, Role } from "@/generated/prisma";
 import { requireRoleInRoute } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
 import { removeBunnyFile, uploadTaskAttachment } from "@/lib/bunny-storage";
-import { normalizeTaskDescriptionImages } from "@/lib/task-description";
+import { prepareTaskDescription } from "@/lib/task-description";
 import { createTaskSchema } from "@/lib/validators/mentor-tasks";
 import {
   SUBMISSION_ALLOWED_EXTS,
@@ -83,15 +83,17 @@ export async function POST(req: Request) {
     );
   }
 
-  // Description images → validated Bunny paths; enforce the 1-image cap.
-  const { html: normalizedDescription, imageCount } =
-    normalizeTaskDescriptionImages(description);
-  if (imageCount > 1) {
-    return NextResponse.json(
-      { error: "Maksimal 1 gambar per deskripsi." },
-      { status: 400 },
-    );
+  // Description image (deferred upload): validate the 1-image cap and, if a
+  // pending image was attached, upload it now (rolled back on DB failure).
+  const prepared = await prepareTaskDescription({
+    html: description,
+    pendingImage: form.get("descriptionImage"),
+    uploaderId: auth.user.id,
+  });
+  if (!prepared.ok) {
+    return NextResponse.json({ error: prepared.error }, { status: prepared.status });
   }
+  const normalizedDescription = prepared.html;
 
   // Optional supporting attachment (PDF/DOCX/ZIP ≤ 5 MB).
   const rawFile = form.get("file");
@@ -164,6 +166,7 @@ export async function POST(req: Request) {
   } catch (err) {
     console.error("[mentor/tasks] db write failed", err);
     if (attachment) await removeBunnyFile(attachment.objectPath);
+    if (prepared.uploadedPath) await removeBunnyFile(prepared.uploadedPath);
     return NextResponse.json(
       { error: "Gagal menyimpan tugas. Coba lagi." },
       { status: 500 },

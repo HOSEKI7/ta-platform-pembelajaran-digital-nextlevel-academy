@@ -48,9 +48,9 @@ export function CreateTaskView({ classFullName, minISO, maxISO }: Props) {
         submitLabel="Buat Tugas"
         submittingLabel="Menyimpan…"
         onCancel={() => router.push("/mentor/tasks")}
-        onSubmit={({ values, file }) =>
+        onSubmit={({ values, file, descriptionImage }) =>
           mutation.mutate(
-            { ...values, file },
+            { ...values, file, descriptionImage },
             {
               onSuccess: () => {
                 toast.success("Tugas berhasil dibuat.", {

@@ -58,6 +58,7 @@ auth-*.png
 /.skills/
 CLAUDE.md
 AGENTS.md
+skills-lock.json
 
 # Requirement Files
 /docs/

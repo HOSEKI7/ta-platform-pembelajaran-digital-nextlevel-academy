@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Image } from "@tiptap/extension-image";
@@ -25,7 +25,8 @@ const ACCEPT = "image/png,image/jpeg,image/webp,image/gif";
 const MAX_BYTES = 5 * 1024 * 1024;
 
 /** Image node extended with a `data-bunny-path` attribute (the stored object
- *  path), so the server can re-sign the URL on every read. */
+ *  path, for already-saved images) and a `pending` flag (a freshly attached
+ *  image whose bytes are still in the browser — uploaded only on save). */
 const BunnyImage = Image.extend({
   addAttributes() {
     return {
@@ -36,9 +37,23 @@ const BunnyImage = Image.extend({
         renderHTML: (attrs) =>
           attrs.bunnyPath ? { "data-bunny-path": attrs.bunnyPath } : {},
       },
+      pending: {
+        default: false,
+        parseHTML: (el) => el.getAttribute("data-pending-image") === "1",
+        renderHTML: (attrs) =>
+          attrs.pending ? { "data-pending-image": "1" } : {},
+      },
     };
   },
 });
+
+function hasPendingImage(editor: Editor): boolean {
+  let found = false;
+  editor.state.doc.descendants((node) => {
+    if (node.type.name === "image" && node.attrs.pending) found = true;
+  });
+  return found;
+}
 
 function countImages(editor: Editor): number {
   let n = 0;
@@ -51,71 +66,77 @@ function countImages(editor: Editor): number {
 type Props = {
   /** Emits the editor HTML on every change. */
   onChange: (html: string) => void;
+  /** Emits the freshly attached image File (uploaded by the route on save), or
+   *  null once it's removed. Existing (already-stored) images don't emit. */
+  onPendingImageChange?: (file: File | null) => void;
   /** Initial HTML content (edit mode). Images keep their `data-bunny-path`. */
   initialHTML?: string;
   disabled?: boolean;
-  /** Endpoint for inline image uploads. Admin edit points this at its own
-   *  ADMINISTRATOR-gated route; defaults to the mentor route. */
-  imageUploadUrl?: string;
 };
 
 /**
  * Word-like rich-text editor for a task description. Supports basic formatting
- * plus a single pasted/dropped/uploaded image (capped to save Bunny storage).
- * Images upload to `imageUploadUrl` (default `/api/mentor/tasks/images`); the
- * returned object path is kept on the node so it can be normalized/validated
- * server-side.
+ * plus a single pasted/dropped/attached image (capped to save Bunny storage).
+ *
+ * Deferred upload: a newly attached image is NOT sent to storage on paste. It's
+ * shown via a local `blob:` preview and marked `pending`; the actual File is
+ * surfaced through `onPendingImageChange` so the create/update route uploads it
+ * only after the task is successfully saved.
  */
 export function TaskDescriptionEditor({
   onChange,
+  onPendingImageChange,
   initialHTML,
   disabled = false,
-  imageUploadUrl = "/api/mentor/tasks/images",
 }: Props) {
   const editorRef = useRef<Editor | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
+  // Tracks the in-browser preview for the pending image so we can revoke it.
+  const pendingRef = useRef<{ file: File; url: string } | null>(null);
+  const onPendingImageChangeRef = useRef(onPendingImageChange);
+  useEffect(() => {
+    onPendingImageChangeRef.current = onPendingImageChange;
+  }, [onPendingImageChange]);
 
-  const insertImageFile = useCallback(async (file: File) => {
-    const editor = editorRef.current;
-    if (!editor) return;
+  const clearPending = useCallback(() => {
+    if (pendingRef.current) {
+      URL.revokeObjectURL(pendingRef.current.url);
+      pendingRef.current = null;
+      onPendingImageChangeRef.current?.(null);
+    }
+  }, []);
 
-    if (countImages(editor) >= 1) {
-      toast.error("Maksimal 1 gambar per deskripsi.");
-      return;
-    }
-    if (!ACCEPT.split(",").includes(file.type)) {
-      toast.error("Format gambar tidak didukung. Gunakan PNG, JPG, WEBP, atau GIF.");
-      return;
-    }
-    if (file.size > MAX_BYTES) {
-      toast.error("Ukuran gambar melebihi batas 5 MB.");
-      return;
-    }
+  const insertImageFile = useCallback(
+    (file: File) => {
+      const editor = editorRef.current;
+      if (!editor) return;
 
-    setUploading(true);
-    try {
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch(imageUploadUrl, { method: "POST", body: fd });
-      const json = (await res.json()) as { data?: { path: string; url: string }; error?: string };
-      if (!res.ok || !json.data) {
-        throw new Error(json.error ?? "Gagal mengunggah gambar.");
+      if (countImages(editor) >= 1) {
+        toast.error("Maksimal 1 gambar per deskripsi.");
+        return;
       }
+      if (!ACCEPT.split(",").includes(file.type)) {
+        toast.error("Format gambar tidak didukung. Gunakan PNG, JPG, WEBP, atau GIF.");
+        return;
+      }
+      if (file.size > MAX_BYTES) {
+        toast.error("Ukuran gambar melebihi batas 5 MB.");
+        return;
+      }
+
+      // Replace any prior pending preview, then show this one locally.
+      clearPending();
+      const url = URL.createObjectURL(file);
+      pendingRef.current = { file, url };
+      onPendingImageChangeRef.current?.(file);
       editor
         .chain()
         .focus()
-        .insertContent({
-          type: "image",
-          attrs: { src: json.data.url, bunnyPath: json.data.path },
-        })
+        .insertContent({ type: "image", attrs: { src: url, pending: true } })
         .run();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Gagal mengunggah gambar.");
-    } finally {
-      setUploading(false);
-    }
-  }, [imageUploadUrl]);
+    },
+    [clearPending],
+  );
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -137,7 +158,7 @@ export function TaskDescriptionEditor({
         );
         if (!img) return false;
         event.preventDefault();
-        void insertImageFile(img);
+        insertImageFile(img);
         return true;
       },
       handleDrop: (_view, event) => {
@@ -146,16 +167,23 @@ export function TaskDescriptionEditor({
         );
         if (!img) return false;
         event.preventDefault();
-        void insertImageFile(img);
+        insertImageFile(img);
         return true;
       },
     },
     onCreate: ({ editor }) => {
       editorRef.current = editor;
     },
-    onUpdate: ({ editor }) => onChange(editor.getHTML()),
+    onUpdate: ({ editor }) => {
+      // If the pending node was deleted, drop the tracked File + preview.
+      if (pendingRef.current && !hasPendingImage(editor)) clearPending();
+      onChange(editor.getHTML());
+    },
     editable: !disabled,
   });
+
+  // Revoke the preview URL on unmount.
+  useEffect(() => () => clearPending(), [clearPending]);
 
   if (!editor) {
     return (
@@ -206,14 +234,10 @@ export function TaskDescriptionEditor({
         <ToolbarButton
           label={atImageLimit ? "Maksimal 1 gambar" : "Sisipkan gambar"}
           active={false}
-          disabled={atImageLimit || uploading}
+          disabled={atImageLimit}
           onClick={() => fileInputRef.current?.click()}
         >
-          {uploading ? (
-            <Loader2 className="size-4 animate-spin" strokeWidth={2.4} />
-          ) : (
-            <ImageIcon className="size-4" strokeWidth={2.4} />
-          )}
+          <ImageIcon className="size-4" strokeWidth={2.4} />
         </ToolbarButton>
       </div>
 
@@ -226,7 +250,7 @@ export function TaskDescriptionEditor({
         className="hidden"
         onChange={(e) => {
           const f = e.target.files?.[0];
-          if (f) void insertImageFile(f);
+          if (f) insertImageFile(f);
           e.target.value = "";
         }}
       />

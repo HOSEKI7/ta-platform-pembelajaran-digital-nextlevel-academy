@@ -56,9 +56,9 @@ export function EditTaskView({ data, minISO, maxISO }: Props) {
           attachment: task.attachment,
         }}
         onCancel={() => router.push(detailHref)}
-        onSubmit={({ values, file, attachmentAction }) =>
+        onSubmit={({ values, file, attachmentAction, descriptionImage }) =>
           mutation.mutate(
-            { ...values, file, attachmentAction },
+            { ...values, file, attachmentAction, descriptionImage },
             {
               onSuccess: () => {
                 toast.success("Perubahan tersimpan.");

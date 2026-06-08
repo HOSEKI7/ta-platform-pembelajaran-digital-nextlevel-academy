@@ -11,7 +11,7 @@ import {
 } from "@/lib/bunny-storage";
 import {
   extractTaskImagePaths,
-  normalizeTaskDescriptionImages,
+  prepareTaskDescription,
 } from "@/lib/task-description";
 import { createTaskSchema } from "@/lib/validators/mentor-tasks";
 import {
@@ -41,7 +41,7 @@ export async function PUT(
   const { taskId } = await ctx.params;
   const task = await prisma.task.findUnique({
     where: { id: taskId },
-    select: { id: true, attachmentUrl: true },
+    select: { id: true, attachmentUrl: true, description: true },
   });
   if (!task) {
     return NextResponse.json({ error: "Tugas tidak ditemukan." }, { status: 404 });
@@ -75,14 +75,18 @@ export async function PUT(
     return NextResponse.json({ error: "Tenggat tidak valid." }, { status: 400 });
   }
 
-  const { html: normalizedDescription, imageCount } =
-    normalizeTaskDescriptionImages(description);
-  if (imageCount > 1) {
-    return NextResponse.json(
-      { error: "Maksimal 1 gambar per deskripsi." },
-      { status: 400 },
-    );
+  // Description image (deferred upload): validate the 1-image cap and upload a
+  // newly attached image now (rolled back on DB failure). `finalPath` is the
+  // image now stored; any old image that differs is cleaned up after save.
+  const prepared = await prepareTaskDescription({
+    html: description,
+    pendingImage: form.get("descriptionImage"),
+    uploaderId: auth.user.id,
+  });
+  if (!prepared.ok) {
+    return NextResponse.json({ error: prepared.error }, { status: prepared.status });
   }
+  const normalizedDescription = prepared.html;
 
   // Attachment intent. "replace" without a file degrades to "keep".
   const rawFile = form.get("file");
@@ -154,15 +158,21 @@ export async function PUT(
   } catch (err) {
     console.error("[admin/internship/tasks PUT] db update failed", err);
     if (uploadedPath) await removeBunnyFile(uploadedPath);
+    if (prepared.uploadedPath) await removeBunnyFile(prepared.uploadedPath);
     return NextResponse.json(
       { error: "Gagal menyimpan perubahan. Coba lagi." },
       { status: 500 },
     );
   }
 
-  // Best-effort cleanup of the replaced/removed file (Bunny object paths only).
+  // Best-effort cleanup of the replaced/removed attachment (Bunny paths only).
   if (oldToRemove && !isExternalUrl(oldToRemove) && oldToRemove !== uploadedPath) {
     removeBunnyFile(oldToRemove).catch(() => {});
+  }
+
+  // Best-effort cleanup of a replaced/removed description image.
+  for (const oldPath of extractTaskImagePaths(task.description)) {
+    if (oldPath !== prepared.finalPath) removeBunnyFile(oldPath).catch(() => {});
   }
 
   return NextResponse.json({ data: { id: task.id } });
