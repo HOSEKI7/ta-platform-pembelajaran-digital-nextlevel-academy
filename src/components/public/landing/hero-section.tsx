@@ -49,23 +49,24 @@ export function HeroSection() {
               Belajar dengan pace kamu · WIB
             </span>
 
-            <h1 className="mt-6 font-heading text-[44px] font-extrabold leading-[1.02] tracking-tight text-zinc-900 sm:text-6xl lg:text-[68px]">
-              <span className="block">Belajar.</span>
-              <span className="block">Naik Level.</span>
+            <h1 className="mt-6 font-heading text-[40px] font-extrabold leading-[1.04] tracking-tight text-zinc-900 sm:text-[54px] lg:text-[62px]">
+              <span className="block">Elevate Your Skills,</span>
+              <span className="block">Reach The</span>
               <span className="relative inline-block">
                 <span className="landing-gradient-pan bg-clip-text text-transparent [background-image:linear-gradient(110deg,var(--color-brand-700),var(--color-brand-500),var(--color-brand-accent),var(--color-brand-500),var(--color-brand-700))]">
-                  Bersertifikat.
+                  Next Level
                 </span>
-                {/* Yellow underline-strike SVG */}
+                {/* Yellow "level-up" underline — stroke rises toward the right
+                    to echo the gamified level-up motif. */}
                 <svg
                   aria-hidden
-                  viewBox="0 0 360 22"
+                  viewBox="0 0 320 26"
                   preserveAspectRatio="none"
-                  className="absolute -bottom-2 left-0 h-2.5 w-full text-[color:var(--color-brand-accent)]"
+                  className="absolute -bottom-2.5 left-0 h-3 w-full text-[color:var(--color-brand-accent)]"
                   fill="none"
                 >
                   <path
-                    d="M2 14 C 90 4, 200 22, 358 8"
+                    d="M3 22 C 70 18, 150 16, 210 11 S 300 4, 317 3"
                     stroke="currentColor"
                     strokeWidth="6"
                     strokeLinecap="round"

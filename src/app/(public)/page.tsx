@@ -16,7 +16,7 @@ export const revalidate = 60;
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://nextlevel.academy";
 
 export const metadata: Metadata = {
-  title: "Belajar, Naik Level, Bersertifikat",
+  title: "Elevate Your Skills, Reach The Next Level",
   description:
     "Platform e-learning Indonesia dengan gamifikasi EXP/level/voucher & sistem magang terintegrasi. Akses seumur hidup, sertifikat resmi, mulai gratis hari ini.",
   keywords: [
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     locale: "id_ID",
     url: "/",
     siteName: "NextLevel Academy",
-    title: "NextLevel Academy — Belajar, Naik Level, Bersertifikat",
+    title: "NextLevel Academy — Elevate Your Skills, Reach The Next Level",
     description:
       "Platform e-learning Indonesia dengan gamifikasi EXP/level/voucher & sistem magang terintegrasi.",
     images: [
@@ -50,7 +50,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "NextLevel Academy — Belajar, Naik Level, Bersertifikat",
+    title: "NextLevel Academy — Elevate Your Skills, Reach The Next Level",
     description:
       "Gamifikasi EXP + magang terintegrasi. Akses seumur hidup. Mulai gratis.",
     images: ["/NextLevel_3D_Logo.webp"],
