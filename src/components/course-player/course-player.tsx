@@ -61,6 +61,17 @@ export function CoursePlayer({ data }: Props) {
     return flat[flat.length - 1]?.id === state.activeStepId;
   }, [course, state.activeStepId]);
 
+  // Course is 100% complete once every step is in the completed set. Drives the
+  // final step's "✅ Klaim Sertifikat" CTA.
+  const courseCompleted = useMemo(() => {
+    const flat = flattenSteps(course);
+    return flat.length > 0 && flat.every((s) => state.completedStepIds.has(s.id));
+  }, [course, state.completedStepIds]);
+
+  const handleClaimCertificate = useCallback(() => {
+    router.push("/certificates");
+  }, [router]);
+
   const completeMutation = useMutation<CompleteResponse, Error, string>({
     mutationFn: async (stepId) => {
       const res = await fetch(`/api/learn/${stepId}/complete`, {
@@ -149,11 +160,13 @@ export function CoursePlayer({ data }: Props) {
               sprintTitle={activeStep.sprintTitle}
               isCompleted={isCompleted}
               isLast={isLastStep}
+              courseCompleted={courseCompleted}
               embedUrl={embedUrl}
               quizState={quizState}
               loading={completeMutation.isPending}
               onComplete={handleComplete}
               onNext={goNext}
+              onClaimCertificate={handleClaimCertificate}
               onQuizSubmitted={handleQuizSubmitted}
             />
             <StepTabs

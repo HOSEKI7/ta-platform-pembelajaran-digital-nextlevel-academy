@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Check, Loader2 } from "lucide-react";
+import { ArrowRight, Award, Check, Loader2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { CompletionBurst } from "./completion-burst";
@@ -9,8 +9,13 @@ import { CompletionBurst } from "./completion-burst";
 type Props = {
   isCompleted: boolean;
   isLast: boolean;
+  /** True once every step in the course is completed (progress 100%). */
+  courseCompleted: boolean;
   onComplete: () => void;
   onNext: () => void;
+  /** Invoked from the final step once the course is 100% complete — routes the
+   *  student to their certificate page to claim it. */
+  onClaimCertificate: () => void;
   /** When true, the button is locked (e.g. quiz step that isn't passable yet). */
   disabled?: boolean;
   /** Mutation-in-flight indicator — disables click + swaps icon to a spinner. */
@@ -24,15 +29,18 @@ type Props = {
  * background eases from solid brand-blue into a blue → soft yellow gradient
  * (the "Focus Theater" signature).
  *
- * When the step is the final step in the course, post-completion the button
- * reads "Kursus Selesai" and becomes non-interactive (real completion-screen
- * navigation will land with the certificate flow).
+ * When the student finishes the FINAL step AND the whole course has reached
+ * 100% completion, the button becomes the green "✅ Klaim Sertifikat" CTA that
+ * routes to the certificate page. If the final step is done but earlier steps
+ * are somehow still open, it falls back to a non-interactive "Kursus Selesai".
  */
 export function CompleteButton({
   isCompleted,
   isLast,
+  courseCompleted,
   onComplete,
   onNext,
+  onClaimCertificate,
   disabled,
   loading,
 }: Props) {
@@ -46,6 +54,11 @@ export function CompleteButton({
     if (!isCompleted) setBurstShown(false);
   }
 
+  // Final step + 100% course progress → the button claims the certificate.
+  const showClaim = isCompleted && isLast && courseCompleted;
+  // Final step completed but course not fully done (edge case) → dead-end label.
+  const isDeadEnd = isCompleted && isLast && !courseCompleted;
+
   function handleClick() {
     if (disabled || loading) return;
     if (!isCompleted) {
@@ -55,14 +68,20 @@ export function CompleteButton({
       window.setTimeout(() => setBurstShown(false), 1100);
       return;
     }
+    if (showClaim) {
+      onClaimCertificate();
+      return;
+    }
     if (!isLast) onNext();
   }
 
   const label = !isCompleted
     ? "Tandai Selesai"
-    : isLast
-      ? "Kursus Selesai"
-      : "Materi Selanjutnya";
+    : showClaim
+      ? "Klaim Sertifikat"
+      : isLast
+        ? "Kursus Selesai"
+        : "Materi Selanjutnya";
 
   return (
     <div className="relative inline-flex">
@@ -71,7 +90,7 @@ export function CompleteButton({
       <button
         type="button"
         onClick={handleClick}
-        disabled={disabled || loading || (isCompleted && isLast)}
+        disabled={disabled || loading || isDeadEnd}
         aria-label={label}
         aria-busy={loading || undefined}
         className={cn(
@@ -83,8 +102,9 @@ export function CompleteButton({
           isCompleted &&
             !isLast &&
             "bg-gradient-to-r from-[color:var(--player-accent)] via-[color:var(--player-accent)] to-[color:var(--player-accent-yellow)]/45 shadow-[0_22px_44px_-18px_rgba(71,142,244,0.75)] hover:brightness-110",
-          isCompleted &&
-            isLast &&
+          showClaim &&
+            "bg-gradient-to-r from-emerald-500 to-emerald-400 shadow-[0_18px_40px_-18px_rgba(16,185,129,0.6)] hover:brightness-110",
+          isDeadEnd &&
             "bg-gradient-to-r from-emerald-500 to-emerald-400 shadow-[0_18px_40px_-18px_rgba(16,185,129,0.6)] cursor-default",
           (disabled || loading) && "opacity-70 cursor-not-allowed",
         )}
@@ -96,6 +116,12 @@ export function CompleteButton({
         >
           {loading ? (
             <Loader2 className="size-4 animate-spin" strokeWidth={2.6} />
+          ) : showClaim ? (
+            <Award
+              className="size-4"
+              strokeWidth={2.8}
+              style={{ animation: "player-morph-in 0.4s ease both" }}
+            />
           ) : isCompleted ? (
             isLast ? (
               <Check className="size-4" strokeWidth={3} />
@@ -124,9 +150,11 @@ export function CompleteButton({
       {/* SR live-region announcement when status flips */}
       <span aria-live="polite" className="sr-only">
         {isCompleted
-          ? isLast
-            ? "Seluruh kursus ditandai selesai."
-            : "Materi ditandai selesai. Lanjut ke materi berikutnya."
+          ? showClaim
+            ? "Selamat! Kursus tuntas. Klaim sertifikatmu."
+            : isLast
+              ? "Seluruh kursus ditandai selesai."
+              : "Materi ditandai selesai. Lanjut ke materi berikutnya."
           : ""}
       </span>
     </div>

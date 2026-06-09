@@ -14,11 +14,14 @@ type Props = {
   sprintTitle: string;
   isCompleted: boolean;
   isLast: boolean;
+  /** True once every step in the course is completed (progress 100%). */
+  courseCompleted: boolean;
   embedUrl?: string;
   quizState?: QuizStepState;
   loading?: boolean;
   onComplete: () => void;
   onNext: () => void;
+  onClaimCertificate: () => void;
   onQuizSubmitted: (resp: QuizSubmitResponse) => void;
 };
 
@@ -33,11 +36,13 @@ export function VideoStage({
   sprintTitle,
   isCompleted,
   isLast,
+  courseCompleted,
   embedUrl,
   quizState,
   loading,
   onComplete,
   onNext,
+  onClaimCertificate,
   onQuizSubmitted,
 }: Props) {
   const isQuiz = step.type === "QUIZ";
@@ -130,12 +135,14 @@ export function VideoStage({
             <CompleteButton
               isCompleted={isCompleted}
               isLast={isLast}
+              courseCompleted={courseCompleted}
               loading={loading}
               // QUIZ steps that are already completed reach this branch — the
               // button just acts as the "Materi Selanjutnya" advance control.
               disabled={false}
               onComplete={onComplete}
               onNext={onNext}
+              onClaimCertificate={onClaimCertificate}
             />
           </div>
         )}
