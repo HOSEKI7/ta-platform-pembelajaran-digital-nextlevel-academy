@@ -10,6 +10,7 @@ import { toast } from "sonner";
 
 import { AuthInput, AuthPasswordInput } from "@/app/(auth)/_components/form-field";
 import { Button } from "@/components/ui/button";
+import { authErrorMessage } from "@/lib/auth-error-messages";
 import { signIn, sendVerificationEmail, getSession } from "@/lib/auth-client";
 import { dashboardPathForRole } from "@/lib/role-routes";
 import { loginSchema, type LoginInput } from "@/lib/validators/auth";
@@ -52,7 +53,7 @@ export function LoginForm() {
         );
         return;
       }
-      toast.error(error.message ?? "Email atau password salah.");
+      toast.error(authErrorMessage(error, "Email atau password salah."));
       return;
     }
 
