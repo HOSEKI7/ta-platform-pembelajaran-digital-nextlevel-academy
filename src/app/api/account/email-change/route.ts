@@ -6,6 +6,11 @@ import { Role } from "@/generated/prisma";
 import { auth } from "@/lib/auth";
 import { requireRoleInRoute } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
+import {
+  changeEmailRateLimiter,
+  consumeRateLimit,
+  tooManyRequestsResponse,
+} from "@/lib/rate-limit";
 import { changeEmailSchema } from "@/lib/validators/account";
 
 export const runtime = "nodejs";
@@ -17,6 +22,10 @@ export async function POST(req: Request) {
     Role.ADMINISTRATOR,
   ]);
   if (session instanceof Response) return session;
+
+  // Tight cap so this can't become an email-existence oracle (keyed by userId).
+  const limit = await consumeRateLimit(changeEmailRateLimiter, session.user.id);
+  if (!limit.allowed) return tooManyRequestsResponse(limit.retryAfterSec);
 
   // Admins live under /admin; everyone else uses the student settings path.
   const settingsPath =
@@ -51,9 +60,9 @@ export async function POST(req: Request) {
     );
   }
 
-  // Pre-check existence so we can return a helpful error code instead of
-  // Better Auth's opaque 200 (which exists to avoid leaking enumeration).
-  // We only short-circuit when the email is taken by ANOTHER user.
+  // Explicit existence pre-check (user decision): return a clear 409 when the
+  // target email already belongs to ANOTHER account, instead of Better Auth's
+  // opaque generic success. Emails are matched literally.
   const taken = await prisma.user.findUnique({
     where: { email: newEmail },
     select: { id: true },

@@ -7,6 +7,7 @@ import { EmailChangedEmail } from "@/emails/email-changed";
 import { PasswordChangedEmail } from "@/emails/password-changed";
 import { ResetPasswordEmail } from "@/emails/reset-password";
 import { VerifyEmail } from "@/emails/verify-email";
+import { authRateLimitStorage } from "@/lib/auth-rate-limit-storage";
 import { env } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/resend";
@@ -67,7 +68,9 @@ export const auth = betterAuth({
     // `sendChangeEmailConfirmation` (current-email approval) so Better Auth
     // falls through to its third branch and sends a verification link to the
     // *new* email via `emailVerification.sendVerificationEmail` below. The
-    // user's email is only swapped once the new address is verified.
+    // user's email is only swapped once the new address is verified. Existence
+    // of the target email is checked explicitly in the change-email route
+    // (returns 409) — see src/app/api/account/email-change/route.ts.
     changeEmail: {
       enabled: true,
     },
@@ -163,13 +166,15 @@ export const auth = betterAuth({
 
   // ---- Rate limiting (PRD §11.3) ------------------------------------------
   // The built-in limiter counts every request (not just failures), which is
-  // a stricter envelope than the PRD asks for — acceptable for v1.0 and
-  // refinable later via a custom storage hook.
+  // a stricter envelope than the PRD asks for. Backed by shared Redis via
+  // `customStorage` so the windows survive restarts/deploys (degrades to a
+  // strict in-memory net if Redis is down — never fail-open; see
+  // auth-rate-limit-storage.ts).
   rateLimit: {
     enabled: true,
     window: 60,
     max: 200, // general endpoints: 200 req/min/IP
-    storage: "memory",
+    customStorage: authRateLimitStorage,
     customRules: {
       "/sign-in/email": { window: FIFTEEN_MINUTES, max: 5 },
       "/sign-up/email": { window: ONE_HOUR, max: 10 },
@@ -188,23 +193,53 @@ export const auth = betterAuth({
   // is created / password is hashed, so we still have plaintext to validate.
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
+      // 1) Password complexity on the relevant endpoints (PRD §6.1.1).
       const passwordPaths = new Set([
         "/sign-up/email",
         "/reset-password",
         "/change-password",
       ]);
-      if (!passwordPaths.has(ctx.path)) return;
+      if (passwordPaths.has(ctx.path)) {
+        const body = ctx.body as
+          | { password?: unknown; newPassword?: unknown }
+          | undefined;
+        const candidate =
+          typeof body?.newPassword === "string"
+            ? body.newPassword
+            : typeof body?.password === "string"
+              ? body.password
+              : undefined;
+        if (typeof candidate === "string" && !PASSWORD_COMPLEXITY.test(candidate)) {
+          throw new APIError("BAD_REQUEST", {
+            message: PASSWORD_COMPLEXITY_MESSAGE,
+          });
+        }
+      }
 
-      const body = ctx.body as { password?: unknown; newPassword?: unknown } | undefined;
-      const candidate =
-        typeof body?.newPassword === "string"
-          ? body.newPassword
-          : typeof body?.password === "string"
-            ? body.password
+      // 2) Sign-up: reject a duplicate email EXPLICITLY (PRD §6.1.1). With
+      // `requireEmailVerification` + `autoSignIn: false`, Better Auth would
+      // otherwise answer a duplicate with a generic synthetic "success" — by
+      // design (user decision) we want a clear "email already registered"
+      // message on the page instead. Emails are matched literally (lowercased),
+      // so `user+tag@` and `user@` remain distinct accounts on purpose.
+      if (ctx.path === "/sign-up/email") {
+        const body = ctx.body as { email?: unknown } | undefined;
+        const email =
+          typeof body?.email === "string"
+            ? body.email.trim().toLowerCase()
             : undefined;
-      if (typeof candidate !== "string") return;
-      if (!PASSWORD_COMPLEXITY.test(candidate)) {
-        throw new APIError("BAD_REQUEST", { message: PASSWORD_COMPLEXITY_MESSAGE });
+        if (email) {
+          const existing = await prisma.user.findUnique({
+            where: { email },
+            select: { id: true },
+          });
+          if (existing) {
+            throw new APIError("UNPROCESSABLE_ENTITY", {
+              message: "Email ini sudah terdaftar. Coba masuk atau gunakan email lain.",
+              code: "USER_ALREADY_EXISTS",
+            });
+          }
+        }
       }
     }),
     // PRD §6.1.4: send a notification email after a successful password

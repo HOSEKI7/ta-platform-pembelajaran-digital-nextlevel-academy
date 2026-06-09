@@ -64,6 +64,7 @@ const globalForLimiters = globalThis as unknown as {
   voucherRateLimiter?: RateLimiterAbstract;
   adminInviteRateLimiter?: RateLimiterAbstract;
   adminInviteAcceptRateLimiter?: RateLimiterAbstract;
+  changeEmailRateLimiter?: RateLimiterAbstract;
 };
 
 /** Order creation — heaviest side effects (Midtrans Snap + Resend email + DB). */
@@ -90,6 +91,21 @@ export const adminInviteRateLimiter: RateLimiterAbstract =
   (globalForLimiters.adminInviteRateLimiter = buildLimiter({
     keyPrefix: "rl:admin-invite",
     points: 10,
+    durationSec: 60 * 60,
+  }));
+
+/**
+ * Email-change requests — tight cap (keyed by userId) so a logged-in user can't
+ * turn the change-email round-trip into an email-existence oracle or spam the
+ * confirmation flow. This route calls `auth.api.changeEmail` directly (server
+ * side), so Better Auth's own HTTP rate limiter never sees it — hence its own
+ * limiter here.
+ */
+export const changeEmailRateLimiter: RateLimiterAbstract =
+  globalForLimiters.changeEmailRateLimiter ??
+  (globalForLimiters.changeEmailRateLimiter = buildLimiter({
+    keyPrefix: "rl:change-email",
+    points: 5,
     durationSec: 60 * 60,
   }));
 

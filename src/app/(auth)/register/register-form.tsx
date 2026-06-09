@@ -46,6 +46,8 @@ export function RegisterForm() {
     });
 
     if (error) {
+      // The sign-up before-hook (auth.ts) throws USER_ALREADY_EXISTS for a
+      // duplicate email so we can show an explicit message here.
       if (error.code === "USER_ALREADY_EXISTS") {
         toast.error("Email ini sudah terdaftar. Coba masuk atau pakai email lain.");
         return;
