@@ -11,7 +11,7 @@ import { Reveal } from "./reveal";
 
 export function FeaturedCoursesSection() {
   return (
-    <section id="courses" className="relative py-20 sm:py-24">
+    <section id="courses" className="relative py-[var(--fluid-section-y)]">
       <SiteContainer>
         <Reveal className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-end">
           <div>
@@ -19,10 +19,10 @@ export function FeaturedCoursesSection() {
               <span className="size-1 rounded-full bg-[color:var(--color-brand-accent)]" />
               Kursus Pilihan
             </span>
-            <h2 className="mt-5 font-heading text-3xl font-extrabold tracking-tight text-zinc-900 sm:text-4xl">
+            <h2 className="mt-5 font-heading text-[length:var(--fluid-h2)] font-extrabold tracking-tight text-zinc-900">
               Kursus pilihan untuk kamu mulai.
             </h2>
-            <p className="mt-3 max-w-lg text-base leading-relaxed text-zinc-600">
+            <p className="mt-3 max-w-lg text-[length:var(--fluid-lead)] leading-relaxed text-zinc-600">
               Kurasi tim NextLevel: kursus paling diminati dan relevan dengan karir digital di
               Indonesia.
             </p>

@@ -32,14 +32,14 @@ const TESTIMONIALS = [
 
 export function TestimonialsSection() {
   return (
-    <section className="relative py-20 sm:py-24">
+    <section className="relative py-[var(--fluid-section-y)]">
       <SiteContainer>
         <Reveal className="mx-auto max-w-3xl text-center">
           <span className="inline-flex items-center gap-2 rounded-full bg-[color:var(--color-brand-50)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-brand-700)] ring-1 ring-[color:var(--color-brand-100)]">
             <span className="size-1 rounded-full bg-[color:var(--color-brand-accent)]" />
             Cerita pembelajar
           </span>
-          <h2 className="mt-5 font-heading text-3xl font-extrabold tracking-tight text-zinc-900 sm:text-4xl">
+          <h2 className="mt-5 font-heading text-[length:var(--fluid-h2)] font-extrabold tracking-tight text-zinc-900">
             Dari mereka yang sudah naik level.
           </h2>
         </Reveal>

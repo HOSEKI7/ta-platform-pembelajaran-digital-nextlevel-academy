@@ -70,7 +70,7 @@ export function MobileNav({ user }: Props) {
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger
         aria-label="Buka menu"
-        className="grid size-10 place-items-center rounded-full ring-1 ring-zinc-200 transition hover:ring-[color:var(--color-brand-300)] md:hidden"
+        className="grid size-10 place-items-center rounded-full ring-1 ring-zinc-200 transition hover:ring-[color:var(--color-brand-300)] lg:hidden"
       >
         <Menu className="size-5 text-zinc-700" strokeWidth={2.2} />
       </SheetTrigger>

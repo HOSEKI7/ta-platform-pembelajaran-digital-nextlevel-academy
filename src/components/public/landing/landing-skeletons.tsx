@@ -14,7 +14,7 @@ export function HeroStatsSkeleton() {
     <dl
       aria-busy="true"
       aria-live="polite"
-      className="mt-12 grid max-w-lg grid-cols-2 gap-8 border-t border-zinc-200/80 pt-6"
+      className="mt-8 grid max-w-lg grid-cols-2 gap-8 border-t border-zinc-200/80 pt-6"
     >
       {Array.from({ length: 2 }).map((_, i) => (
         <div key={i}>

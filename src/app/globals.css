@@ -129,6 +129,29 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* ----- Landing — fluid scale -------------------------------------------
+     Single source of truth for the public/landing surface so the design
+     scales PROPORTIONALLY from small phones to ultrawide instead of freezing
+     at one or two breakpoints (which read as "zoomed in" small / "zoomed out"
+     large). Applied via Tailwind arbitrary values, e.g.
+       text-[length:var(--fluid-h2)] · py-[var(--fluid-section-y)].
+     `--nav-h` is the sticky public navbar height — the hero binds its min
+     height to it instead of a magic 68px constant. */
+  --nav-h: 68px;
+  --fluid-section-y: clamp(4rem, 2.5rem + 4vw, 7rem);
+  --fluid-display: clamp(2.5rem, 2rem + 2.2vw, 4.5rem);
+  --fluid-h2: clamp(1.875rem, 1.4rem + 1.6vw, 3rem);
+  --fluid-cta-h2: clamp(2.25rem, 1.6rem + 2.2vw, 3.75rem);
+  --fluid-lead: clamp(1rem, 0.96rem + 0.55vw, 1.25rem);
+}
+
+/* Navbar grows on QHD+/ultrawide (matches public-navbar `min-[1920px]:h-[72px]`)
+   so the hero's `calc(100svh - var(--nav-h))` stays pixel-correct. */
+@media (min-width: 1920px) {
+  :root {
+    --nav-h: 72px;
+  }
 }
 
 .dark {

@@ -28,7 +28,7 @@ const STEPS = [
 
 export function HowItWorksSection() {
   return (
-    <section className="relative py-20 sm:py-24">
+    <section className="relative py-[var(--fluid-section-y)]">
       <SiteContainer>
         <Reveal className="flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-end">
           <div className="max-w-xl">
@@ -36,11 +36,11 @@ export function HowItWorksSection() {
               <span className="size-1 rounded-full bg-[color:var(--color-brand-accent)]" />
               Cara kerjanya
             </span>
-            <h2 className="mt-5 font-heading text-3xl font-extrabold tracking-tight text-zinc-900 sm:text-4xl">
+            <h2 className="mt-5 font-heading text-[length:var(--fluid-h2)] font-extrabold tracking-tight text-zinc-900">
               Dari penasaran ke bersertifikat dalam 4 langkah.
             </h2>
           </div>
-          <p className="max-w-md text-base leading-relaxed text-zinc-600">
+          <p className="max-w-md text-[length:var(--fluid-lead)] leading-relaxed text-zinc-600">
             Tidak ada subscription. Bayar sekali, akses seumur hidup. Tiap langkah memberikan
             sinyal progres yang jelas — kamu selalu tahu posisinya di mana.
           </p>

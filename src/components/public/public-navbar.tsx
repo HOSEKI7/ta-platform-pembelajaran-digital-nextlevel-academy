@@ -39,7 +39,9 @@ export function PublicNavbar({ session }: Props) {
           )}
         />
 
-        <div className="mx-auto flex h-16 w-full max-w-7xl items-center gap-6 px-6 sm:h-[68px] sm:px-8 lg:px-10 min-[1920px]:h-[72px] min-[1920px]:max-w-[1480px] min-[1920px]:px-14">
+        {/* Width caps + gutters MUST mirror SiteContainer so the navbar edges
+            line up with section content at every breakpoint. */}
+        <div className="mx-auto flex h-16 w-full max-w-7xl items-center gap-6 px-[clamp(1.25rem,4vw,2.5rem)] sm:h-[68px] min-[1280px]:max-w-[1360px] min-[1536px]:max-w-[1480px] min-[1920px]:h-[72px] min-[1920px]:max-w-[1600px] min-[1920px]:px-14 min-[2560px]:max-w-[1840px]">
           {/* LEFT: Wordmark */}
           <Link
             href="/"
@@ -56,8 +58,11 @@ export function PublicNavbar({ session }: Props) {
             />
           </Link>
 
-          {/* CENTER: Nav links (md+). Pill background with subtle divider dots. */}
-          <nav className="hidden flex-1 items-center justify-center md:flex">
+          {/* CENTER: Nav links (lg+). Pill background with subtle divider dots.
+              Below lg the full link set + auth buttons can't fit (esp. at the
+              768–1023 tablet band → horizontal overflow), so tablet falls back
+              to the hamburger sheet like mobile. */}
+          <nav className="hidden flex-1 items-center justify-center lg:flex">
             <ul className="flex items-center gap-1 rounded-full bg-white/70 px-2 py-1.5 ring-1 ring-zinc-200/80 backdrop-blur">
               {PUBLIC_NAV_LINKS.map((link, idx) => (
                 <li key={link.href} className="flex items-center">
@@ -80,14 +85,14 @@ export function PublicNavbar({ session }: Props) {
           </nav>
 
           {/* RIGHT: Auth-aware actions */}
-          <div className="ml-auto flex items-center gap-2 md:ml-0">
+          <div className="ml-auto flex items-center gap-2 lg:ml-0">
             {user ? (
               <Link
                 href={dashboardHrefFor(user.role)}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Buka dashboard di tab baru"
-                className="hidden h-10 items-center gap-1.5 rounded-full bg-[color:var(--color-brand-500)] px-4 text-sm font-semibold text-white shadow-[0_10px_24px_-10px_rgba(43,114,234,0.7)] transition hover:bg-[color:var(--color-brand-600)] sm:inline-flex"
+                className="hidden h-10 items-center gap-1.5 rounded-full bg-[color:var(--color-brand-500)] px-4 text-sm font-semibold text-white shadow-[0_10px_24px_-10px_rgba(43,114,234,0.7)] transition hover:bg-[color:var(--color-brand-600)] lg:inline-flex"
               >
                 Dashboard
                 <ArrowUpRight className="size-4" strokeWidth={2.4} />
@@ -98,7 +103,7 @@ export function PublicNavbar({ session }: Props) {
                   href="/login"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hidden h-10 items-center rounded-full px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 hover:text-zinc-900 sm:inline-flex"
+                  className="hidden h-10 items-center rounded-full px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 hover:text-zinc-900 lg:inline-flex"
                 >
                   Masuk
                 </Link>
@@ -106,7 +111,7 @@ export function PublicNavbar({ session }: Props) {
                   href="/register"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hidden h-10 items-center gap-1.5 rounded-full bg-[color:var(--color-brand-500)] px-4 text-sm font-semibold text-white shadow-[0_12px_28px_-12px_rgba(43,114,234,0.7)] transition hover:translate-y-[-1px] hover:bg-[color:var(--color-brand-600)] sm:inline-flex"
+                  className="hidden h-10 items-center gap-1.5 rounded-full bg-[color:var(--color-brand-500)] px-4 text-sm font-semibold text-white shadow-[0_12px_28px_-12px_rgba(43,114,234,0.7)] transition hover:translate-y-[-1px] hover:bg-[color:var(--color-brand-600)] lg:inline-flex"
                 >
                   Daftar Gratis
                   <Sparkles className="size-4 text-[color:var(--color-brand-accent)]" />

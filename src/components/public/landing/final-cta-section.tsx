@@ -7,7 +7,7 @@ import { Reveal } from "./reveal";
 
 export function FinalCtaSection() {
   return (
-    <section className="relative py-20 sm:py-24">
+    <section className="relative py-[var(--fluid-section-y)]">
       <SiteContainer>
         <Reveal
           from="scale"
@@ -40,11 +40,11 @@ export function FinalCtaSection() {
                 <span className="size-1.5 rounded-full bg-[color:var(--color-brand-accent)] shadow-[0_0_10px_var(--color-brand-accent)]" />
                 Mulai gratis, tanpa kartu kredit
               </span>
-              <h2 className="mt-5 font-heading text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-5xl">
+              <h2 className="mt-5 font-heading text-[length:var(--fluid-cta-h2)] font-extrabold leading-[1.05] tracking-tight">
                 Siap naik level?{" "}
                 <span className="text-[color:var(--color-brand-accent)]">Mulai hari ini.</span>
               </h2>
-              <p className="mt-5 max-w-xl text-base leading-relaxed text-white/90">
+              <p className="mt-5 max-w-xl text-[length:var(--fluid-lead)] leading-relaxed text-white/90">
                 Buat akun gratis dalam 30 detik. Akses kursus pengantar tanpa biaya — bayar hanya
                 untuk yang ingin kamu kuasai serius.
               </p>

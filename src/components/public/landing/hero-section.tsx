@@ -12,7 +12,7 @@ import { HeroStatsSkeleton } from "./landing-skeletons";
 
 export function HeroSection() {
   return (
-    <section className="relative isolate flex overflow-hidden pt-10 pb-24 sm:pt-14 lg:min-h-[calc(100svh-68px)] lg:items-center lg:pt-20 lg:pb-24">
+    <section className="relative isolate flex overflow-hidden pt-10 pb-24 sm:pt-14 lg:min-h-[calc(100svh-var(--nav-h))] lg:items-center lg:py-10">
       <HeroParallax />
       {/* Atmosphere: layered background */}
       <div
@@ -49,7 +49,7 @@ export function HeroSection() {
               Belajar dengan pace kamu · WIB
             </span>
 
-            <h1 className="mt-6 font-heading text-[40px] font-extrabold leading-[1.04] tracking-tight text-zinc-900 sm:text-[54px] lg:text-[62px]">
+            <h1 className="mt-6 font-heading text-[length:var(--fluid-display)] font-extrabold leading-[1.04] tracking-tight text-zinc-900">
               <span className="block">Elevate Your Skills,</span>
               <span className="block">Reach The</span>
               <span className="relative inline-block">
@@ -75,12 +75,12 @@ export function HeroSection() {
               </span>
             </h1>
 
-            <p className="mt-7 max-w-xl text-base leading-relaxed text-zinc-600 sm:text-lg">
+            <p className="mt-6 max-w-xl text-[length:var(--fluid-lead)] leading-relaxed text-zinc-600">
               Kumpulkan EXP, naik level, dan raih sertifikat dari kursus paling relevan untuk
               karir digital di Indonesia. Akses seumur hidup — tanpa langganan.
             </p>
 
-            <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
               <Link
                 href="/register"
                 target="_blank"
@@ -105,8 +105,10 @@ export function HeroSection() {
             </Suspense>
           </div>
 
-          {/* RIGHT: 3D logo with orbiting chips */}
-          <div className="relative flex h-[420px] items-center justify-center sm:h-[520px] lg:h-[560px]">
+          {/* RIGHT: 3D logo with orbiting chips. Column height is fluid (not a
+              fixed 560px) so it scales with the viewport and never forces the
+              hero taller than the screen on short desktops. */}
+          <div className="relative flex h-[clamp(20rem,38vw,40rem)] items-center justify-center">
             {/* Soft halo */}
             <div
               aria-hidden
@@ -146,9 +148,8 @@ export function HeroSection() {
                 priority
                 fetchPriority="high"
                 sizes="(max-width: 640px) 320px, (max-width: 1024px) 420px, 460px"
-                className="relative drop-shadow-[0_40px_70px_rgba(34,75,174,0.35)]"
+                className="relative h-auto w-[clamp(14rem,32vw,30rem)] max-w-full drop-shadow-[0_40px_70px_rgba(34,75,174,0.35)]"
                 style={{
-                  height: "auto",
                   animation: "auth-logo-float 6s ease-in-out infinite",
                   willChange: "transform",
                 }}
@@ -211,7 +212,7 @@ async function HeroStats() {
   return (
     <dl
       data-testid="hero-stats"
-      className="mt-12 grid max-w-lg grid-cols-2 gap-8 border-t border-zinc-200/80 pt-6"
+      className="mt-8 grid max-w-lg grid-cols-2 gap-8 border-t border-zinc-200/80 pt-6"
     >
       <div>
         <dt className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">

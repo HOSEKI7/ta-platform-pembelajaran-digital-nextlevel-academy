@@ -39,7 +39,7 @@ const FAQS = [
 
 export function FaqSection() {
   return (
-    <section id="faq" className="relative py-20 sm:py-24">
+    <section id="faq" className="relative py-[var(--fluid-section-y)]">
       <SiteContainer>
         <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] lg:items-start">
           <Reveal from="left" className="lg:sticky lg:top-28">
@@ -47,10 +47,10 @@ export function FaqSection() {
               <span className="size-1 rounded-full bg-[color:var(--color-brand-accent)]" />
               FAQ
             </span>
-            <h2 className="mt-5 font-heading text-3xl font-extrabold tracking-tight text-zinc-900 sm:text-4xl">
+            <h2 className="mt-5 font-heading text-[length:var(--fluid-h2)] font-extrabold tracking-tight text-zinc-900">
               Pertanyaan yang sering ditanyakan.
             </h2>
-            <p className="mt-4 text-base leading-relaxed text-zinc-600">
+            <p className="mt-4 text-[length:var(--fluid-lead)] leading-relaxed text-zinc-600">
               Belum menemukan jawaban? Sapa kami di{" "}
               <a
                 href="/contact"
