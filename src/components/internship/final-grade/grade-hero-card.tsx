@@ -77,23 +77,23 @@ function GradedHero({
 
       <div className="relative flex flex-col gap-8 lg:flex-row lg:items-center lg:gap-10">
         {/* Left: score + letter */}
-        <div className="grade-rise flex items-baseline gap-4 sm:gap-5">
+        <div className="grade-rise flex items-baseline gap-3 sm:gap-5">
           <p
             aria-label={`Nilai akhir ${grade} dari 100`}
             className={cn(
-              "font-heading text-[7rem] font-extrabold leading-none tracking-tight text-zinc-900 tabular-nums sm:text-[9rem]",
+              "font-heading text-[clamp(3.25rem,14vw,5.5rem)] font-extrabold leading-none tracking-tight text-zinc-900 tabular-nums sm:text-[9rem]",
               "dark:text-zinc-50",
             )}
           >
             {grade}
-            <span className="ml-1 text-3xl font-semibold text-zinc-300 dark:text-zinc-600 sm:text-4xl">
+            <span className="ml-1 text-xl font-semibold text-zinc-300 dark:text-zinc-600 min-[400px]:text-2xl sm:text-4xl">
               /100
             </span>
           </p>
-          <div className="flex flex-col gap-2 pb-2">
+          <div className="flex shrink-0 flex-col gap-2 pb-2">
             <span
               className={cn(
-                "inline-flex items-center justify-center rounded-2xl px-3 py-1.5 font-heading text-2xl font-bold ring-1 ring-inset sm:text-3xl",
+                "inline-flex items-center justify-center rounded-2xl px-2.5 py-1 font-heading text-xl font-bold ring-1 ring-inset min-[400px]:px-3 min-[400px]:py-1.5 min-[400px]:text-2xl sm:text-3xl",
                 TONE_SURFACE[band.tone],
               )}
             >
@@ -167,18 +167,18 @@ function EmptyHero({ mentorName }: { mentorName: string }) {
         className="pointer-events-none absolute -right-16 -top-24 size-72 rounded-full bg-zinc-100 opacity-60 blur-3xl dark:bg-white/[0.04]"
       />
       <div className="relative flex flex-col gap-8 lg:flex-row lg:items-center lg:gap-10">
-        <div className="grade-rise flex items-baseline gap-4 sm:gap-5">
+        <div className="grade-rise flex items-baseline gap-3 sm:gap-5">
           <p
             className={cn(
-              "select-none font-heading text-[7rem] font-extrabold leading-none tracking-tight text-zinc-200 tabular-nums sm:text-[9rem]",
+              "select-none font-heading text-[clamp(3.25rem,14vw,5.5rem)] font-extrabold leading-none tracking-tight text-zinc-200 tabular-nums sm:text-[9rem]",
               "dark:text-white/10",
             )}
             aria-hidden
           >
             ——
           </p>
-          <div className="flex flex-col gap-2 pb-2">
-            <span className="inline-flex items-center justify-center rounded-2xl bg-zinc-100 px-3 py-1.5 font-heading text-2xl font-bold text-zinc-400 ring-1 ring-inset ring-zinc-200 dark:bg-white/5 dark:text-zinc-600 dark:ring-white/10 sm:text-3xl">
+          <div className="flex shrink-0 flex-col gap-2 pb-2">
+            <span className="inline-flex items-center justify-center rounded-2xl bg-zinc-100 px-2.5 py-1 font-heading text-xl font-bold text-zinc-400 ring-1 ring-inset ring-zinc-200 dark:bg-white/5 dark:text-zinc-600 dark:ring-white/10 min-[400px]:px-3 min-[400px]:py-1.5 min-[400px]:text-2xl sm:text-3xl">
               ?
             </span>
             <span className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400 dark:text-zinc-500">

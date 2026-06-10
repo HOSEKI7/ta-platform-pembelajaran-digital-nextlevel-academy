@@ -47,7 +47,7 @@ export function DeadlinePicker({
         <PopoverTrigger
           disabled={disabled}
           className={cn(
-            "inline-flex h-11 flex-1 items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3.5 text-sm font-semibold transition",
+            "inline-flex h-11 items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3.5 text-sm font-semibold transition sm:flex-1",
             "hover:border-[color:var(--color-brand-300)] focus-visible:border-[color:var(--color-brand-500)] focus-visible:outline-none disabled:opacity-60",
             "dark:border-[color:var(--color-surface-border)] dark:bg-[color:var(--color-surface-card)]",
             dateISO ? "text-zinc-900 dark:text-zinc-100" : "text-zinc-400 dark:text-zinc-500",
