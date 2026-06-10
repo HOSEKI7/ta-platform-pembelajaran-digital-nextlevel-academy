@@ -148,7 +148,11 @@ export function CoursePlayer({ data }: Props) {
         onOpenCurriculum={() => setMobileOpen(true)}
       />
 
-      <main className="w-full px-4 pb-16 pt-6 sm:px-6 sm:pt-8 lg:px-8 2xl:px-12">
+      {/* `overflow-x-clip` contains the VideoStage `player-halo` (inset-x-[-10%])
+          and any decorative bleed so the player never scrolls horizontally on
+          mobile. `clip` (not `hidden`) avoids creating a scroll container, so the
+          sticky desktop sidebar and vertical glow are unaffected. */}
+      <main className="w-full overflow-x-clip px-4 pb-16 pt-6 sm:px-6 sm:pt-8 lg:px-8 2xl:px-12">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_420px] 2xl:grid-cols-[minmax(0,1fr)_460px] 2xl:gap-8">
           {/* Left column: video stage + tabs */}
           <div

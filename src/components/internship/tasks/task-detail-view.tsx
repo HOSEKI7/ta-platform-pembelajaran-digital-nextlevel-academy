@@ -192,9 +192,9 @@ export function TaskDetailView({ task, serverNowISO }: Props) {
         Kembali ke Daftar Tugas
       </Link>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Main column */}
-        <div className="flex flex-col gap-6 lg:col-span-2">
+        <div className="flex min-w-0 flex-col gap-6 lg:col-span-2">
           {/* Hero */}
           <section className="relative overflow-hidden rounded-3xl bg-white p-6 ring-1 ring-zinc-200 sm:p-8 dark:bg-[color:var(--color-surface-card)] dark:ring-[color:var(--color-surface-border)]">
             <div
@@ -485,7 +485,7 @@ export function TaskDetailView({ task, serverNowISO }: Props) {
         </div>
 
         {/* Sidebar */}
-        <aside className="flex flex-col gap-6 lg:col-span-1">
+        <aside className="flex min-w-0 flex-col gap-6 lg:col-span-1">
           <div className="flex flex-col gap-4 rounded-3xl bg-white p-6 ring-1 ring-zinc-200 dark:bg-[color:var(--color-surface-card)] dark:ring-[color:var(--color-surface-border)]">
             <h2 className="font-heading text-base font-bold text-zinc-900 dark:text-zinc-100">
               Ringkasan

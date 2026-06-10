@@ -2,6 +2,7 @@
 
 import { Award } from "lucide-react";
 
+import { RichTextContent } from "@/components/internship/tasks/rich-text-content";
 import type { PlayerCourse, PlayerStep } from "@/lib/course-player/types";
 
 type Props = {
@@ -13,9 +14,13 @@ export function StepDescription({ step, course }: Props) {
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_220px]">
       <div className="space-y-4">
-        <p className="text-[15px] leading-relaxed text-zinc-700 dark:text-zinc-300">
-          {step.description}
-        </p>
+        {/* Description is rich-text HTML from the admin course builder; render
+            it through the shared `.task-prose` renderer so formatting shows
+            correctly instead of leaking raw tags. */}
+        <RichTextContent
+          html={step.description}
+          className="text-[15px] leading-relaxed text-zinc-700 dark:text-zinc-300"
+        />
 
         <div className="grid gap-3 sm:grid-cols-3">
           <Pill label="Format" value={step.type === "QUIZ" ? "Kuis" : "Video"} />
