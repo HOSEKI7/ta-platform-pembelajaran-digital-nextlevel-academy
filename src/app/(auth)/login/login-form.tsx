@@ -83,8 +83,8 @@ export function LoginForm() {
   }
 
   return (
-    <div className="space-y-8 min-[1920px]:space-y-10">
-      <header className="space-y-2.5 min-[1920px]:space-y-3">
+    <div className="space-y-6 sm:space-y-8 min-[1920px]:space-y-10">
+      <header className="space-y-2 sm:space-y-2.5 min-[1920px]:space-y-3">
         <span className="text-[color:var(--color-brand-700)] inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] min-[1920px]:text-xs">
           Masuk Akun
         </span>

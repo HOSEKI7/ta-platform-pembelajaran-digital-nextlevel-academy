@@ -23,24 +23,28 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
           `auth-light-scope` class re-declares CSS vars locally as a safety
           net so any descendant primitive renders with light values. */}
       <ForceLightTheme />
-      <div className="auth-light-scope grid min-h-screen w-full lg:grid-cols-[1fr_minmax(0,1.05fr)]">
-        {/* Left: form column. Wordmark lives here so it is visible at every
-            breakpoint; the brand panel on the right is hidden on small screens.
+      {/* `100svh` (small viewport height) is used instead of `min-h-screen`
+          (`100vh`) so the layout tracks the REAL visible viewport on mobile —
+          `100vh` includes the area behind the address bar, which overflows and
+          forces a scroll / hides the footer. On `lg+` the split is pinned to the
+          exact viewport height so the brand panel (already `overflow-hidden`) is
+          bounded and the two columns share one height. */}
+      <div className="auth-light-scope grid min-h-[100svh] w-full lg:h-[100svh] lg:grid-cols-[1fr_minmax(0,1.05fr)]">
+        {/* Left: form column — a viewport-bounded flex column with three zones:
+            logo (fixed) · content (centers + scrolls) · footer (fixed).
 
-            Vertical padding scales with viewport tier:
-              - default (≤sm):  py-8 — phone-screen friendly
-              - sm / md:        py-10
-              - lg (≥1024):     py-6 — compact so 1366×768 fits without scroll
-              - xl (≥1280):     py-10
-              - 2K (≥1920):     py-20 — generous breathing room on QHD+/UHD
-            Previously `lg:py-16` plus the inner wrapper's `py-10` produced
-            ~208px of fixed chrome that pushed the register form below the
-            fold on 768px laptops. */}
-        <main className="relative flex flex-col bg-white px-6 py-8 sm:px-10 sm:py-10 lg:px-16 lg:py-6 xl:py-10 min-[1920px]:px-24 min-[1920px]:py-20">
+            The middle zone is the scroll container: it `m-auto`-centers the form
+            when there's spare height (the common case → no scroll anywhere), and
+            scrolls INTERNALLY when the form is taller than the viewport (very
+            short / zoomed screens), keeping the top reachable so nothing is ever
+            cut off. `min-h-0` lets this flex child shrink below its content so
+            the overflow actually engages. Single `py` rhythm (no doubled padding
+            with the inner wrapper) preserves the vertical budget. */}
+        <main className="relative flex min-h-[100svh] flex-col bg-white px-6 py-5 sm:px-10 sm:py-6 lg:min-h-0 lg:px-16 min-[1920px]:px-24 min-[1920px]:py-10">
           <Link
             href="/"
             aria-label="NextLevel Academy beranda"
-            className="-ml-3 -mt-2 inline-flex w-fit items-center sm:-ml-5 sm:-mt-3 lg:-ml-10 lg:-mt-2 xl:-mt-4 min-[1920px]:-ml-14 min-[1920px]:-mt-8"
+            className="-ml-3 inline-flex w-fit shrink-0 items-center sm:-ml-5 lg:-ml-10 min-[1920px]:-ml-14"
           >
             <Image
               src="/NextLevel_LogoXFit.webp"
@@ -52,11 +56,13 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
             />
           </Link>
 
-          <div className="flex flex-1 items-center justify-center py-4 sm:py-6 xl:py-10 min-[1920px]:py-12">
-            <div className="w-full max-w-md min-[1920px]:max-w-[600px]">{children}</div>
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+            <div className="m-auto w-full max-w-md py-4 sm:py-5 min-[1920px]:max-w-[600px] min-[1920px]:py-8">
+              {children}
+            </div>
           </div>
 
-          <footer className="text-muted-foreground text-center text-xs min-[1920px]:text-sm">
+          <footer className="text-muted-foreground shrink-0 text-center text-xs min-[1920px]:text-sm">
             © {new Date().getFullYear()} NextLevel Academy
           </footer>
         </main>

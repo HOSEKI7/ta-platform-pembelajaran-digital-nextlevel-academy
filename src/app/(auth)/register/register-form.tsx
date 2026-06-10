@@ -65,8 +65,8 @@ export function RegisterForm() {
   }
 
   return (
-    <div className="space-y-7 min-[1920px]:space-y-9">
-      <header className="space-y-2.5 min-[1920px]:space-y-3">
+    <div className="space-y-5 sm:space-y-6 min-[1920px]:space-y-9">
+      <header className="space-y-2 sm:space-y-2.5 min-[1920px]:space-y-3">
         <span className="text-[color:var(--color-brand-700)] inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] min-[1920px]:text-xs">
           Daftar Akun Baru
         </span>
@@ -87,7 +87,7 @@ export function RegisterForm() {
 
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="space-y-4 lg:space-y-4 xl:space-y-5 min-[1920px]:space-y-6"
+        className="space-y-3.5 sm:space-y-4 xl:space-y-5 min-[1920px]:space-y-6"
         noValidate
       >
         <AuthInput
