@@ -102,13 +102,13 @@ export function AdminDashboard({ firstName, serverNowISO, data }: Props) {
         today={data.today}
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map((card) => (
           <MetricCard key={card.label} {...card} />
         ))}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <RevenueAreaChart data={data.monthlyRevenue} />
         <MonthlyBarChart
           title="Pendaftaran Pengguna Baru"
@@ -120,7 +120,7 @@ export function AdminDashboard({ firstName, serverNowISO, data }: Props) {
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <MonthlyBarChart
           title="Kursus Terjual"
           subtitle="Per bulan"
@@ -132,7 +132,7 @@ export function AdminDashboard({ firstName, serverNowISO, data }: Props) {
         <TopCoursesCard courses={data.topCourses} />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.6fr_1fr]">
         <RecentTransactionsCard
           transactions={data.recentTransactions}
           nowISO={serverNowISO}

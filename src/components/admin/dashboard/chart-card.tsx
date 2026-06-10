@@ -27,7 +27,7 @@ export function ChartCard({
   return (
     <section
       className={cn(
-        "flex flex-col rounded-3xl bg-white p-5 ring-1 ring-zinc-200 sm:p-6",
+        "flex min-w-0 flex-col rounded-3xl bg-white p-5 ring-1 ring-zinc-200 sm:p-6",
         "dark:bg-[color:var(--color-surface-card)] dark:ring-[color:var(--color-surface-border)]",
         className,
       )}
