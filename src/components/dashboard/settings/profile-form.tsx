@@ -397,7 +397,7 @@ function ActionBar({
           </span>
         )}
       </p>
-      <div className="flex flex-1 items-center justify-end gap-2 sm:flex-none">
+      <div className="flex flex-1 flex-wrap items-center justify-end gap-2 sm:flex-none">
         <Button
           type="button"
           variant="outline"

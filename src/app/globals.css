@@ -476,7 +476,14 @@
 .reveal-ready [data-reveal][data-from="scale"] {
   transform: scale(0.94);
 }
-.reveal-ready [data-reveal="in"] {
+/* The `[data-from]` variant is listed so this reset matches the directional
+   selectors' specificity (0,3,0). Without it, `[data-from="left"|"right"|...]`
+   (also 0,3,0, but with a *value*) would out-rank a plain `[data-reveal="in"]`
+   (0,2,0) and the element would stay stuck at its translateX(-28px) entry
+   offset forever — e.g. the FAQ heading drifting left of the container. Coming
+   later in source, the equal-specificity reset now wins. */
+.reveal-ready [data-reveal="in"],
+.reveal-ready [data-reveal="in"][data-from] {
   opacity: 1;
   transform: none;
 }

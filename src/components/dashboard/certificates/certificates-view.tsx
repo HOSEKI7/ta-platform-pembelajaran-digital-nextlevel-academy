@@ -319,10 +319,13 @@ function Toolbar({
                 onSortChange(value === "asc" ? "asc" : "desc");
             }}
           >
-            <SelectTrigger id="cert-sort" className="min-w-32">
+            <SelectTrigger id="cert-sort" className="min-w-24">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            {/* Anchor as a standard right-aligned dropdown (not the centered
+                overlay) so it opens leftward into the table and never spills
+                past the card's right edge. */}
+            <SelectContent align="end" alignItemWithTrigger={false} className="min-w-28">
               {SORT_OPTIONS.map((opt) => (
                 <SelectItem key={opt.value} value={opt.value}>
                   {opt.label}
@@ -349,10 +352,16 @@ function Toolbar({
               }
             }}
           >
-            <SelectTrigger id="cert-page-size" className="min-w-20">
+            <SelectTrigger id="cert-page-size" className="min-w-16">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            {/* Rightmost control — right-align + compact width so the popup
+                opens leftward and stays inside the card/viewport. */}
+            <SelectContent
+              align="end"
+              alignItemWithTrigger={false}
+              className="min-w-20"
+            >
               {CERTIFICATES_PAGE_SIZES.map((n) => (
                 <SelectItem key={n} value={String(n)}>
                   {n}

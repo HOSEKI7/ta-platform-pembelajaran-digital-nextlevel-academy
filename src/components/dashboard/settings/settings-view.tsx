@@ -107,8 +107,13 @@ export function SettingsView({
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)] lg:items-start lg:gap-8 xl:gap-10">
-        <div className="lg:sticky lg:top-24">
+      {/* Base `grid-cols-1` is required: without it the mobile fallback is an
+          implicit `auto` column sized to max-content, and IdentityCard's
+          (unwrapped) note paragraph blows the column past the viewport →
+          horizontal overflow that eats the right gutter. `minmax(0,1fr)` fills
+          the container instead. */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)] lg:items-start lg:gap-8 xl:gap-10">
+        <div className="min-w-0 lg:sticky lg:top-24">
           <IdentityCard
             id={initial.id}
             name={draft.name || initial.name}

@@ -92,8 +92,10 @@ export function AdminSettingsView({
       <TabSwitcher current={tab} onChange={changeTab} />
 
       {tab === "profil" ? (
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)] lg:items-start lg:gap-8 xl:gap-10">
-          <div className="lg:sticky lg:top-24">
+        // Base `grid-cols-1` avoids the implicit max-content column that would
+        // otherwise overflow on mobile (see settings-view.tsx note).
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)] lg:items-start lg:gap-8 xl:gap-10">
+          <div className="min-w-0 lg:sticky lg:top-24">
             <IdentityCard
               id={initial.id}
               name={draft.name || initial.name}
