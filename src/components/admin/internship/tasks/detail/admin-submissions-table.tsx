@@ -114,8 +114,8 @@ export function AdminSubmissionsTable({ rows, onForce }: Props) {
       ) : (
         <>
           {/* Desktop */}
-          <div className="hidden sm:block">
-            <table className="w-full border-collapse text-left">
+          <div className="hidden overflow-x-auto sm:block">
+            <table className="w-full min-w-[44rem] border-collapse text-left">
               <thead>
                 <tr className="border-b border-zinc-100 text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-400 dark:border-[color:var(--color-surface-border)] dark:text-zinc-500">
                   <th className="w-14 px-6 py-3 text-center font-semibold">No.</th>
@@ -160,7 +160,7 @@ export function AdminSubmissionsTable({ rows, onForce }: Props) {
                   </span>
                   <PersonCell row={row} />
                 </div>
-                <div className="flex items-center justify-between gap-3 pl-1">
+                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 pl-1">
                   <TaskStatusBadge status={row.status} />
                   <RowActions row={row} onForce={onForce} />
                 </div>
