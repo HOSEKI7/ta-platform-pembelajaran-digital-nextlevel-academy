@@ -138,7 +138,7 @@ export function FieldFormDialog({
                         {(v: string) => (v ? batchName(v) : "Pilih batch")}
                       </SelectValue>
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent alignItemWithTrigger={false}>
                       {batches.map((b) => (
                         <SelectItem key={b.id} value={b.id}>
                           {b.name}

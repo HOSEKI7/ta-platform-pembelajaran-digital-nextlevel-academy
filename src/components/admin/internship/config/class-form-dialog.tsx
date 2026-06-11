@@ -148,7 +148,7 @@ export function ClassCreateDialog({
                       {(v: string) => (v ? batchName(v) : "Pilih batch")}
                     </SelectValue>
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent alignItemWithTrigger={false}>
                     {batches.map((b) => (
                       <SelectItem key={b.id} value={b.id}>
                         {b.name}
@@ -181,7 +181,7 @@ export function ClassCreateDialog({
                       {(v: string) => (v ? fieldName(v) : "Pilih bidang")}
                     </SelectValue>
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent alignItemWithTrigger={false}>
                     {fieldOptions.map((f) => (
                       <SelectItem key={f.id} value={f.id}>
                         {f.name}
