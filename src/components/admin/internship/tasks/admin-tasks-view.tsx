@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { SEARCH_DEBOUNCE_MS, useDebouncedValue } from "@/hooks/use-debounced-value";
 import { ClipboardList, Inbox, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -110,11 +111,11 @@ export function AdminTasksView() {
   );
 
   // Debounced search → URL.
+  const debouncedSearch = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS);
   useEffect(() => {
-    if (searchInput === urlSearch) return;
-    const handle = setTimeout(() => updateUrl({ search: searchInput }), 250);
-    return () => clearTimeout(handle);
-  }, [searchInput, urlSearch, updateUrl]);
+    if (debouncedSearch === urlSearch) return;
+    updateUrl({ search: debouncedSearch });
+  }, [debouncedSearch, urlSearch, updateUrl]);
 
   useEffect(() => {
     if (query.isError) {

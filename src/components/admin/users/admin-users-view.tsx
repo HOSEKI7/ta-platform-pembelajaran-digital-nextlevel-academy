@@ -3,6 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { SEARCH_DEBOUNCE_MS, useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Inbox, Loader2, Plus, Search, UsersRound } from "lucide-react";
 import { toast } from "sonner";
 
@@ -137,11 +138,11 @@ export function AdminUsersView() {
   );
 
   // Debounced search → URL.
+  const debouncedSearch = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS);
   useEffect(() => {
-    if (searchInput === urlSearch) return;
-    const handle = setTimeout(() => updateUrl({ search: searchInput }), 250);
-    return () => clearTimeout(handle);
-  }, [searchInput, urlSearch, updateUrl]);
+    if (debouncedSearch === urlSearch) return;
+    updateUrl({ search: debouncedSearch });
+  }, [debouncedSearch, urlSearch, updateUrl]);
 
   const data = usersQuery.data;
   const isFetching = usersQuery.isFetching;

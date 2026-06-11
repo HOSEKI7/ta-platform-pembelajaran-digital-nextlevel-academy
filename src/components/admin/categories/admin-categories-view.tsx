@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { SEARCH_DEBOUNCE_MS, useDebouncedValue } from "@/hooks/use-debounced-value";
 import { FolderTree, Inbox, Loader2, Plus, Search } from "lucide-react";
 
 import {
@@ -79,11 +80,11 @@ export function AdminCategoriesView() {
   );
 
   // Debounced search → URL.
+  const debouncedSearch = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS);
   useEffect(() => {
-    if (searchInput === urlSearch) return;
-    const handle = setTimeout(() => updateUrl({ search: searchInput }), 250);
-    return () => clearTimeout(handle);
-  }, [searchInput, urlSearch, updateUrl]);
+    if (debouncedSearch === urlSearch) return;
+    updateUrl({ search: debouncedSearch });
+  }, [debouncedSearch, urlSearch, updateUrl]);
 
   const openCreate = () => {
     setDialogNonce((n) => n + 1);

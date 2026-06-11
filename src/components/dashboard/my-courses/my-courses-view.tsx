@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { BookOpen, Compass, Filter, Inbox, Search, X } from "lucide-react";
 
+import { SEARCH_DEBOUNCE_MS, useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useMyCoursesQuery } from "@/hooks/use-dashboard";
 import type { MyCoursesStatus } from "@/lib/student-data-loader";
 import { MY_COURSES_STATUSES } from "@/lib/validators/my-courses";
@@ -50,18 +51,16 @@ export function MyCoursesView() {
   // typing. Back/forward navigation updates the URL directly; we don't mirror
   // it back into the input because React Compiler disallows the cascading
   // setState pattern and the UX impact is negligible.
+  const debouncedSearch = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS);
   useEffect(() => {
-    if (searchInput === urlSearch) return;
-    const handle = setTimeout(() => {
-      const params = new URLSearchParams();
-      const trimmed = searchInput.trim();
-      if (trimmed.length > 0) params.set("search", trimmed);
-      if (urlStatus !== "all") params.set("status", urlStatus);
-      const qs = params.toString();
-      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-    }, 250);
-    return () => clearTimeout(handle);
-  }, [searchInput, urlSearch, urlStatus, pathname, router]);
+    if (debouncedSearch === urlSearch) return;
+    const params = new URLSearchParams();
+    const trimmed = debouncedSearch.trim();
+    if (trimmed.length > 0) params.set("search", trimmed);
+    if (urlStatus !== "all") params.set("status", urlStatus);
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }, [debouncedSearch, urlSearch, urlStatus, pathname, router]);
 
   function handleStatusChange(value: unknown) {
     const next = parseStatus(typeof value === "string" ? value : null);
