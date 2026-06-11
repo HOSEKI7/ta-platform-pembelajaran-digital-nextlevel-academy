@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, BellRing, CheckCircle2, Inbox } from "lucide-react";
+import Link from "next/link";
+import { Bell, BellRing, CheckCircle2, ChevronRight, Inbox } from "lucide-react";
 import { formatDistanceToNow, parseISO } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 
 import { cn } from "@/lib/utils";
+import { notificationHref } from "@/lib/notification-href";
 import {
   Popover,
   PopoverContent,
@@ -121,7 +123,7 @@ export function NotificationsBell({
             <ul className="divide-y divide-zinc-100 dark:divide-[color:var(--color-surface-border)]">
               {items.map((n) => (
                 <li key={n.id}>
-                  <NotificationRow notification={n} />
+                  <NotificationRow notification={n} onNavigate={() => setOpen(false)} />
                 </li>
               ))}
             </ul>
@@ -132,41 +134,68 @@ export function NotificationsBell({
   );
 }
 
-function NotificationRow({ notification: n }: { notification: NotificationDTO }) {
-  return (
-    <div className="block px-4 py-3 transition hover:bg-zinc-50 dark:hover:bg-white/[0.04]">
-      <div className="flex items-start gap-3">
-        <span
-          aria-hidden
+function NotificationRow({
+  notification: n,
+  onNavigate,
+}: {
+  notification: NotificationDTO;
+  onNavigate: () => void;
+}) {
+  const href = notificationHref(n.type, n.refId);
+
+  const body = (
+    <div className="flex items-start gap-3">
+      <span
+        aria-hidden
+        className={cn(
+          "mt-1.5 size-2 shrink-0 rounded-full",
+          n.isRead
+            ? "bg-zinc-300 dark:bg-zinc-600"
+            : "bg-[color:var(--color-brand-500)] shadow-[0_0_8px_var(--color-brand-300)]",
+        )}
+      />
+      <div className="min-w-0 flex-1">
+        <p
           className={cn(
-            "mt-1.5 size-2 shrink-0 rounded-full",
+            "truncate text-sm font-semibold",
             n.isRead
-              ? "bg-zinc-300 dark:bg-zinc-600"
-              : "bg-[color:var(--color-brand-500)] shadow-[0_0_8px_var(--color-brand-300)]",
+              ? "text-zinc-700 dark:text-zinc-300"
+              : "text-zinc-900 dark:text-white",
           )}
-        />
-        <div className="min-w-0 flex-1">
-          <p
-            className={cn(
-              "truncate text-sm font-semibold",
-              n.isRead
-                ? "text-zinc-700 dark:text-zinc-300"
-                : "text-zinc-900 dark:text-white",
-            )}
-          >
-            {n.title}
-          </p>
-          <p className="line-clamp-2 mt-0.5 text-xs leading-snug text-zinc-500 dark:text-zinc-400">
-            {n.message}
-          </p>
-          <p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-zinc-400 dark:text-zinc-500">
-            {formatDistanceToNow(parseISO(n.createdAt), {
-              addSuffix: true,
-              locale: idLocale,
-            })}
-          </p>
-        </div>
+        >
+          {n.title}
+        </p>
+        <p className="line-clamp-2 mt-0.5 text-xs leading-snug text-zinc-500 dark:text-zinc-400">
+          {n.message}
+        </p>
+        <p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-zinc-400 dark:text-zinc-500">
+          {formatDistanceToNow(parseISO(n.createdAt), {
+            addSuffix: true,
+            locale: idLocale,
+          })}
+        </p>
       </div>
+      {href ? (
+        <ChevronRight
+          aria-hidden
+          className="mt-1 size-4 shrink-0 self-center text-zinc-300 transition group-hover:text-[color:var(--color-brand-500)] dark:text-zinc-600"
+          strokeWidth={2.2}
+        />
+      ) : null}
     </div>
+  );
+
+  if (!href) {
+    return <div className="block px-4 py-3">{body}</div>;
+  }
+
+  return (
+    <Link
+      href={href}
+      onClick={onNavigate}
+      className="group block px-4 py-3 transition hover:bg-zinc-50 dark:hover:bg-white/[0.04]"
+    >
+      {body}
+    </Link>
   );
 }
