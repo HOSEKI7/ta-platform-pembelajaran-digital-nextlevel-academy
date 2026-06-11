@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
  * Shared debounce delay (ms) for every search-filter input across the app.
  * Single source of truth — bump here, not per-view.
  */
-export const SEARCH_DEBOUNCE_MS = 500;
+export const SEARCH_DEBOUNCE_MS = 300;
 
 /**
  * Returns `value` delayed by `delayMs`: it only settles to the latest value
