@@ -10,6 +10,7 @@ import {
 import {
   clampMonth,
   getWibYmd,
+  offFromCell,
   periodMonthBounds,
 } from "@/components/internship/attendance/attendance-data";
 import type { AttendanceDisplayStatus, CalendarDayStatus } from "@/lib/internship-types";
@@ -63,13 +64,10 @@ export default async function InternshipAttendancePage() {
   const todayCell = initialData.cells.find((c) => c.isToday);
   const todayStatus = toDisplayStatus(todayCell?.status);
   const todayCheckInLabel = todayCell?.status === "HADIR" ? todayCell.checkInTime ?? null : null;
-  // "Checkable" = today is an eligible working day (HADIR/BELUM/TIDAK_HADIR only
-  // occur on working days in-period). The window/already-present gating is then
-  // applied client-side; this flag just distinguishes a holiday/weekend.
-  const todayCheckable =
-    todayCell?.status === "HADIR" ||
-    todayCell?.status === "BELUM" ||
-    todayCell?.status === "TIDAK_HADIR";
+  // Non-null on a non-working day (holiday/weekend/out-of-period) so the card can
+  // show a clear "Libur" state; null on a working day (check-in relevant). The
+  // window/already-present gating is then applied client-side.
+  const todayOff = offFromCell(todayCell);
 
   return (
     <AttendanceView
@@ -81,7 +79,7 @@ export default async function InternshipAttendancePage() {
       initialData={initialData}
       todayStatus={todayStatus}
       todayCheckInLabel={todayCheckInLabel}
-      todayCheckable={todayCheckable}
+      todayOff={todayOff}
     />
   );
 }

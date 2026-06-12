@@ -4,18 +4,22 @@ import Link from "next/link";
 import { ArrowUpRight, CalendarCheck, Flame } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { describeOff } from "@/components/internship/attendance/attendance-data";
 
 import type {
   AttendanceDisplayStatus,
   DayMark,
   Last7Status,
   MonthSummary,
+  TodayOff,
 } from "@/lib/internship-types";
 
 type Props = {
   status: AttendanceDisplayStatus;
   /** ISO check-in timestamp, or null when not yet present. */
   checkInLabel: string | null;
+  /** Non-null on a non-working day → a clear "Libur" pill instead of "Belum absen". */
+  off: TodayOff | null;
   monthSummary: MonthSummary;
   last7: DayMark[];
 };
@@ -51,10 +55,19 @@ const DOT_COLOR: Record<Last7Status, string> = {
 export function TodayAttendanceCard({
   status,
   checkInLabel,
+  off,
   monthSummary,
   last7,
 }: Props) {
-  const meta = STATUS_META[status];
+  const offCopy = off ? describeOff(off) : null;
+  // A neutral "Libur" pill replaces the tri-state status on a day off.
+  const meta = offCopy
+    ? {
+        label: offCopy.pill,
+        pill: "bg-zinc-100 text-zinc-600 ring-zinc-200 dark:bg-white/10 dark:text-zinc-300 dark:ring-white/15",
+        dot: "bg-zinc-400",
+      }
+    : STATUS_META[status];
   const ratePct = monthSummary.totalDays
     ? Math.round((monthSummary.presentDays / monthSummary.totalDays) * 100)
     : 0;
@@ -88,10 +101,15 @@ export function TodayAttendanceCard({
 
       <div className="rounded-2xl bg-zinc-50 px-4 py-3 dark:bg-white/[0.03]">
         <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-400 dark:text-zinc-500">
-          Waktu check-in
+          {offCopy ? "Status hari ini" : "Waktu check-in"}
         </p>
-        <p className="mt-0.5 font-heading text-2xl font-extrabold text-zinc-900 dark:text-zinc-50">
-          {checkInLabel ? `${checkInLabel} WIB` : "—:—"}
+        <p
+          className={cn(
+            "mt-0.5 font-heading font-extrabold text-zinc-900 dark:text-zinc-50",
+            offCopy ? "text-xl" : "text-2xl",
+          )}
+        >
+          {offCopy ? offCopy.heading : checkInLabel ? `${checkInLabel} WIB` : "—:—"}
         </p>
       </div>
 

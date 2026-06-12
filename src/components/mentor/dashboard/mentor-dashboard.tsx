@@ -84,7 +84,7 @@ export function MentorDashboard({
         window={window}
         status={data.selfAttendance.status}
         checkInLabel={data.selfAttendance.checkInLabel}
-        checkable={data.selfAttendance.checkable}
+        off={data.selfAttendance.off}
         isPending={checkIn.isPending}
         onCheckIn={() => checkIn.mutate()}
       />

@@ -7,7 +7,7 @@
  * figure here is scoped to the mentor's own class.
  */
 
-import type { AttendanceDisplayStatus } from "@/lib/internship-types";
+import type { AttendanceDisplayStatus, TodayOff } from "@/lib/internship-types";
 
 /** Topbar chip / hero identity context, derived from MentorProfile → Class. */
 export type MentorContext = {
@@ -43,13 +43,13 @@ export type MentorAttendanceToday = {
 /**
  * The mentor's OWN attendance status for today — drives the dashboard hero's
  * check-in CTA. HADIR/BELUM/TIDAK_HADIR mirror the Peserta-Magang tri-state;
- * `checkable` is true only on an eligible working day (in period, not a
- * weekend/holiday).
+ * `off` is non-null on a non-working day (holiday / weekend / out-of-period),
+ * which makes the hero render a clear "Libur" state instead of the check-in CTA.
  */
 export type MentorSelfAttendance = {
   status: AttendanceDisplayStatus;
   checkInLabel: string | null;
-  checkable: boolean;
+  off: TodayOff | null;
 };
 
 /** A task whose deadline has not yet passed, with submission progress. */

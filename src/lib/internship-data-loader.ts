@@ -20,6 +20,7 @@ import type {
   MagangContextBundle,
   MonthSummary,
   PendingTask,
+  TodayOff,
 } from "@/lib/internship-types";
 
 const WINDOW: AttendanceWindow = INTERNSHIP_CHECKIN_WINDOW;
@@ -180,8 +181,9 @@ export type InternshipDashboardDTO = {
   window: AttendanceWindow;
   todayStatus: "HADIR" | "BELUM" | "TIDAK_HADIR";
   todayCheckInLabel: string | null;
-  /** Server fact: today is a working day inside the period and not a holiday. */
-  todayCheckable: boolean;
+  /** Non-null when today is a non-working day (holiday/weekend/out-of-period);
+   *  null means today is an eligible working day. Replaces the old boolean. */
+  todayOff: TodayOff | null;
   monthSummary: MonthSummary;
   last7: DayMark[];
   tasks: PendingTask[];
@@ -239,15 +241,14 @@ export async function loadDashboardData(
       a.checkedInAt ? formatInTimeZone(a.checkedInAt, WIB_TZ, "HH:mm") : "—:—",
     );
   }
-  const holidaySet = new Set(
-    expandHolidays(
-      holidays.map((h) => ({
-        startISO: dbDateToISO(h.startDate),
-        days: h.days,
-        description: h.description,
-      })),
-    ).keys(),
+  const holidayMap = expandHolidays(
+    holidays.map((h) => ({
+      startISO: dbDateToISO(h.startDate),
+      days: h.days,
+      description: h.description,
+    })),
   );
+  const holidaySet = new Set(holidayMap.keys());
 
   const windowClosedToday = computeWindow(now, WINDOW).state === "AFTER";
 
@@ -256,6 +257,18 @@ export async function loadDashboardData(
     const dow = weekdayUtc(ymd.year, ymd.month, ymd.day);
     if (dow === 0 || dow === 6) return false;
     return !holidaySet.has(isoKey(ymd.year, ymd.month, ymd.day));
+  };
+
+  /** Why a day is non-working (out-of-period / holiday / weekend), or null. */
+  const offForDay = (ymd: Ymd): TodayOff | null => {
+    if (compareYmd(ymd, periodStart) < 0 || compareYmd(ymd, periodEnd) > 0) {
+      return { reason: "LUAR_PERIODE", label: null };
+    }
+    const label = holidayMap.get(isoKey(ymd.year, ymd.month, ymd.day));
+    if (label) return { reason: "HOLIDAY", label };
+    const dow = weekdayUtc(ymd.year, ymd.month, ymd.day);
+    if (dow === 0 || dow === 6) return { reason: "WEEKEND", label: null };
+    return null;
   };
 
   /** Resolve a single day to its display status (HADIR/BELUM/TIDAK_HADIR/LIBUR). */
@@ -317,7 +330,7 @@ export async function loadDashboardData(
     window: WINDOW,
     todayStatus,
     todayCheckInLabel,
-    todayCheckable: isWorkingDay(today),
+    todayOff: offForDay(today),
     monthSummary: { presentDays, totalDays, streakDays },
     last7,
     tasks: taskRows.map((t) => ({

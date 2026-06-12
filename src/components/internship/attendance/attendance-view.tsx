@@ -10,6 +10,7 @@ import type {
   AttendanceMonthDTO,
   AttendanceWindow,
   InternshipPeriod,
+  TodayOff,
 } from "@/lib/internship-types";
 
 import { clampMonth, getWibYmd, periodMonthBounds } from "./attendance-data";
@@ -28,7 +29,7 @@ type Props = {
   /** Today's resolved state (server) — drives the Check-In card. */
   todayStatus: AttendanceDisplayStatus;
   todayCheckInLabel: string | null;
-  todayCheckable: boolean;
+  todayOff: TodayOff | null;
 };
 
 /**
@@ -46,7 +47,7 @@ export function AttendanceView({
   initialData,
   todayStatus,
   todayCheckInLabel,
-  todayCheckable,
+  todayOff,
 }: Props) {
   const todayYmd = getWibYmd(serverNowISO);
   const { first, last } = periodMonthBounds(period);
@@ -105,7 +106,7 @@ export function AttendanceView({
         window={window}
         status={todayStatus}
         checkInLabel={todayCheckInLabel}
-        checkable={todayCheckable}
+        off={todayOff}
         isPending={checkIn.isPending}
         onCheckIn={handleCheckIn}
       />

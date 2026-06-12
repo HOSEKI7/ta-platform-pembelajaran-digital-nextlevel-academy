@@ -12,6 +12,7 @@ import type {
   CalendarDay,
   CalendarDayStatus,
   Holiday,
+  TodayOff,
 } from "@/lib/internship-types";
 
 export type { CalendarDay, CalendarDayStatus, AttendanceMonthDTO } from "@/lib/internship-types";
@@ -70,6 +71,52 @@ export const STATUS_LEGEND: ReadonlyArray<{
     swatch: "border border-dashed border-zinc-300 bg-transparent dark:border-white/15",
   },
 ];
+
+/**
+ * Today's "off" descriptor → display copy. Pure, client-safe: used by the hero,
+ * the today card, and the check-in card to render a clear "Libur" state.
+ */
+export function describeOff(off: TodayOff): {
+  pill: string;
+  heading: string;
+  subtitle: string;
+} {
+  switch (off.reason) {
+    case "HOLIDAY":
+      return {
+        pill: "Libur",
+        heading: "Hari ini libur",
+        subtitle: off.label ?? "Hari libur — tidak ada jadwal absen.",
+      };
+    case "WEEKEND":
+      return {
+        pill: "Libur",
+        heading: "Akhir pekan",
+        subtitle: "Tidak ada jadwal absen di akhir pekan.",
+      };
+    case "LUAR_PERIODE":
+      return {
+        pill: "Di luar periode",
+        heading: "Di luar periode magang",
+        subtitle: "Hari ini di luar rentang program magang.",
+      };
+  }
+}
+
+/**
+ * Derive today's "off" descriptor from its resolved calendar cell. Returns null
+ * on a working day (HADIR/BELUM/TIDAK_HADIR) — check-in is relevant then.
+ */
+export function offFromCell(cell: CalendarDay | null | undefined): TodayOff | null {
+  if (!cell) return null;
+  if (cell.status === "LUAR_PERIODE") return { reason: "LUAR_PERIODE", label: null };
+  if (cell.status === "LIBUR") {
+    return cell.holidayLabel
+      ? { reason: "HOLIDAY", label: cell.holidayLabel }
+      : { reason: "WEEKEND", label: null };
+  }
+  return null;
+}
 
 export type Ymd = { year: number; month: number; day: number };
 

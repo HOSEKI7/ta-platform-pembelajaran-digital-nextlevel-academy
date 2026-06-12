@@ -40,7 +40,7 @@ export default async function InternshipDashboardPage() {
       window={data.window}
       todayStatus={data.todayStatus}
       todayCheckInLabel={data.todayCheckInLabel}
-      todayCheckable={data.todayCheckable}
+      todayOff={data.todayOff}
       monthSummary={data.monthSummary}
       last7={data.last7}
       tasks={data.tasks}

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { formatInTimeZone } from "date-fns-tz";
 import { id as idLocale } from "date-fns/locale";
 import {
+  CalendarOff,
   CheckCircle2,
   Clock,
   Fingerprint,
@@ -14,11 +15,13 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { describeOff } from "@/components/internship/attendance/attendance-data";
 
 import type {
   AttendanceDisplayStatus,
   AttendanceWindow,
   MagangContext,
+  TodayOff,
 } from "@/lib/internship-types";
 
 const WIB_TZ = "Asia/Jakarta";
@@ -44,8 +47,9 @@ type Props = {
   window: AttendanceWindow;
   status: AttendanceDisplayStatus;
   checkInLabel: string | null;
-  /** Server fact: today is an eligible working day (in period, not holiday). */
-  checkable: boolean;
+  /** Non-null on a non-working day (holiday/weekend/out-of-period) → "Libur"
+   *  state; null means today is an eligible working day. */
+  off: TodayOff | null;
   isPending: boolean;
   onCheckIn: () => void;
 };
@@ -57,7 +61,7 @@ export function AttendanceHero({
   window,
   status,
   checkInLabel,
-  checkable,
+  off,
   isPending,
   onCheckIn,
 }: Props) {
@@ -93,7 +97,8 @@ export function AttendanceHero({
 
   const checkedIn = status === "HADIR";
   const checkInTime = checkInLabel;
-  const canCheckIn = checkable && windowState === "OPEN" && !checkedIn;
+  const offCopy = off ? describeOff(off) : null;
+  const canCheckIn = off === null && windowState === "OPEN" && !checkedIn;
 
   const contextChips = [
     { icon: Layers, value: context.batchLabel },
@@ -160,64 +165,77 @@ export function AttendanceHero({
                 {clock}
               </p>
             </div>
-            <WindowBadge state={windowState} checkedIn={checkedIn} />
+            <WindowBadge state={windowState} checkedIn={checkedIn} offLabel={offCopy?.pill ?? null} />
           </div>
 
-          {/* Window timeline */}
-          <div>
-            <div className="flex items-center justify-between text-[11px] font-semibold text-white/70">
-              <span>{window.start}</span>
-              <span className="uppercase tracking-[0.18em] text-white/50">
-                Jendela absen
-              </span>
-              <span>{window.end}</span>
-            </div>
-            <div className="relative mt-2 h-2.5 overflow-hidden rounded-full bg-white/15">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-[color:var(--color-brand-accent)] to-[#fff4a3] transition-all duration-700"
-                style={{ width: `${markerPct}%` }}
-              />
-              <span
-                aria-hidden
-                className="absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_0_0_3px_rgba(255,255,255,0.35)] transition-all duration-700"
-                style={{ left: `${markerPct}%` }}
-              />
-            </div>
-          </div>
-
-          {/* CTA */}
-          {checkedIn ? (
-            <div className="flex items-center gap-3 rounded-2xl bg-emerald-400/15 px-4 py-3 ring-1 ring-emerald-300/30">
-              <CheckCircle2 className="size-6 shrink-0 text-emerald-300" strokeWidth={2.2} />
-              <div>
-                <p className="text-sm font-bold text-white">
-                  Sudah absen hari ini
-                </p>
-                <p className="text-xs text-white/70">
-                  Check-in pukul {checkInTime} WIB · Hadir
-                </p>
+          {offCopy ? (
+            /* Day off — surface a clear "Libur" notice instead of the window/CTA. */
+            <div className="flex items-start gap-3 rounded-2xl bg-white/[0.08] px-4 py-3.5 ring-1 ring-white/15">
+              <CalendarOff className="size-6 shrink-0 text-white/80" strokeWidth={2.2} />
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-white">{offCopy.heading}</p>
+                <p className="text-xs leading-relaxed text-white/70">{offCopy.subtitle}</p>
               </div>
             </div>
           ) : (
-            <button
-              type="button"
-              onClick={onCheckIn}
-              disabled={!canCheckIn || isPending}
-              className={cn(
-                "group inline-flex h-12 items-center justify-center gap-2 rounded-2xl px-5 text-sm font-bold transition",
-                "bg-[color:var(--color-brand-accent)] text-[color:var(--color-brand-950)]",
-                "shadow-[0_14px_30px_-12px_rgba(244,214,0,0.8)] hover:-translate-y-0.5 hover:shadow-[0_18px_36px_-12px_rgba(244,214,0,0.9)]",
-                "active:translate-y-0",
-                "disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none disabled:hover:translate-y-0",
-              )}
-            >
-              {isPending ? (
-                <Loader2 className="size-5 animate-spin" strokeWidth={2.3} />
+            <>
+              {/* Window timeline */}
+              <div>
+                <div className="flex items-center justify-between text-[11px] font-semibold text-white/70">
+                  <span>{window.start}</span>
+                  <span className="uppercase tracking-[0.18em] text-white/50">
+                    Jendela absen
+                  </span>
+                  <span>{window.end}</span>
+                </div>
+                <div className="relative mt-2 h-2.5 overflow-hidden rounded-full bg-white/15">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-[color:var(--color-brand-accent)] to-[#fff4a3] transition-all duration-700"
+                    style={{ width: `${markerPct}%` }}
+                  />
+                  <span
+                    aria-hidden
+                    className="absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_0_0_3px_rgba(255,255,255,0.35)] transition-all duration-700"
+                    style={{ left: `${markerPct}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* CTA */}
+              {checkedIn ? (
+                <div className="flex items-center gap-3 rounded-2xl bg-emerald-400/15 px-4 py-3 ring-1 ring-emerald-300/30">
+                  <CheckCircle2 className="size-6 shrink-0 text-emerald-300" strokeWidth={2.2} />
+                  <div>
+                    <p className="text-sm font-bold text-white">
+                      Sudah absen hari ini
+                    </p>
+                    <p className="text-xs text-white/70">
+                      Check-in pukul {checkInTime} WIB · Hadir
+                    </p>
+                  </div>
+                </div>
               ) : (
-                <Fingerprint className="size-5 transition group-hover:scale-110" strokeWidth={2.3} />
+                <button
+                  type="button"
+                  onClick={onCheckIn}
+                  disabled={!canCheckIn || isPending}
+                  className={cn(
+                    "group inline-flex h-12 items-center justify-center gap-2 rounded-2xl px-5 text-sm font-bold transition",
+                    "bg-[color:var(--color-brand-accent)] text-[color:var(--color-brand-950)]",
+                    "shadow-[0_14px_30px_-12px_rgba(244,214,0,0.8)] hover:-translate-y-0.5 hover:shadow-[0_18px_36px_-12px_rgba(244,214,0,0.9)]",
+                    "active:translate-y-0",
+                    "disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none disabled:hover:translate-y-0",
+                  )}
+                >
+                  {isPending ? (
+                    <Loader2 className="size-5 animate-spin" strokeWidth={2.3} />
+                  ) : (
+                    <Fingerprint className="size-5 transition group-hover:scale-110" strokeWidth={2.3} />
+                  )}
+                  {isPending ? "Memproses…" : "Check-In Sekarang"}
+                </button>
               )}
-              {isPending ? "Memproses…" : "Check-In Sekarang"}
-            </button>
+            </>
           )}
         </div>
       </div>
@@ -228,17 +246,22 @@ export function AttendanceHero({
 function WindowBadge({
   state,
   checkedIn,
+  offLabel,
 }: {
   state: "BEFORE" | "OPEN" | "AFTER";
   checkedIn: boolean;
+  /** When set, today is a day off — overrides the time-based window label. */
+  offLabel?: string | null;
 }) {
-  const { label, dot } = checkedIn
-    ? { label: "Selesai", dot: "bg-emerald-300" }
-    : state === "OPEN"
-      ? { label: "Sedang dibuka", dot: "bg-[color:var(--color-brand-accent)]" }
-      : state === "BEFORE"
-        ? { label: "Belum dibuka", dot: "bg-white/60" }
-        : { label: "Sudah ditutup", dot: "bg-red-300" };
+  const { label, dot } = offLabel
+    ? { label: offLabel, dot: "bg-white/60" }
+    : checkedIn
+      ? { label: "Selesai", dot: "bg-emerald-300" }
+      : state === "OPEN"
+        ? { label: "Sedang dibuka", dot: "bg-[color:var(--color-brand-accent)]" }
+        : state === "BEFORE"
+          ? { label: "Belum dibuka", dot: "bg-white/60" }
+          : { label: "Sudah ditutup", dot: "bg-red-300" };
 
   return (
     <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/12 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white/85 ring-1 ring-white/20">

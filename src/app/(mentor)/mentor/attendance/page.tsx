@@ -10,6 +10,7 @@ import {
 import {
   clampMonth,
   getWibYmd,
+  offFromCell,
   periodMonthBounds,
 } from "@/components/internship/attendance/attendance-data";
 import type {
@@ -70,12 +71,10 @@ export default async function MentorAttendancePage() {
   const todayCell = initialData.cells.find((c) => c.isToday);
   const todayStatus = toDisplayStatus(todayCell?.status);
   const todayCheckInLabel = todayCell?.status === "HADIR" ? todayCell.checkInTime ?? null : null;
-  // "Checkable" = today is an eligible working day. Window/already-present gating
-  // is applied client-side; this flag just distinguishes a holiday/weekend.
-  const todayCheckable =
-    todayCell?.status === "HADIR" ||
-    todayCell?.status === "BELUM" ||
-    todayCell?.status === "TIDAK_HADIR";
+  // Non-null on a non-working day (holiday/weekend/out-of-period) so the card can
+  // show a clear "Libur" state; null on a working day. Window/already-present
+  // gating is applied client-side.
+  const todayOff = offFromCell(todayCell);
 
   return (
     <MentorSelfAttendanceView
@@ -87,7 +86,7 @@ export default async function MentorAttendancePage() {
       initialData={initialData}
       todayStatus={todayStatus}
       todayCheckInLabel={todayCheckInLabel}
-      todayCheckable={todayCheckable}
+      todayOff={todayOff}
     />
   );
 }

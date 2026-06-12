@@ -9,6 +9,7 @@ import type {
   MagangContext,
   MonthSummary,
   PendingTask,
+  TodayOff,
 } from "@/lib/internship-types";
 
 import { AttendanceHero } from "./attendance-hero";
@@ -22,7 +23,7 @@ type Props = {
   window: AttendanceWindow;
   todayStatus: AttendanceDisplayStatus;
   todayCheckInLabel: string | null;
-  todayCheckable: boolean;
+  todayOff: TodayOff | null;
   monthSummary: MonthSummary;
   last7: DayMark[];
   tasks: PendingTask[];
@@ -40,7 +41,7 @@ export function InternshipDashboard({
   window,
   todayStatus,
   todayCheckInLabel,
-  todayCheckable,
+  todayOff,
   monthSummary,
   last7,
   tasks,
@@ -56,7 +57,7 @@ export function InternshipDashboard({
         window={window}
         status={todayStatus}
         checkInLabel={todayCheckInLabel}
-        checkable={todayCheckable}
+        off={todayOff}
         isPending={checkIn.isPending}
         onCheckIn={() => checkIn.mutate()}
       />
@@ -66,6 +67,7 @@ export function InternshipDashboard({
           <TodayAttendanceCard
             status={todayStatus}
             checkInLabel={todayCheckInLabel}
+            off={todayOff}
             monthSummary={monthSummary}
             last7={last7}
           />

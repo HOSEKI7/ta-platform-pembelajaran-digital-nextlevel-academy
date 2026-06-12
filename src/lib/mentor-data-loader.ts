@@ -19,6 +19,7 @@ import type { CheckInResult } from "@/lib/internship-data-loader";
 import type {
   AttendanceDisplayStatus,
   AttendanceMonthDTO,
+  TodayOff,
 } from "@/lib/internship-types";
 import type {
   MentorActiveTask,
@@ -632,10 +633,18 @@ export async function loadMentorDashboard(
   if (selfPresent) selfStatus = "HADIR";
   else if (isWorkingDay && win === "AFTER") selfStatus = "TIDAK_HADIR";
   else selfStatus = "BELUM";
+  // Why today is non-working (drives the hero's "Libur" state), or null.
+  const selfOff: TodayOff | null = !inPeriod
+    ? { reason: "LUAR_PERIODE", label: null }
+    : isHoliday
+      ? { reason: "HOLIDAY", label: holiday?.description ?? null }
+      : isWeekend
+        ? { reason: "WEEKEND", label: null }
+        : null;
   const selfAttendance: MentorSelfAttendance = {
     status: selfStatus,
     checkInLabel: selfCheckInLabel,
-    checkable: isWorkingDay,
+    off: selfOff,
   };
 
   // ---- active tasks (deadline not yet passed) + review backlog ----

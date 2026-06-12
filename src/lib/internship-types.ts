@@ -12,6 +12,21 @@ export type AttendanceDisplayStatus = "HADIR" | "BELUM" | "TIDAK_HADIR";
 /** Last-7-days strip status — adds LIBUR for weekend/holiday days. */
 export type Last7Status = AttendanceDisplayStatus | "LIBUR";
 
+/** Why today is not a check-in day (a non-working day). */
+export type AttendanceOffReason = "HOLIDAY" | "WEEKEND" | "LUAR_PERIODE";
+
+/**
+ * Today's "off" descriptor — orthogonal to the tri-state. `null` means today is
+ * an eligible working day (check-in relevant); non-null marks a holiday / weekend
+ * / out-of-period day so the UI can show a clear "Libur" state instead of the
+ * check-in panel.
+ */
+export type TodayOff = {
+  reason: AttendanceOffReason;
+  /** Holiday description (only when reason === "HOLIDAY"), else null. */
+  label: string | null;
+};
+
 export type MagangContext = {
   /** e.g. "Batch 1 2026" */
   batchLabel: string;
