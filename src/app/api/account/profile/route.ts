@@ -51,6 +51,44 @@ export async function PATCH(req: Request) {
     );
   }
 
+  // Institution belongs to InternshipProfile (not the `user` table) and is only
+  // self-editable by Peserta Magang while it's still empty — once filled by the
+  // admin or by this one-time edit it's locked. Enforce server-side; the UI lock
+  // is just convenience.
+  let institutionResult: string | null | undefined;
+  if (data.institution !== undefined) {
+    if (session.user.role !== Role.PESERTA_MAGANG) {
+      return NextResponse.json(
+        { error: "Institusi hanya dapat diisi oleh peserta magang." },
+        { status: 400 },
+      );
+    }
+
+    const profile = await prisma.internshipProfile.findUnique({
+      where: { userId: session.user.id },
+      select: { institution: true },
+    });
+    if (!profile) {
+      return NextResponse.json(
+        { error: "Profil magang tidak ditemukan." },
+        { status: 404 },
+      );
+    }
+    if (profile.institution && profile.institution.trim().length > 0) {
+      return NextResponse.json(
+        { error: "Institusi sudah dikunci dan tidak dapat diubah." },
+        { status: 409 },
+      );
+    }
+
+    const value = data.institution.trim();
+    await prisma.internshipProfile.update({
+      where: { userId: session.user.id },
+      data: { institution: value },
+    });
+    institutionResult = value;
+  }
+
   // Username uniqueness — Better Auth 1.6 enforces this too, but checking
   // here gives a friendly Indonesian error before the auth API throws.
   if (data.username && data.username !== (session.user.username ?? "")) {
@@ -68,15 +106,19 @@ export async function PATCH(req: Request) {
 
   try {
     // Build the patch body — only include fields the user actually changed.
+    // Institution lives in InternshipProfile (handled above), so it never goes
+    // through Better Auth's updateUser.
     const body: Record<string, unknown> = {};
     if (data.name !== undefined) body.name = data.name;
     if (data.username !== undefined) body.username = data.username;
     if (data.image !== undefined) body.image = data.image;
 
-    await auth.api.updateUser({
-      headers: await headers(),
-      body,
-    });
+    if (Object.keys(body).length > 0) {
+      await auth.api.updateUser({
+        headers: await headers(),
+        body,
+      });
+    }
   } catch (err) {
     if (err instanceof APIError) {
       return NextResponse.json(
@@ -97,6 +139,7 @@ export async function PATCH(req: Request) {
       username: data.username ?? session.user.username ?? null,
       image:
         data.image !== undefined ? data.image : (session.user.image ?? null),
+      institution: institutionResult,
     },
   });
 }

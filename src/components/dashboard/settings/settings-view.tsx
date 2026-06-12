@@ -39,6 +39,10 @@ type Props = {
    *  wording for the read-only email section. */
   lockEmailHelper?: string;
   lockEmailNote?: string;
+  /** When provided (Peserta Magang only), renders an Institution section.
+   *  `locked` is true once a value exists — the field is self-editable exactly
+   *  once while empty (admin can always change it from the admin panel). */
+  institution?: { value: string | null; locked: boolean };
 };
 
 const TABS: { value: Tab; label: string; helper: string; icon: typeof UserRound }[] = [
@@ -64,6 +68,7 @@ export function SettingsView({
   headerDescription,
   lockEmailHelper,
   lockEmailNote,
+  institution,
 }: Props) {
   const [tab, setTab] = useState<Tab>("profil");
 
@@ -138,6 +143,7 @@ export function SettingsView({
               lockEmail={lockEmail}
               lockEmailHelper={lockEmailHelper}
               lockEmailNote={lockEmailNote}
+              institution={institution}
             />
           ) : (
             <SecurityForm />

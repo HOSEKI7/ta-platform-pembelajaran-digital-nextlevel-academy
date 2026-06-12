@@ -8,6 +8,8 @@ export const NAME_MAX = 60;
 export const USERNAME_MIN = 3;
 export const USERNAME_MAX = 24;
 export const USERNAME_PATTERN = /^[a-z0-9._]+$/;
+export const INSTITUTION_MIN = 2;
+export const INSTITUTION_MAX = 120;
 
 const passwordSchema = z
   .string()
@@ -50,6 +52,16 @@ export const imageAvatarSchema = z
   .optional();
 
 /**
+ * Institution (institusi) — only the Peserta Magang surface sends this, and the
+ * route enforces the one-time/locked rule server-side (see profile route).
+ */
+export const institutionSchema = z
+  .string()
+  .trim()
+  .min(INSTITUTION_MIN, `Institusi minimal ${INSTITUTION_MIN} karakter.`)
+  .max(INSTITUTION_MAX, `Institusi maksimal ${INSTITUTION_MAX} karakter.`);
+
+/**
  * Profile update — at least one field required. Image accepts `null` to mean
  * "remove avatar" (use initials).
  */
@@ -58,12 +70,14 @@ export const updateProfileSchema = z
     name: nameSchema.optional(),
     username: usernameSchema.optional(),
     image: imageAvatarSchema,
+    institution: institutionSchema.optional(),
   })
   .refine(
     (v) =>
       v.name !== undefined ||
       v.username !== undefined ||
-      v.image !== undefined,
+      v.image !== undefined ||
+      v.institution !== undefined,
     { message: "Tidak ada perubahan untuk disimpan." },
   );
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;

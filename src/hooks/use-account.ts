@@ -38,12 +38,14 @@ export type UpdateProfilePayload = {
   name?: string;
   username?: string;
   image?: string | null;
+  institution?: string;
 };
 
 export type UpdateProfileResponse = {
   name: string;
   username: string | null;
   image: string | null;
+  institution?: string | null;
 };
 
 export function useUpdateProfileMutation() {

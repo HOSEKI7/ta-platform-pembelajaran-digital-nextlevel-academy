@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AtSign,
+  Building2,
   CheckCircle2,
   Loader2,
   Lock,
@@ -24,6 +25,8 @@ import type { AvatarOption } from "@/lib/avatars";
 import { cn } from "@/lib/utils";
 import {
   changeEmailSchema,
+  institutionSchema,
+  INSTITUTION_MAX,
   NAME_MAX,
   updateProfileSchema,
   USERNAME_MAX,
@@ -57,6 +60,9 @@ type Props = {
   /** The explanatory note shown in the locked email callout. Defaults to the
    *  Peserta-Magang wording. */
   lockEmailNote?: string;
+  /** When provided (Peserta Magang only), renders an Institution section.
+   *  `locked` true → read-only; false → self-editable once while empty. */
+  institution?: { value: string | null; locked: boolean };
 };
 
 const DEFAULT_LOCK_EMAIL_HELPER =
@@ -79,6 +85,7 @@ export function ProfileForm({
   lockEmail = false,
   lockEmailHelper = DEFAULT_LOCK_EMAIL_HELPER,
   lockEmailNote = DEFAULT_LOCK_EMAIL_NOTE,
+  institution,
 }: Props) {
   const router = useRouter();
 
@@ -90,6 +97,38 @@ export function ProfileForm({
     username?: string;
     email?: string;
   }>({});
+
+  // Institution is a one-time self-edit (magang only). Starts empty when
+  // unlocked; the server is authoritative on the lock.
+  const [institutionDraft, setInstitutionDraft] = useState("");
+  const [institutionError, setInstitutionError] = useState<string>();
+  const institutionDirty = institutionDraft.trim().length > 0;
+
+  function handleInstitutionSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setInstitutionError(undefined);
+    const parsed = institutionSchema.safeParse(institutionDraft);
+    if (!parsed.success) {
+      const msg = parsed.error.issues[0]?.message ?? "Institusi tidak valid.";
+      setInstitutionError(msg);
+      toast.error(msg);
+      return;
+    }
+    updateProfile.mutate(
+      { institution: parsed.data },
+      {
+        onSuccess: () => {
+          toast.success("Institusi berhasil disimpan dan dikunci.");
+          router.refresh();
+        },
+        onError: (err) => {
+          const msg = err.message || "Gagal menyimpan institusi.";
+          setInstitutionError(msg);
+          toast.error(msg);
+        },
+      },
+    );
+  }
 
   const profileDirty =
     draft.name !== initial.name ||
@@ -351,6 +390,98 @@ export function ProfileForm({
           />
         </form>
       )}
+
+      {/* ============= Institusi (Peserta Magang) ============= */}
+      {institution ? (
+        institution.locked ? (
+          <Section
+            eyebrow="04 · Institusi"
+            title="Asal institusi"
+            helper="Universitas atau sekolah asalmu. Sudah ditetapkan dan tidak dapat diubah lagi."
+          >
+            <Field
+              id="institution"
+              label="Institusi"
+              icon={<Building2 className="size-4" strokeWidth={2.4} />}
+            >
+              <div className="relative">
+                <Input
+                  id="institution"
+                  value={institution.value ?? ""}
+                  readOnly
+                  aria-readonly
+                  tabIndex={-1}
+                  className="h-11 cursor-not-allowed bg-zinc-50 pr-10 text-zinc-700 ring-1 ring-zinc-200 dark:bg-white/[0.03] dark:text-zinc-200 dark:ring-[color:var(--color-surface-border)]"
+                />
+                <Lock
+                  aria-hidden
+                  className="pointer-events-none absolute right-3.5 top-1/2 size-4 -translate-y-1/2 text-zinc-400"
+                  strokeWidth={2.4}
+                />
+              </div>
+            </Field>
+
+            <div className="mt-3 flex items-start gap-3 rounded-2xl border border-zinc-200 bg-zinc-50/80 px-4 py-3 text-xs text-zinc-700 dark:border-[color:var(--color-surface-border)] dark:bg-white/[0.03] dark:text-zinc-200">
+              <ShieldAlert
+                className="mt-0.5 size-4 shrink-0 text-[color:var(--color-brand-600)] dark:text-[color:var(--color-brand-300)]"
+                strokeWidth={2.4}
+              />
+              <p className="leading-relaxed">
+                Institusi terkunci. Bila ada kesalahan, hubungi mentor atau
+                administrator program untuk memperbaikinya.
+              </p>
+            </div>
+          </Section>
+        ) : (
+          <form onSubmit={handleInstitutionSubmit} className="flex flex-col gap-6">
+            <Section
+              eyebrow="04 · Institusi"
+              title="Asal institusi"
+              helper="Isi universitas atau sekolah asalmu. Field ini hanya dapat diisi sekali."
+            >
+              <Field
+                id="institution"
+                label="Institusi"
+                icon={<Building2 className="size-4" strokeWidth={2.4} />}
+                hint={`${institutionDraft.length}/${INSTITUTION_MAX}`}
+                error={institutionError}
+              >
+                <Input
+                  id="institution"
+                  maxLength={INSTITUTION_MAX}
+                  value={institutionDraft}
+                  placeholder="mis. Universitas Indonesia"
+                  onChange={(e) => setInstitutionDraft(e.target.value)}
+                  className="h-11"
+                />
+              </Field>
+
+              <div className="mt-3 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+                <ShieldAlert className="mt-0.5 size-4 shrink-0" strokeWidth={2.4} />
+                <p className="leading-relaxed">
+                  Institusi hanya dapat diisi{" "}
+                  <span className="font-bold">satu kali</span>. Setelah disimpan,
+                  field akan terkunci — pastikan penulisannya benar.
+                </p>
+              </div>
+            </Section>
+
+            <ActionBar
+              dirty={institutionDirty}
+              saving={updateProfile.isPending}
+              onReset={() => {
+                setInstitutionDraft("");
+                setInstitutionError(undefined);
+              }}
+              submitLabel="Simpan Institusi"
+              icon={<Save className="size-3.5" strokeWidth={2.4} />}
+              loadingLabel="Menyimpan…"
+              hintIdle="Belum ada institusi yang diisi."
+              hintDirty="Institusi akan dikunci setelah disimpan."
+            />
+          </form>
+        )
+      ) : null}
     </div>
   );
 }
