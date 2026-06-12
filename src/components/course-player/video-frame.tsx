@@ -75,15 +75,25 @@ export function VideoFrame({ embedUrl, stepId, isCompleted, onEnded }: Props) {
       };
 
       instance.on("ready", () => {
-        instance!.on("ended", handleComplete);
-        // Fallback path: check time/duration on every update. Bunny emits
-        // timeupdate roughly 4x/second; the comparison is cheap.
-        instance!.on("timeupdate", ({ seconds, duration }) => {
-          if (firedRef.current || isCompletedRef.current) return;
-          if (duration > 0 && seconds >= duration - 1) {
-            handleComplete();
-          }
-        });
+        // The "ready" message can arrive AFTER this effect was cleaned up
+        // (step navigation / unmount). Attaching listeners then posts a message
+        // to an iframe whose contentWindow is already null → crash. Bail out if
+        // we've been torn down, and guard the postMessage path defensively.
+        if (cancelled) return;
+        try {
+          instance!.on("ended", handleComplete);
+          // Fallback path: check time/duration on every update. Bunny emits
+          // timeupdate roughly 4x/second; the comparison is cheap.
+          instance!.on("timeupdate", ({ seconds, duration }) => {
+            if (firedRef.current || isCompletedRef.current) return;
+            if (duration > 0 && seconds >= duration - 1) {
+              handleComplete();
+            }
+          });
+        } catch (err) {
+          // iframe detached / reloading mid-handshake — nothing to bind to.
+          console.warn("[VideoFrame] Failed to attach player listeners", err);
+        }
       });
     })();
 

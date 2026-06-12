@@ -465,6 +465,7 @@ model Video {
   duration     Int         @default(0) // seconds — unknown until Bunny webhook reports it
   status       VideoStatus @default(PROCESSING)
   videoUrl     String? // CDN HLS playback URL (metadata; player uses signed iframe embed)
+  lastSyncedAt DateTime? // last time duration/status was reconciled from Bunny (webhook or self-heal); guards re-sync cooldown
 
   step     Step           @relation(fields: [stepId], references: [id], onDelete: Cascade)
   archives VideoArchive[]

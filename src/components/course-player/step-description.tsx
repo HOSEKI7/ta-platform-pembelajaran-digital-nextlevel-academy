@@ -24,10 +24,17 @@ export function StepDescription({ step, course }: Props) {
 
         <div className="grid gap-3 sm:grid-cols-3">
           <Pill label="Format" value={step.type === "QUIZ" ? "Kuis" : "Video"} />
-          <Pill
-            label="Durasi"
-            value={`${Math.round(step.durationSec / 60)} menit`}
-          />
+          {step.type === "QUIZ" ? (
+            <Pill
+              label="Jumlah Soal"
+              value={`${step.quiz?.questions.length ?? 0} soal`}
+            />
+          ) : (
+            <Pill
+              label="Durasi"
+              value={`${Math.round(step.durationSec / 60)} menit`}
+            />
+          )}
           <Pill
             label="Reward"
             value={step.type === "QUIZ" ? "+90 XP (skor pertama)" : "+15 XP"}

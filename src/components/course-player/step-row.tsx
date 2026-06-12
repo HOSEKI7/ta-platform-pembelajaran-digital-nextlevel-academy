@@ -96,7 +96,11 @@ export function StepRow({ step, status, index, onSelect }: Props) {
           <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-zinc-500 dark:text-zinc-500">
             <span>{isQuiz ? "Kuis" : "Video"}</span>
             <span className="text-zinc-300 dark:text-zinc-700">·</span>
-            <span className="font-mono">{durationLabel(step.durationSec)}</span>
+            <span className="font-mono">
+              {isQuiz
+                ? `${step.quiz?.questions.length ?? 0} soal`
+                : durationLabel(step.durationSec)}
+            </span>
           </div>
         </div>
 

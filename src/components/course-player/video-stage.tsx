@@ -87,6 +87,7 @@ export function VideoStage({
           )
         ) : embedUrl ? (
           <VideoFrame
+            key={step.id}
             embedUrl={embedUrl}
             stepId={step.id}
             isCompleted={isCompleted}
@@ -122,7 +123,7 @@ export function VideoStage({
               </>
             ) : (
               <>
-                <span>{formatDuration(step.durationSec)} menit</span>
+                <span>{formatDuration(step.durationSec)}</span>
                 <span className="text-zinc-300 dark:text-zinc-700">·</span>
                 <span>+15 XP saat selesai</span>
               </>

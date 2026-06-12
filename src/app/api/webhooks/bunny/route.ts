@@ -74,12 +74,13 @@ export async function POST(request: NextRequest) {
           status: VideoStatus.READY,
           duration: durationSec,
           videoUrl: cdnPlaybackUrl(guid),
+          lastSyncedAt: new Date(),
         },
       });
     } else if (status === BUNNY_STATUS.ERROR || status === BUNNY_STATUS.UPLOAD_FAILED) {
       await prisma.video.update({
         where: { id: video.id },
-        data: { status: VideoStatus.FAILED },
+        data: { status: VideoStatus.FAILED, lastSyncedAt: new Date() },
       });
     }
     // Intermediate states → leave as PROCESSING.

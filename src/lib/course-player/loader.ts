@@ -1,8 +1,11 @@
 import "server-only";
 
+import { after } from "next/server";
+
 import { signBunnyEmbedUrl } from "@/lib/bunny";
 import { resolveCourseImageUrl } from "@/lib/bunny-storage";
 import { prisma } from "@/lib/prisma";
+import { selfHealVideoDurations, type SelfHealCandidate } from "./sync-video-duration";
 
 import type {
   CoursePlayerData,
@@ -143,11 +146,21 @@ export async function loadCoursePlayer(
 
   const embedUrls: Record<string, string> = {};
   const quizStates: Record<string, QuizStepState> = {};
+  const healCandidates: SelfHealCandidate[] = [];
   const nowMs = Date.now();
 
   for (const sp of c.sprints) {
     for (const st of sp.steps) {
       if (st.type === "VIDEO" && st.video?.bunnyVideoId) {
+        // Lazily reconcile durations that the Bunny webhook never delivered.
+        if (st.video.duration === 0) {
+          healCandidates.push({
+            id: st.video.id,
+            bunnyVideoId: st.video.bunnyVideoId,
+            duration: st.video.duration,
+            lastSyncedAt: st.video.lastSyncedAt,
+          });
+        }
         try {
           embedUrls[st.id] = signBunnyEmbedUrl(st.video.bunnyVideoId);
         } catch (err) {
@@ -185,6 +198,12 @@ export async function loadCoursePlayer(
   const notes: Record<string, string> = {};
   for (const n of enrollment.stepNotes) {
     notes[n.stepId] = n.content;
+  }
+
+  // Non-blocking: reconcile any duration-0 videos from Bunny after the response
+  // is sent, so the NEXT load reflects real lengths without slowing this one.
+  if (healCandidates.length > 0) {
+    after(() => selfHealVideoDurations(healCandidates));
   }
 
   return {
