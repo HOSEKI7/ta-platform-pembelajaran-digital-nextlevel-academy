@@ -51,6 +51,7 @@ auth-*.png
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+/tests/
 
 # AI Things
 /.claude/
@@ -58,6 +59,7 @@ auth-*.png
 /.skills/
 CLAUDE.md
 AGENTS.md
+/tasks/
 skills-lock.json
 
 # Requirement Files

@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Production deploys build a self-contained server bundle in CI and ship it
+  // to the VPS (docs/deployment/05-cicd-github-actions.md). Gated behind an env
+  // flag so local `next dev` / `next start` behave exactly as before.
+  output: process.env.BUILD_STANDALONE === "1" ? "standalone" : undefined,
   experimental: {
     optimizePackageImports: [
       "lucide-react",
