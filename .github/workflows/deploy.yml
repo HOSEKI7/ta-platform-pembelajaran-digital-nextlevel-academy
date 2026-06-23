@@ -59,7 +59,9 @@ jobs:
       - name: Pack artifact
         run: |
           cp -r .next/static .next/standalone/.next/static
-          mkdir -p .next/standalone/public && cp -r public/ .next/standalone/public/
+          rm -rf .next/standalone/public
+          cp -r public .next/standalone/public
+          sync
           tar -C .next/standalone -czf release.tar.gz .
           du -h release.tar.gz
 
