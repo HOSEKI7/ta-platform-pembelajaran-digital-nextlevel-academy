@@ -19,6 +19,7 @@ rm -rf "$RELEASE"
 mkdir -p "$RELEASE"
 tar -xzf "$TARBALL" -C "$RELEASE"
 rm -f "$TARBALL"
+sync
 
 ln -sfn "$RELEASE" "$ROOT/current"
 sudo systemctl restart nextlevel
