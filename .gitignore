@@ -61,6 +61,7 @@ CLAUDE.md
 AGENTS.md
 /tasks/
 skills-lock.json
+opencode.json
 
 # Requirement Files
 /docs/

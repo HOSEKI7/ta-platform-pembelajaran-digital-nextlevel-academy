@@ -31,10 +31,10 @@ type TeamMemberView = { name: string; role: string; initials: string };
 // Shown only when an admin hasn't filled in the Tim list under Informasi
 // Platform (PRD §6.11.11), so the section never renders empty.
 const FALLBACK_TEAM: TeamMemberView[] = [
-  { initials: "FZ", name: "Farid Zahran", role: "Founder & Product" },
-  { initials: "AS", name: "Andi Saputra", role: "Lead Instructor" },
-  { initials: "RH", name: "Rina H.", role: "Design Lead" },
-  { initials: "BP", name: "Bagus P.", role: "Engineering Lead" },
+  { initials: "KA", name: "Kevin Arya Swardhana", role: "Founder / CEO" },
+  { initials: "MI", name: "Muhammad Ikhsan", role: "Co-Founder / DEPUTY CEO" },
+  { initials: "FR", name: "Fachrizy Al Rasyid", role: "Co-Founder / CMO" },
+  { initials: "FZ", name: "Farid Zahran", role: "Co-Founder / CTO" },
 ];
 
 /** First letters of the first two words, e.g. "Farid Zahran" → "FZ". */

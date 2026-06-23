@@ -1,4 +1,4 @@
-name: Deploy Production
+﻿name: Deploy Production
 
 on:
   push:
@@ -59,7 +59,7 @@ jobs:
       - name: Pack artifact
         run: |
           cp -r .next/static .next/standalone/.next/static
-          cp -r public .next/standalone/public
+          mkdir -p .next/standalone/public && cp -r public/ .next/standalone/public/
           tar -C .next/standalone -czf release.tar.gz .
           du -h release.tar.gz
 
