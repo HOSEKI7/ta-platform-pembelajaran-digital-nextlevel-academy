@@ -42,7 +42,6 @@
   - [7. Jalankan development server](#7-jalankan-development-server)
 - [Scripts yang Tersedia](#scripts-yang-tersedia)
 - [Struktur Proyek](#struktur-proyek)
-- [Akun Testing](#akun-testing)
 - [Deployment](#deployment)
 - [Catatan Skripsi](#catatan-skripsi)
 
@@ -64,8 +63,6 @@ Pendekatan **gamifikasi** (EXP, leveling, badge, voucher reward) dirancang untuk
 | **Administrator**  | Pre-seeded / Invite   | Kelola seluruh platform: konten, pengguna, transaksi, konfigurasi      |
 
 Bahasa UI: **Indonesia** · Mata uang: **IDR** · Zona waktu: **WIB (UTC+7)** · Format tanggal: **DD/MM/YYYY**
-
-> 📖 Spesifikasi lengkap: [`docs/NextLevel_Academy_PRD_v2.md`](docs/NextLevel_Academy_PRD_v2.md)
 
 ---
 
@@ -179,7 +176,7 @@ Bahasa UI: **Indonesia** · Mata uang: **IDR** · Zona waktu: **WIB (UTC+7)** ·
 
 ```bash
 git clone <repository-url>
-cd platform-pembelajaran-digital-nextlevel-academy
+cd ta-platform-pembelajaran-digital-nextlevel-academy
 ```
 
 ### 2. Install dependencies
@@ -288,33 +285,13 @@ prisma/
 └── seed.ts                # Seed data
 
 scripts/                   # One-off utility scripts
-docs/
-├── NextLevel_Academy_PRD_v2.md   # Product Requirements Document
-└── deployment/                    # Deployment guide (00–08)
 ```
 
 **Routing convention:** Next.js 16 App Router dengan route groups per role. Setiap grup memiliki layout + sidebar sendiri. Proteksi role dilakukan server-side di layout via `requireRole()`.
 
 ---
 
-## Akun Testing
-
-Berikut akun untuk development (password ada di skrip seed atau dapat di-reset via Admin Panel):
-
-| Role               | Email                             |
-| ------------------ | --------------------------------- |
-| **Peserta Didik**  | `faridzahran174@gmail.com`        |
-| **Peserta Magang** | `faridzahran174+magang@gmail.com` |
-| **Mentor**         | `faridzahran174+mentor@gmail.com` |
-| **Administrator**  | `faridzahran174+admin@gmail.com`  |
-
-> Detail password lengkap ada di [`AGENTS.md`](AGENTS.md). Untuk admin, jalankan `npm run bootstrap:admin` untuk membuat akun dari env.
-
----
-
 ## Deployment
-
-Panduan deployment lengkap ada di [`docs/deployment/00-overview.md`](docs/deployment/00-overview.md).
 
 **Arsitektur target:**
 
@@ -334,8 +311,6 @@ Build standalone diaktifkan via env `BUILD_STANDALONE=1` (hanya di CI).
 Repositori ini dikembangkan sebagai bagian dari **Tugas Akhir / Skripsi** dengan judul:
 
 > **"PENGEMBANGAN PLATFORM PEMBELAJARAN DIGITAL BERBASIS WEB DENGAN GAMIFIKASI DAN SISTEM MAGANG TERINTEGARASI (STUDI KASUS: NEXTLEVEL ACADEMY)"**
-
-Dokumentasi pendukung skripsi dan panduan teknis tambahan tersedia di direktori `docs/`.
 
 ---
 
