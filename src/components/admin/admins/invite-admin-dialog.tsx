@@ -6,7 +6,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, Copy, Loader2, Mail, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 
-import { inviteAdminSchema, type InviteAdminInput } from "@/lib/validations/admin-invite";
+import {
+  inviteAdminSchema,
+  type InviteAdminInput,
+} from "@/lib/validations/admin-invite";
 import { useInviteAdminMutation } from "@/hooks/use-admin-account-actions";
 
 import { Button } from "@/components/ui/button";
@@ -28,7 +31,11 @@ type Props = {
   tooManyAdmins: boolean;
 };
 
-export function InviteAdminDialog({ open, onOpenChange, tooManyAdmins }: Props) {
+export function InviteAdminDialog({
+  open,
+  onOpenChange,
+  tooManyAdmins,
+}: Props) {
   const [createdUrl, setCreatedUrl] = useState<string | null>(null);
   const [sentEmail, setSentEmail] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -65,13 +72,17 @@ export function InviteAdminDialog({ open, onOpenChange, tooManyAdmins }: Props) 
           setSentEmail(values.email);
           if (data.inviteUrl) {
             setCreatedUrl(data.inviteUrl);
-            toast.success("Undangan dibuat. Salin tautannya untuk dikirim manual.");
+            toast.success(
+              "Undangan dibuat. Salin tautannya untuk dikirim manual.",
+            );
           } else {
             toast.success("Undangan terkirim ke email.");
           }
         },
         onError: (err) =>
-          toast.error(err instanceof Error ? err.message : "Gagal mengirim undangan."),
+          toast.error(
+            err instanceof Error ? err.message : "Gagal mengirim undangan.",
+          ),
       },
     );
   };
@@ -131,7 +142,12 @@ export function InviteAdminDialog({ open, onOpenChange, tooManyAdmins }: Props) 
                   <code className="min-w-0 flex-1 truncate rounded-lg bg-zinc-100 px-3 py-2 text-xs text-zinc-700 dark:bg-white/5 dark:text-zinc-200">
                     {createdUrl}
                   </code>
-                  <Button type="button" variant="outline" size="sm" onClick={copyUrl}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={copyUrl}
+                  >
                     {copied ? (
                       <Check className="size-4" strokeWidth={2.4} />
                     ) : (
@@ -149,8 +165,15 @@ export function InviteAdminDialog({ open, onOpenChange, tooManyAdmins }: Props) 
             </DialogFooter>
           </div>
         ) : (
-          <form onSubmit={handleSubmit(onValid)} className="flex flex-col gap-5">
-            <Field label="Email" htmlFor="invite-email" error={errors.email?.message}>
+          <form
+            onSubmit={handleSubmit(onValid)}
+            className="flex flex-col gap-5"
+          >
+            <Field
+              label="Email"
+              htmlFor="invite-email"
+              error={errors.email?.message}
+            >
               <Input
                 id="invite-email"
                 type="email"
