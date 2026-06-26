@@ -6,10 +6,16 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 
 import type { BadgeIconOption } from "@/lib/badge-icons";
-import type { AdminBadgeRow, BadgeCourseOption } from "@/lib/admin-badges-query";
+import type {
+  AdminBadgeRow,
+  BadgeCourseOption,
+} from "@/lib/admin-badges-query";
 import { TRIGGER_LABELS } from "@/lib/admin-badges-query";
 import type { BadgeTriggerKey } from "@/lib/gamification-types";
-import { badgeFormSchema, type BadgeFormInput } from "@/lib/validations/admin-badge";
+import {
+  badgeFormSchema,
+  type BadgeFormInput,
+} from "@/lib/validations/admin-badge";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -121,7 +127,9 @@ export function BadgeFormDialog({
           onOpenChange(false);
         },
         onError: (err) =>
-          toast.error(err instanceof Error ? err.message : "Gagal membuat badge."),
+          toast.error(
+            err instanceof Error ? err.message : "Gagal membuat badge.",
+          ),
       });
     } else {
       updateMutation.mutate(payload, {
@@ -131,14 +139,16 @@ export function BadgeFormDialog({
           onOpenChange(false);
         },
         onError: (err) =>
-          toast.error(err instanceof Error ? err.message : "Gagal menyimpan badge."),
+          toast.error(
+            err instanceof Error ? err.message : "Gagal menyimpan badge.",
+          ),
       });
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] w-full max-w-xl overflow-x-hidden overflow-y-auto">
+      <DialogContent className="w-full max-w-[calc(100vw-2rem)] sm:max-w-2xl overflow-x-hidden overflow-y-auto max-h-[90dvh]">
         <DialogHeader>
           <DialogTitle>
             {mode === "create" ? "Tambah Badge" : "Edit Badge"}
@@ -150,7 +160,10 @@ export function BadgeFormDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onValid)} className="flex min-w-0 flex-col gap-5">
+        <form
+          onSubmit={handleSubmit(onValid)}
+          className="flex min-w-0 flex-col gap-5"
+        >
           {/* Trigger */}
           <Field label="Trigger" error={errors.trigger?.message}>
             <Controller
@@ -169,10 +182,14 @@ export function BadgeFormDialog({
                   }}
                   disabled={mode === "edit"}
                 >
-                  <SelectTrigger className="h-11 w-full rounded-xl" aria-label="Trigger">
+                  <SelectTrigger
+                    className="h-11 w-full rounded-xl"
+                    aria-label="Trigger"
+                  >
                     <SelectValue>
                       {(val: string) =>
-                        TRIGGER_LABELS[val as BadgeTriggerKey] ?? "Pilih trigger"
+                        TRIGGER_LABELS[val as BadgeTriggerKey] ??
+                        "Pilih trigger"
                       }
                     </SelectValue>
                   </SelectTrigger>
@@ -222,7 +239,10 @@ export function BadgeFormDialog({
                       field.onChange(typeof v === "string" && v ? v : null)
                     }
                   >
-                    <SelectTrigger className="h-11 w-full rounded-xl" aria-label="Kursus">
+                    <SelectTrigger
+                      className="h-11 w-full rounded-xl"
+                      aria-label="Kursus"
+                    >
                       <SelectValue>
                         {(val: string | null | undefined) =>
                           courseOptions.find((c) => c.id === val)?.title ??
@@ -324,7 +344,9 @@ function Field({ label, error, hint, children }: FieldProps) {
       {hint && !error ? (
         <p className="text-[11px] text-zinc-400">{hint}</p>
       ) : null}
-      {error ? <p className="text-[11px] font-medium text-red-600">{error}</p> : null}
+      {error ? (
+        <p className="text-[11px] font-medium text-red-600">{error}</p>
+      ) : null}
     </div>
   );
 }
