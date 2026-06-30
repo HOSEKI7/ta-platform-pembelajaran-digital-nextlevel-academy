@@ -1,5 +1,12 @@
 import type { NextConfig } from "next";
 
+const bunnyStorageHost = process.env.BUNNY_STORAGE_PULL_ZONE;
+if (!bunnyStorageHost) {
+  throw new Error(
+    "BUNNY_STORAGE_PULL_ZONE env var is required at build time (next.config.ts)",
+  );
+}
+
 const nextConfig: NextConfig = {
   // Production deploys build a self-contained server bundle in CI and ship it
   // to the VPS (docs/deployment/05-cicd-github-actions.md). Gated behind an env
@@ -37,7 +44,7 @@ const nextConfig: NextConfig = {
       // resolved via `resolveCourseImageUrl`; next/image must allowlist the host.
       {
         protocol: "https",
-        hostname: process.env.BUNNY_STORAGE_PULL_ZONE!, // atau custom domain BUNNY_STORAGE_PULL_ZONE
+        hostname: bunnyStorageHost, // atau custom domain BUNNY_STORAGE_PULL_ZONE
         pathname: "/**",
       },
       // tambahkan entry lain HANYA kalau pull zone itu juga dipakai via <Image src=...>
