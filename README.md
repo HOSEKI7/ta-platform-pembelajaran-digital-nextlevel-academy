@@ -37,9 +37,8 @@
   - [2. Install dependencies](#2-install-dependencies)
   - [3. Siapkan environment variables](#3-siapkan-environment-variables)
   - [4. Push schema ke database](#4-push-schema-ke-database)
-  - [5. (Opsional) Seed data awal](#5-opsional-seed-data-awal)
-  - [6. Bootstrap akun admin pertama](#6-bootstrap-akun-admin-pertama)
-  - [7. Jalankan development server](#7-jalankan-development-server)
+  - [5. (Opsional) Bootstrap akun admin pertama](#5-opsional-bootstrap-akun-admin-pertama)
+  - [6. Jalankan development server](#6-jalankan-development-server)
 - [Scripts yang Tersedia](#scripts-yang-tersedia)
 - [Struktur Proyek](#struktur-proyek)
 - [Deployment](#deployment)
@@ -205,23 +204,15 @@ Isi semua variabel yang dibutuhkan di `.env.local`. Lihat [.env.example](.env.ex
 npx prisma db push
 ```
 
-### 5. (Opsional) Seed data awal
-
-```bash
-npm run db:seed
-```
-
-Seed ini membuat data awal: kategori, course contoh, pengguna default, dll.
-
-### 6. Bootstrap akun admin pertama
+### 5. (Opsional) Bootstrap akun admin pertama
 
 ```bash
 npm run bootstrap:admin
 ```
 
-Membuat akun Administrator dari env `BOOTSTRAP_ADMIN_EMAIL` (akan diminta ganti password saat login pertama).
+Membuat akun Administrator dari env `BOOTSTRAP_ADMIN_EMAIL` (akan diminta ganti password saat login pertama), jika aplikasi baru dideploy atau database masih kosong.
 
-### 7. Jalankan development server
+### 6. Jalankan development server
 
 ```bash
 npm run dev
