@@ -35,7 +35,12 @@ const nextConfig: NextConfig = {
       // Bunny.net CDN pull zones (storage / cert / stream). Admin-uploaded
       // course thumbnails are signed Pull-Zone URLs (e.g. internship-files.b-cdn.net)
       // resolved via `resolveCourseImageUrl`; next/image must allowlist the host.
-      { protocol: "https", hostname: "**.b-cdn.net" },
+      {
+        protocol: "https",
+        hostname: process.env.BUNNY_STORAGE_PULL_ZONE!, // atau custom domain BUNNY_STORAGE_PULL_ZONE
+        pathname: "/**",
+      },
+      // tambahkan entry lain HANYA kalau pull zone itu juga dipakai via <Image src=...>
     ],
   },
 };

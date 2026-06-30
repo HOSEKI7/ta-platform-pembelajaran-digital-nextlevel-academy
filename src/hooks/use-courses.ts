@@ -29,5 +29,6 @@ export function useCoursesQuery(params: CoursesPageParams) {
     queryKey: coursesQueryKey(params),
     queryFn: () => fetchCoursesPage(params),
     placeholderData: (prev) => prev,
+    staleTime: 30 * 1000, // 30 detik
   });
 }

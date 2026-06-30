@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import { unstable_cache } from "next/cache";
 import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 
 import { loadCoursesPage } from "@/lib/courses-loader";
@@ -13,6 +15,7 @@ import { getQueryClient } from "@/lib/query-client";
 
 import { CatalogClient } from "@/components/public/landing/catalog-client";
 import { CatalogJsonLd } from "@/components/public/landing/catalog-jsonld";
+import { FeaturedCoursesSkeleton } from "@/components/public/landing/landing-skeletons";
 import { SiteContainer } from "@/components/public/site-container";
 
 export const revalidate = 60;
@@ -105,7 +108,9 @@ export default async function CoursesPage({ searchParams }: Props) {
           prisma.category.findMany({
             select: {
               name: true,
-              _count: { select: { courses: { where: { status: "PUBLISHED" } } } },
+              _count: {
+                select: { courses: { where: { status: "PUBLISHED" } } },
+              },
             },
             orderBy: { name: "asc" },
           }),
@@ -121,9 +126,9 @@ export default async function CoursesPage({ searchParams }: Props) {
     }),
   ]);
 
-  const initial = queryClient.getQueryData<Awaited<ReturnType<typeof loadCoursesPage>>>(
-    coursesQueryKey(params),
-  );
+  const initial = queryClient.getQueryData<
+    Awaited<ReturnType<typeof loadCoursesPage>>
+  >(coursesQueryKey(params));
 
   return (
     <>
@@ -159,16 +164,79 @@ export default async function CoursesPage({ searchParams }: Props) {
             secepat kamu mau.
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-zinc-600 sm:text-lg">
-            Bayar sekali, akses seumur hidup. Gunakan filter di bawah untuk menemukan kursus
-            yang paling cocok dengan tujuan kamu.
+            Bayar sekali, akses seumur hidup. Gunakan filter di bawah untuk
+            menemukan kursus yang paling cocok dengan tujuan kamu.
           </p>
         </SiteContainer>
       </section>
 
       {/* Hydrated client catalog: filters, sort, grid, pagination */}
+      <Suspense fallback={<FeaturedCoursesSkeleton />}>
+        <CatalogData params={params} />
+      </Suspense>
+    </>
+  );
+}
+
+async function CatalogData({
+  params,
+}: {
+  params: { page: number; category: string | null; sort: Sort };
+}) {
+  const queryClient = getQueryClient();
+
+  await Promise.all([
+    queryClient.prefetchQuery({
+      queryKey: coursesQueryKey(params),
+      queryFn: () => loadCoursesPage(params),
+    }),
+    queryClient.prefetchQuery({
+      queryKey: ["public", "categories"],
+      queryFn: getCategoriesData, // <- ini jawaban Penjelasan #2, lihat di bawah
+    }),
+  ]);
+
+  const initial = queryClient.getQueryData<
+    Awaited<ReturnType<typeof loadCoursesPage>>
+  >(coursesQueryKey(params));
+
+  return (
+    <>
+      <CatalogJsonLd
+        siteUrl={siteUrl}
+        category={params.category}
+        page={params.page}
+        courses={initial?.courses ?? []}
+      />
       <HydrationBoundary state={dehydrate(queryClient)}>
         <CatalogClient />
       </HydrationBoundary>
     </>
   );
 }
+
+// Function unstable_cache-nya diletakkan di sini, level module
+// (di luar component), supaya wrapper cache-nya dibuat sekali saat module di-load,
+// bukan dibuat ulang tiap request.
+const getCategoriesData = unstable_cache(
+  async () => {
+    const [categories, totalPublished] = await Promise.all([
+      prisma.category.findMany({
+        select: {
+          name: true,
+          _count: { select: { courses: { where: { status: "PUBLISHED" } } } },
+        },
+        orderBy: { name: "asc" },
+      }),
+      prisma.course.count({ where: { status: "PUBLISHED" } }),
+    ]);
+    return {
+      categories: categories
+        .filter((c) => c._count.courses > 0)
+        .map((c) => ({ name: c.name, courseCount: c._count.courses })),
+      totalPublished,
+    };
+  },
+  ["public-categories"],
+  { revalidate: 300, tags: ["categories"] },
+);
