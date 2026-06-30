@@ -48,6 +48,7 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           NEXT_PUBLIC_MIDTRANS_CLIENT_KEY: ${{ vars.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY }}
+          BUNNY_STORAGE_PULL_ZONE: ${{ vars.BUNNY_STORAGE_PULL_ZONE }}
           # Dummy server-side: `next build` mengeksekusi module scope (mis. auth.ts)
           # saat mencoba prerender. Semua halaman app dynamic, jadi nilai dummy ini
           # TIDAK pernah ter-bake ke output build. Nilai asli HANYA ada di app.env VPS.

@@ -44,7 +44,7 @@ const nextConfig: NextConfig = {
       // resolved via `resolveCourseImageUrl`; next/image must allowlist the host.
       {
         protocol: "https",
-        hostname: bunnyStorageHost, // atau custom domain BUNNY_STORAGE_PULL_ZONE
+        hostname: bunnyStorageHost,
         pathname: "/**",
       },
       // tambahkan entry lain HANYA kalau pull zone itu juga dipakai via <Image src=...>
