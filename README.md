@@ -27,10 +27,10 @@
   - [🔧 Administrator](#-administrator)
 - [Tech Stack](#tech-stack)
 - [Screenshot](#screenshot)
-  - [Landing Page](#landing-page)
-  - [Halaman Auth](#halaman-auth)
-  - [Dashboard Peserta Didik](#dashboard-peserta-didik)
-  - [Course Player](#course-player)
+    - [Landing Page](#landing-page)
+    - [Halaman Auth](#halaman-auth)
+    - [Dashboard Peserta Didik](#dashboard-peserta-didik)
+    - [Course Player](#course-player)
 - [Prasyarat](#prasyarat)
 - [Panduan Instalasi](#panduan-instalasi)
   - [1. Clone repositori](#1-clone-repositori)
@@ -143,19 +143,19 @@ Bahasa UI: **Indonesia** · Mata uang: **IDR** · Zona waktu: **WIB (UTC+7)** ·
 
 #### Landing Page
 
-![Landing Page](/assets/LandingPage.png)
+![Landing Page](/assets/LandingPage.webp)
 
 #### Halaman Auth
 
-![Login Page](/assets/LoginPage.png)
+![Login Page](/assets/LoginPage.webp)
 
 #### Dashboard Peserta Didik
 
-![Dashboard Peserta Didik](/assets/Dashboard_PesertaDidik.png)
+![Dashboard Peserta Didik](/assets/Dashboard_PesertaDidik.webp)
 
 #### Course Player
 
-![Video Learning](/assets/LearningPage_Video_PesertaDidik.png)
+![Video Learning](/assets/LearningPage_Video_PesertaDidik.webp)
 
 ---
 
