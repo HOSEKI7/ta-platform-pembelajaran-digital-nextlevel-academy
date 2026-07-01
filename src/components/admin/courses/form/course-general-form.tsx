@@ -1,17 +1,13 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useCallback } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Save } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/admin/courses/form/confirm-dialog";
-import {
-  courseCreateSchema,
-  courseEditSchema,
-  type CourseGeneralInput,
-} from "@/lib/validations/admin-course";
+import { courseEditSchema, type CourseGeneralInput } from "@/lib/validations/admin-course";
 import type { AdminCategoryOption } from "@/lib/admin-course-form-types";
 
 import { CourseGeneralSection } from "./course-general-section";
@@ -67,9 +63,10 @@ export function CourseGeneralForm({
   onSubmit,
   onCancel,
 }: Props) {
-  const schema = mode === "create" ? courseCreateSchema : courseEditSchema;
   const form = useForm<CourseGeneralInput>({
-    resolver: zodResolver(schema as any),
+    // ponytail: always use courseEditSchema — create mode auto-derives slug from
+    // title via useEffect before any submit, so validation always succeeds.
+    resolver: zodResolver(courseEditSchema),
     defaultValues: initial?.values ?? EMPTY,
   });
 
@@ -78,20 +75,25 @@ export function CourseGeneralForm({
 
   // Slug-change confirmation dialog (edit mode only).
   const [showSlugConfirm, setShowSlugConfirm] = useState(false);
-  const pendingSubmit = useRef<(() => void) | null>(null);
+  const [pendingSubmit, setPendingSubmit] = useState<CourseFormSubmit | null>(null);
 
-  const submit = form.handleSubmit((values) => {
-    if (
-      mode === "edit" &&
-      initial &&
-      values.slug !== initial.values.slug
-    ) {
-      pendingSubmit.current = () => onSubmit({ values, thumbnailFile, instructorFile });
-      setShowSlugConfirm(true);
-      return;
-    }
-    onSubmit({ values, thumbnailFile, instructorFile });
-  });
+  const submit = form.handleSubmit(
+    useCallback(
+      (values: CourseGeneralInput) => {
+        if (
+          mode === "edit" &&
+          initial &&
+          values.slug !== initial.values.slug
+        ) {
+          setPendingSubmit({ values, thumbnailFile, instructorFile });
+          setShowSlugConfirm(true);
+          return;
+        }
+        onSubmit({ values, thumbnailFile, instructorFile });
+      },
+      [mode, initial, thumbnailFile, instructorFile, onSubmit],
+    ),
+  );
 
   return (
     <FormProvider {...form}>
@@ -150,7 +152,7 @@ export function CourseGeneralForm({
           busy={submitting}
           onConfirm={() => {
             setShowSlugConfirm(false);
-            pendingSubmit.current?.();
+            if (pendingSubmit) onSubmit(pendingSubmit);
           }}
         />
       </form>

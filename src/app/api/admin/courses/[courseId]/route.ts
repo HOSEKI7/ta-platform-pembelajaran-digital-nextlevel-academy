@@ -4,7 +4,6 @@ import { Role } from "@/generated/prisma";
 import { requireRoleInRoute } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
 import { isExternalUrl, removeBunnyFile } from "@/lib/bunny-storage";
-import { slugify } from "@/lib/slugify";
 import {
   isUniqueError,
   parseCourseEditForm,
