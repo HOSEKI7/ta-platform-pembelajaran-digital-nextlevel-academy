@@ -15,7 +15,7 @@ function buildFormData(p: CourseFormPayload): FormData {
   const v = p.values;
   const fd = new FormData();
   fd.append("title", v.title);
-  fd.append("slug", v.slug);
+  if (v.slug) fd.append("slug", v.slug);
   fd.append("shortDescription", v.shortDescription ?? "");
   fd.append("description", v.description);
   fd.append("categoryId", v.categoryId);

@@ -12,6 +12,14 @@ export type CourseStatusValue = (typeof COURSE_STATUSES)[number];
 
 export const SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
+export const slugField = () =>
+  z
+    .string()
+    .trim()
+    .min(1, "Slug wajib diisi.")
+    .max(80)
+    .regex(SLUG_REGEX, "Slug hanya huruf kecil, angka, dan tanda hubung.");
+
 export const benefitSchema = z.object({
   text: z.string().trim().min(1, "Benefit tidak boleh kosong.").max(200),
 });
@@ -25,20 +33,14 @@ export const faqSchema = z.object({
  * General Information + Pengaturan Kursus fields. Kept "concrete" (no `z.coerce`
  * / `.default()`) so the schema's input and output types match — that lets the
  * react-hook-form `zodResolver` type cleanly against the form values. The client
- * form supplies real numbers/booleans; the server parser (`parseCourseGeneralForm`)
- * converts the multipart strings before validating. Save-as-DRAFT is lenient
+ * form supplies real numbers/booleans; the server parser converts the multipart
+ * strings before validating. Save-as-DRAFT is lenient
  * (thumbnail/instructor photo optional); the stricter Publish gate (PRD §6.11.3
  * "Validasi Sebelum Publish") runs server-side on status change.
  */
 export const courseGeneralSchema = z
   .object({
     title: z.string().trim().min(3, "Judul minimal 3 karakter.").max(150),
-    slug: z
-      .string()
-      .trim()
-      .min(1, "Slug wajib diisi.")
-      .max(80)
-      .regex(SLUG_REGEX, "Slug hanya huruf kecil, angka, dan tanda hubung."),
     shortDescription: z.string().trim().max(280),
     description: z.string().trim().min(1, "Deskripsi wajib diisi."),
     categoryId: z.string().trim().min(1, "Kategori wajib dipilih."),
@@ -56,7 +58,15 @@ export const courseGeneralSchema = z
     { path: ["fakePrice"], message: "Harga coret harus lebih tinggi dari harga." },
   );
 
-export type CourseGeneralInput = z.infer<typeof courseGeneralSchema>;
+/** Create schema — no slug (auto-generated from title on the server). */
+export const courseCreateSchema = courseGeneralSchema;
+export type CourseCreateInput = z.infer<typeof courseCreateSchema>;
+
+/** Edit schema — slug is required (admin sets it manually). */
+export const courseEditSchema = courseGeneralSchema.extend({
+  slug: slugField(),
+});
+export type CourseGeneralInput = z.infer<typeof courseEditSchema>;
 
 // ---- Curriculum --------------------------------------------------------------
 

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 
 import { Role } from "@/generated/prisma";
 import { requireRole } from "@/lib/auth-server";
@@ -11,14 +11,29 @@ import { CoursePlayer } from "@/components/course-player/course-player";
 
 type Params = Promise<{ slug: string }>;
 
+async function resolveActiveSlug(slug: string): Promise<string | null> {
+  const course = await prisma.course.findUnique({
+    where: { slug },
+    select: { slug: true },
+  });
+  if (course) return slug;
+  const history = await prisma.courseSlugHistory.findUnique({
+    where: { slug },
+    select: { course: { select: { slug: true } } },
+  });
+  return history?.course.slug ?? null;
+}
+
 export async function generateMetadata({
   params,
 }: {
   params: Params;
 }): Promise<Metadata> {
   const { slug } = await params;
+  const activeSlug = await resolveActiveSlug(slug);
+  if (!activeSlug) return { title: "Materi tidak ditemukan" };
   const course = await prisma.course.findUnique({
-    where: { slug },
+    where: { slug: activeSlug },
     select: { title: true },
   });
   if (!course) return { title: "Materi tidak ditemukan" };
@@ -34,7 +49,12 @@ export default async function LearnPage({ params }: { params: Params }) {
     redirectTo: `/learn/${slug}`,
   });
 
-  const data = await loadCoursePlayer(session.user.id, slug);
+  // Resolve old slug → current active slug; 308 redirect if stale.
+  const activeSlug = await resolveActiveSlug(slug);
+  if (!activeSlug) notFound();
+  if (activeSlug !== slug) permanentRedirect(`/learn/${activeSlug}`);
+
+  const data = await loadCoursePlayer(session.user.id, activeSlug);
   if (!data) notFound();
 
   // Fire-and-forget — bumps Enrollment.lastAccessedAt so this course floats

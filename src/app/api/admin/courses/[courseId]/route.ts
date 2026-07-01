@@ -7,7 +7,7 @@ import { isExternalUrl, removeBunnyFile } from "@/lib/bunny-storage";
 import { slugify } from "@/lib/slugify";
 import {
   isUniqueError,
-  parseCourseGeneralForm,
+  parseCourseEditForm,
   uploadCourseImageField,
 } from "@/lib/admin-course-write";
 
@@ -21,6 +21,10 @@ export const dynamic = "force-dynamic";
  * validation runs. Multipart: same shape as create. New thumbnail / instructor
  * image replaces the old (old blob deleted best-effort). Benefits/FAQs are
  * replaced wholesale (delete + recreate, preserving order).
+ *
+ * Slug changes are tracked in CourseSlugHistory (max 20 per course; oldest
+ * pruned atomically in the same transaction). Old slugs 308-redirect to the
+ * current slug from public catalog & player pages.
  */
 export async function PATCH(
   req: Request,
@@ -48,7 +52,7 @@ export async function PATCH(
     );
   }
 
-  const parsed = parseCourseGeneralForm(form);
+  const parsed = parseCourseEditForm(form);
   if (!parsed.ok) {
     return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
@@ -62,13 +66,26 @@ export async function PATCH(
     return NextResponse.json({ error: "Kategori tidak ditemukan." }, { status: 400 });
   }
 
-  const slug = input.slug || slugify(input.title);
-  if (slug !== existing.slug) {
+  const slug = input.slug;
+  const slugChanged = slug !== existing.slug;
+  if (slugChanged) {
+    // Check uniqueness against Course (excluding self).
     const taken = await prisma.course.findFirst({
       where: { slug, NOT: { id: courseId } },
       select: { id: true },
     });
     if (taken) {
+      return NextResponse.json(
+        { error: "Slug sudah dipakai kursus lain. Ubah slug." },
+        { status: 409 },
+      );
+    }
+    // Check uniqueness against other courses' slug history.
+    const historyTaken = await prisma.courseSlugHistory.findFirst({
+      where: { slug, courseId: { not: courseId } },
+      select: { id: true },
+    });
+    if (historyTaken) {
       return NextResponse.json(
         { error: "Slug sudah dipakai kursus lain. Ubah slug." },
         { status: 409 },
@@ -97,10 +114,41 @@ export async function PATCH(
   }
 
   try {
-    await prisma.$transaction([
-      prisma.courseBenefit.deleteMany({ where: { courseId } }),
-      prisma.courseFaq.deleteMany({ where: { courseId } }),
-      prisma.course.update({
+    await prisma.$transaction(async (tx) => {
+      // ---- Slug history (only when slug actually changes) ----
+      if (slugChanged) {
+        // 1. Record the OLD slug as history so old URLs 308-redirect.
+        await tx.courseSlugHistory.create({
+          data: {
+            courseId,
+            slug: existing.slug,
+            changedById: auth.user.id,
+          },
+        });
+        // 2. If the NEW slug was previously used by this same course, reclaim it
+        //    (delete the history entry so the unique constraint doesn't block us).
+        await tx.courseSlugHistory.deleteMany({
+          where: { courseId, slug },
+        });
+        // 3. Prune oldest entries — keep newest 19 (we already inserted 1 = 20).
+        const count = await tx.courseSlugHistory.count({ where: { courseId } });
+        if (count > 20) {
+          const old = await tx.courseSlugHistory.findMany({
+            where: { courseId },
+            orderBy: { changedAt: "asc" },
+            take: count - 20,
+            select: { id: true },
+          });
+          await tx.courseSlugHistory.deleteMany({
+            where: { id: { in: old.map((h) => h.id) } },
+          });
+        }
+      }
+
+      // ---- Benefits / FAQs / course update ----
+      await tx.courseBenefit.deleteMany({ where: { courseId } });
+      await tx.courseFaq.deleteMany({ where: { courseId } });
+      await tx.course.update({
         where: { id: courseId },
         data: {
           title: input.title,
@@ -126,8 +174,8 @@ export async function PATCH(
             })),
           },
         },
-      }),
-    ]);
+      });
+    });
   } catch (err) {
     if (thumb.path) await removeBunnyFile(thumb.path);
     if (instructorImg.path) await removeBunnyFile(instructorImg.path);

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 
 import { Role } from "@/generated/prisma";
 import { getSession } from "@/lib/auth-server";
@@ -22,8 +22,15 @@ const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://nextlevel.academy";
 
 type Props = { params: Promise<{ slug: string }> };
 
+async function resolveSlug(slug: string) {
+  return prisma.courseSlugHistory.findUnique({
+    where: { slug },
+    select: { course: { select: { slug: true } } },
+  });
+}
+
 async function loadCourse(slug: string) {
-  return prisma.course.findFirst({
+  const course = await prisma.course.findFirst({
     where: { slug, status: "PUBLISHED" },
     include: {
       category: { select: { name: true } },
@@ -35,6 +42,13 @@ async function loadCourse(slug: string) {
       },
     },
   });
+  if (course) return course;
+  // Fallback: check slug history for old URLs → 308 redirect.
+  const history = await resolveSlug(slug);
+  if (history && history.course.slug !== slug) {
+    return loadCourse(history.course.slug);
+  }
+  return null;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -103,6 +117,9 @@ export default async function CourseDetailPage({ params }: Props) {
   const { slug } = await params;
   const [course, session] = await Promise.all([loadCourse(slug), getSession()]);
   if (!course) notFound();
+
+  // Old slug → 308 redirect to current slug.
+  if (course.slug !== slug) permanentRedirect(`/courses/${course.slug}`);
 
   const totalSteps = course.sprints.reduce((acc, s) => acc + s.steps.length, 0);
   const thumbnailUrl = resolveCourseImageUrl(course.thumbnailUrl);

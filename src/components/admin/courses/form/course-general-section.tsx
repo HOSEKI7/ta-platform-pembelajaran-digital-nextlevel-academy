@@ -18,11 +18,13 @@ import { BenefitListField } from "./benefit-list-field";
 import { FaqListField } from "./faq-list-field";
 
 type Props = {
+  mode: "create" | "edit";
   initialDescription: string;
   thumbnailPreview: string;
   onThumbnailChange: (file: File | null) => void;
   /** True in edit mode so the slug isn't auto-overwritten from the title. */
   slugLocked: boolean;
+  initialSlug?: string;
   disabled?: boolean;
 };
 
@@ -32,10 +34,12 @@ function formatIDR(value: number): string {
 }
 
 export function CourseGeneralSection({
+  mode,
   initialDescription,
   thumbnailPreview,
   onThumbnailChange,
   slugLocked,
+  initialSlug,
   disabled,
 }: Props) {
   const {
@@ -47,6 +51,7 @@ export function CourseGeneralSection({
 
   const [slugTouched, setSlugTouched] = useState(slugLocked);
   const title = watch("title");
+  const slug = watch("slug");
   const price = watch("price");
   const fakePrice = watch("fakePrice");
   const isFeatured = watch("isFeatured");
@@ -59,6 +64,14 @@ export function CourseGeneralSection({
       setValue("slug", slugify(title ?? ""), { shouldValidate: title.trim().length > 0 });
     }
   }, [title, slugTouched, setValue]);
+
+  const [slugPreview, setSlugPreview] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setSlugPreview(slugify(title ?? "")), 200);
+    return () => clearTimeout(t);
+  }, [title]);
+
+  const slugChanged = mode === "edit" && initialSlug && slug !== initialSlug;
 
   return (
     <SectionCard
@@ -75,27 +88,39 @@ export function CourseGeneralSection({
           disabled={disabled}
           {...register("title")}
         />
+        {mode === "create" && slugPreview ? (
+          <p className="mt-1.5 text-xs text-zinc-400 tabular-nums dark:text-zinc-500">
+            → /courses/<span className="text-zinc-600 dark:text-zinc-300">{slugPreview}</span>
+          </p>
+        ) : null}
       </Field>
 
-      <Field
-        label="Slug"
-        htmlFor="slug"
-        hint="Otomatis dari judul. Bisa diubah — hanya huruf kecil, angka, dan tanda hubung."
-        error={errors.slug?.message}
-      >
-        <div className="flex items-center gap-0 overflow-hidden rounded-xl border border-zinc-200 focus-within:border-[color:var(--color-brand-400)] dark:border-[color:var(--color-surface-border)]">
-          <span className="select-none border-r border-zinc-200 bg-zinc-50 px-3 py-2.5 text-xs text-zinc-400 dark:border-[color:var(--color-surface-border)] dark:bg-white/[0.03]">
-            /courses/
-          </span>
-          <input
-            id="slug"
-            className="flex-1 bg-transparent px-3 py-2.5 text-sm outline-none disabled:opacity-60"
-            placeholder="fullstack-web-development"
-            disabled={disabled}
-            {...register("slug", { onChange: () => setSlugTouched(true) })}
-          />
-        </div>
-      </Field>
+      {mode === "edit" ? (
+        <Field
+          label="Slug"
+          htmlFor="slug"
+          hint="Hanya huruf kecil, angka, dan tanda hubung."
+          error={errors.slug?.message}
+        >
+          <div className="flex items-center gap-0 overflow-hidden rounded-xl border border-zinc-200 focus-within:border-[color:var(--color-brand-400)] dark:border-[color:var(--color-surface-border)]">
+            <span className="select-none border-r border-zinc-200 bg-zinc-50 px-3 py-2.5 text-xs text-zinc-400 dark:border-[color:var(--color-surface-border)] dark:bg-white/[0.03]">
+              /courses/
+            </span>
+            <input
+              id="slug"
+              className="flex-1 bg-transparent px-3 py-2.5 text-sm outline-none disabled:opacity-60"
+              placeholder="fullstack-web-development"
+              disabled={disabled}
+              {...register("slug", { onChange: () => setSlugTouched(true) })}
+            />
+          </div>
+          {slugChanged ? (
+            <p className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400">
+              Slug telah diubah. Pengunjung dengan URL lama akan otomatis dialihkan ke URL baru ini.
+            </p>
+          ) : null}
+        </Field>
+      ) : null}
 
       <Field
         label="Deskripsi Singkat"

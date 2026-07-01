@@ -173,6 +173,7 @@ model User {
   platformSettingsUpdated PlatformSetting[] @relation("PlatformSettingEditor")
   auditLogs               AuditLog[]
   adminInvitesSent        AdminInvite[]     @relation("AdminInviteInviter")
+  slugChanges             CourseSlugHistory[]
 
   @@index([role])
   @@index([isActive])
@@ -389,12 +390,30 @@ model Course {
   certificates Certificate[]
   badges       Badge[]         @relation("BadgeCourse")
   vouchers     Voucher[]       @relation("VoucherAllowedCourse")
+  slugHistory  CourseSlugHistory[]
 
   @@index([status])
   @@index([categoryId])
   @@index([createdAt])
   @@index([isFeatured])
   @@map("course")
+}
+
+// Tracks historical slugs for a Course so old URLs 308-redirect to the current
+// slug (PRD §6.11.3 slug editing, §4 slug history & redirect). Max 20 entries
+// per course — oldest entries pruned atomically during update.
+model CourseSlugHistory {
+  id          String   @id @default(cuid())
+  courseId    String
+  slug        String   @unique
+  changedById String?
+  changedAt   DateTime @default(now())
+
+  course    Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  changedBy User?  @relation(fields: [changedById], references: [id], onDelete: SetNull)
+
+  @@index([courseId])
+  @@map("course_slug_history")
 }
 
 // Bullet points on the catalog detail page (PRD §6.3.2 "Yang Akan Dipelajari").

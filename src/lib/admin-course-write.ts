@@ -5,7 +5,12 @@ import {
   TASK_IMAGE_MAX_BYTES,
   uploadCourseAsset,
 } from "@/lib/bunny-storage";
-import { courseGeneralSchema, type CourseGeneralInput } from "@/lib/validations/admin-course";
+import {
+  courseCreateSchema,
+  courseEditSchema,
+  type CourseGeneralInput,
+  type CourseCreateInput,
+} from "@/lib/validations/admin-course";
 
 /**
  * Helpers shared by the create (POST /api/admin/courses) and update
@@ -25,8 +30,8 @@ export function isUniqueError(err: unknown): boolean {
   return (err as { code?: string } | null)?.code === "P2002";
 }
 
-type ParseResult =
-  | { ok: true; data: CourseGeneralInput }
+type ParseResult<T = CourseGeneralInput> =
+  | { ok: true; data: T }
   | { ok: false; error: string };
 
 function parseJsonArray(value: FormDataEntryValue | null): unknown {
@@ -48,11 +53,9 @@ function str(value: FormDataEntryValue | null): string {
   return typeof value === "string" ? value : "";
 }
 
-/** Validate the general/settings fields from a multipart body. The schema is
- *  "concrete" (no coerce) so we normalize multipart strings → real types here. */
-export function parseCourseGeneralForm(form: FormData): ParseResult {
+function parseFormBody(form: FormData) {
   const fakeRaw = form.get("fakePrice");
-  const parsed = courseGeneralSchema.safeParse({
+  return {
     title: str(form.get("title")),
     slug: str(form.get("slug")),
     shortDescription: str(form.get("shortDescription")),
@@ -67,8 +70,21 @@ export function parseCourseGeneralForm(form: FormData): ParseResult {
     status: str(form.get("status")) || "DRAFT",
     benefits: parseJsonArray(form.get("benefits")),
     faqs: parseJsonArray(form.get("faqs")),
-  });
+  };
+}
 
+/** Validate create body (no slug — auto-generated server-side). */
+export function parseCourseCreateForm(form: FormData): ParseResult<CourseCreateInput> {
+  const parsed = courseCreateSchema.safeParse(parseFormBody(form));
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Data tidak valid." };
+  }
+  return { ok: true, data: parsed.data };
+}
+
+/** Validate edit body (slug required — admin sets it manually). */
+export function parseCourseEditForm(form: FormData): ParseResult<CourseGeneralInput> {
+  const parsed = courseEditSchema.safeParse(parseFormBody(form));
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Data tidak valid." };
   }

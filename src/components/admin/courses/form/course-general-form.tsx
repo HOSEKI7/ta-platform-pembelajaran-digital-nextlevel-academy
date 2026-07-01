@@ -1,12 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Save } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { courseGeneralSchema, type CourseGeneralInput } from "@/lib/validations/admin-course";
+import { ConfirmDialog } from "@/components/admin/courses/form/confirm-dialog";
+import {
+  courseCreateSchema,
+  courseEditSchema,
+  type CourseGeneralInput,
+} from "@/lib/validations/admin-course";
 import type { AdminCategoryOption } from "@/lib/admin-course-form-types";
 
 import { CourseGeneralSection } from "./course-general-section";
@@ -62,15 +67,29 @@ export function CourseGeneralForm({
   onSubmit,
   onCancel,
 }: Props) {
+  const schema = mode === "create" ? courseCreateSchema : courseEditSchema;
   const form = useForm<CourseGeneralInput>({
-    resolver: zodResolver(courseGeneralSchema),
+    resolver: zodResolver(schema as any),
     defaultValues: initial?.values ?? EMPTY,
   });
 
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [instructorFile, setInstructorFile] = useState<File | null>(null);
 
+  // Slug-change confirmation dialog (edit mode only).
+  const [showSlugConfirm, setShowSlugConfirm] = useState(false);
+  const pendingSubmit = useRef<(() => void) | null>(null);
+
   const submit = form.handleSubmit((values) => {
+    if (
+      mode === "edit" &&
+      initial &&
+      values.slug !== initial.values.slug
+    ) {
+      pendingSubmit.current = () => onSubmit({ values, thumbnailFile, instructorFile });
+      setShowSlugConfirm(true);
+      return;
+    }
     onSubmit({ values, thumbnailFile, instructorFile });
   });
 
@@ -78,10 +97,12 @@ export function CourseGeneralForm({
     <FormProvider {...form}>
       <form onSubmit={submit} className="flex flex-col gap-6" noValidate>
         <CourseGeneralSection
+          mode={mode}
           initialDescription={initial?.values.description ?? ""}
           thumbnailPreview={initial?.thumbnailPreview ?? ""}
           onThumbnailChange={setThumbnailFile}
           slugLocked={mode === "edit"}
+          initialSlug={initial?.values.slug}
           disabled={submitting}
         />
 
@@ -113,6 +134,25 @@ export function CourseGeneralForm({
             {submitLabel}
           </Button>
         </div>
+
+        <ConfirmDialog
+          open={showSlugConfirm}
+          onOpenChange={setShowSlugConfirm}
+          title="Ubah Slug URL?"
+          description={
+            <span>
+              Slug URL akan diubah. Pengunjung yang masih menggunakan URL lama
+              akan otomatis diarahkan ke URL baru ini. Slug lama akan dicatat
+              sebagai riwayat.
+            </span>
+          }
+          confirmLabel="Ya, Ubah Slug"
+          busy={submitting}
+          onConfirm={() => {
+            setShowSlugConfirm(false);
+            pendingSubmit.current?.();
+          }}
+        />
       </form>
     </FormProvider>
   );

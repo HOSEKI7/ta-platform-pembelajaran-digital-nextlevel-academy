@@ -13,7 +13,7 @@ import { removeBunnyFile } from "@/lib/bunny-storage";
 import { slugify } from "@/lib/slugify";
 import {
   isUniqueError,
-  parseCourseGeneralForm,
+  parseCourseCreateForm,
   uploadCourseImageField,
 } from "@/lib/admin-course-write";
 
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const parsed = parseCourseGeneralForm(form);
+  const parsed = parseCourseCreateForm(form);
   if (!parsed.ok) {
     return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
@@ -86,12 +86,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Kategori tidak ditemukan." }, { status: 400 });
   }
 
-  const slug = input.slug || slugify(input.title);
-  const slugTaken = await prisma.course.findUnique({
-    where: { slug },
-    select: { id: true },
-  });
-  if (slugTaken) {
+  const slug = slugify(input.title);
+  const [slugTaken, slugHistoryTaken] = await Promise.all([
+    prisma.course.findUnique({ where: { slug }, select: { id: true } }),
+    prisma.courseSlugHistory.findUnique({ where: { slug }, select: { id: true } }),
+  ]);
+  if (slugTaken || slugHistoryTaken) {
     return NextResponse.json(
       { error: "Slug sudah dipakai kursus lain. Ubah slug." },
       { status: 409 },
