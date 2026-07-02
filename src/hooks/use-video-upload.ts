@@ -40,7 +40,7 @@ export function useVideoUpload() {
     setState({ phase: "idle" });
   }, []);
 
-  const start = useCallback(async (file: File, title: string) => {
+  const start = useCallback(async (sprintId: string, file: File, title: string) => {
     if (file.size > MAX_BYTES) {
       setState({ phase: "error", message: "Ukuran video melebihi batas 500 MB." });
       return;
@@ -57,7 +57,7 @@ export function useVideoUpload() {
       const res = await fetch("/api/admin/videos/create-upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: title || file.name }),
+        body: JSON.stringify({ title: title || file.name, sprintId }),
       });
       const body = (await res.json().catch(() => null)) as
         | { data?: UploadAuth; error?: string }

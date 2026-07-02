@@ -2,6 +2,8 @@ import "server-only";
 
 import { createHash } from "node:crypto";
 
+import { prisma } from "@/lib/prisma";
+
 /**
  * Bunny.net **Stream** admin helpers — server-side video lifecycle management
  * for the admin "Tambah/Edit Kursus" flow. Distinct from `src/lib/bunny.ts`
@@ -55,8 +57,11 @@ function assertConfigured(): void {
 
 export type CreatedBunnyVideo = { guid: string; libraryId: string };
 
-/** Create an empty video object on Bunny and return its GUID. */
-export async function createBunnyVideo(title: string): Promise<CreatedBunnyVideo> {
+/** Create an empty video on Bunny, optionally inside a collection. */
+export async function createBunnyVideo(
+  title: string,
+  collectionId?: string,
+): Promise<CreatedBunnyVideo> {
   assertConfigured();
   const res = await fetch(`${STREAM_API_BASE}/library/${LIB_ID}/videos`, {
     method: "POST",
@@ -65,7 +70,10 @@ export async function createBunnyVideo(title: string): Promise<CreatedBunnyVideo
       "Content-Type": "application/json",
       Accept: "application/json",
     },
-    body: JSON.stringify({ title: title.slice(0, 200) }),
+    body: JSON.stringify({
+      title: title.slice(0, 200),
+      ...(collectionId ? { collectionId } : {}),
+    }),
   });
   if (!res.ok) {
     throw new Error(`Bunny createVideo gagal: ${res.status} ${res.statusText}`);
@@ -132,4 +140,82 @@ export async function deleteBunnyVideo(videoGuid: string): Promise<void> {
 export function cdnPlaybackUrl(videoGuid: string): string | null {
   if (!CDN_HOST) return null;
   return `https://${CDN_HOST}/${videoGuid}/playlist.m3u8`;
+}
+
+export type CreatedCollection = { guid: string };
+
+/** Create a named collection inside the Stream library. */
+export async function createBunnyCollection(name: string): Promise<CreatedCollection> {
+  assertConfigured();
+  const res = await fetch(`${STREAM_API_BASE}/library/${LIB_ID}/collections`, {
+    method: "POST",
+    headers: {
+      AccessKey: API_KEY,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({ name: name.slice(0, 100) }),
+  });
+  if (!res.ok) {
+    throw new Error(`Bunny createCollection gagal: ${res.status} ${res.statusText}`);
+  }
+  const json = (await res.json()) as { guid?: string };
+  if (!json.guid) {
+    throw new Error("Bunny createCollection: respons tanpa GUID.");
+  }
+  return { guid: json.guid };
+}
+
+/**
+ * Lazy get-or-create a Bunny Stream collection for a course.
+ * Creates one on first video upload, then caches the GUID on the Course row.
+ * Uses pg_advisory_xact_lock to prevent concurrent double-creation.
+ */
+export async function getOrCreateCollection(courseId: string): Promise<string> {
+  assertConfigured();
+
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+    select: { bunnyCollectionId: true, title: true },
+  });
+  if (!course) throw new Error(`Course ${courseId} tidak ditemukan.`);
+  if (course.bunnyCollectionId) return course.bunnyCollectionId;
+
+  return prisma.$transaction(async (tx) => {
+    // ponytail: global advisory lock per course — prevents concurrent double-creation.
+    // Per-course key is narrow enough; no per-account upgrade needed.
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${'collection:' + courseId})::int8)`;
+
+    const locked = await tx.course.findUnique({
+      where: { id: courseId },
+      select: { bunnyCollectionId: true, title: true },
+    });
+    if (locked?.bunnyCollectionId) return locked.bunnyCollectionId;
+
+    const { guid } = await createBunnyCollection(locked?.title ?? course.title);
+    await tx.course.update({
+      where: { id: courseId },
+      data: { bunnyCollectionId: guid },
+    });
+    return guid;
+  });
+}
+
+/**
+ * Move an existing video into a collection (used by backfill).
+ */
+export async function setVideoCollection(videoGuid: string, collectionId: string): Promise<void> {
+  assertConfigured();
+  const res = await fetch(`${STREAM_API_BASE}/library/${LIB_ID}/videos/${videoGuid}`, {
+    method: "POST",
+    headers: {
+      AccessKey: API_KEY,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({ collectionId }),
+  });
+  if (!res.ok) {
+    throw new Error(`Bunny setVideoCollection gagal: ${res.status} ${res.statusText}`);
+  }
 }

@@ -32,10 +32,11 @@ type Props = {
   mode: "create" | "edit";
   initial?: VideoStepInitial;
   saving: boolean;
+  sprintId: string;
   onSave: (payload: Omit<StepVideoPayload, "type">) => void;
 };
 
-export function VideoStepDialog({ open, onOpenChange, mode, initial, saving, onSave }: Props) {
+export function VideoStepDialog({ open, onOpenChange, mode, initial, saving, sprintId, onSave }: Props) {
   // State seeds from `initial` on mount. The parent remounts this dialog (via a
   // changing `key`) each time it opens, so there's no effect-based re-seed.
   const [title, setTitle] = useState(initial?.title ?? "");
@@ -79,7 +80,7 @@ export function VideoStepDialog({ open, onOpenChange, mode, initial, saving, onS
             <VideoUploader
               state={upload.state}
               existingLabel={mode === "edit" && initial?.bunnyVideoId ? "tersimpan" : undefined}
-              onPick={(file) => upload.start(file, title || file.name)}
+              onPick={(file) => upload.start(sprintId, file, title || file.name)}
               onReset={upload.reset}
               disabled={saving}
             />

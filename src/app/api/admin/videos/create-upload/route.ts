@@ -3,8 +3,10 @@ import { z } from "zod";
 
 import { Role } from "@/generated/prisma";
 import { requireRoleInRoute } from "@/lib/auth-server";
+import { prisma } from "@/lib/prisma";
 import {
   createBunnyVideo,
+  getOrCreateCollection,
   isBunnyStreamAdminConfigured,
   signTusUpload,
 } from "@/lib/bunny-stream-admin";
@@ -12,7 +14,10 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const bodySchema = z.object({ title: z.string().trim().min(1).max(200) });
+const bodySchema = z.object({
+  title: z.string().trim().min(1).max(200),
+  sprintId: z.string().trim().min(1),
+});
 
 /**
  * POST /api/admin/videos/create-upload — step 1 of the direct browser upload
@@ -20,6 +25,10 @@ const bodySchema = z.object({ title: z.string().trim().min(1).max(200) });
  * authorization so the client can upload the file straight to Bunny without it
  * passing through our server. The returned `videoGuid` is sent back when saving
  * the video step.
+ *
+ * `sprintId` is supplied by the client (the upload dialog is always scoped to
+ * a sprint). The course's Bunny collection is resolved server-side via the
+ * sprint → course hierarchy — the client never sends a raw courseId.
  */
 export async function POST(req: Request) {
   const auth = await requireRoleInRoute(Role.ADMINISTRATOR);
@@ -40,11 +49,23 @@ export async function POST(req: Request) {
   }
   const parsed = bodySchema.safeParse(raw);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Judul video wajib diisi." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Judul video dan sprint wajib diisi." },
+      { status: 400 },
+    );
   }
 
   try {
-    const { guid } = await createBunnyVideo(parsed.data.title);
+    const sprint = await prisma.sprint.findUnique({
+      where: { id: parsed.data.sprintId },
+      select: { courseId: true },
+    });
+    if (!sprint) {
+      return NextResponse.json({ error: "Sprint tidak ditemukan." }, { status: 404 });
+    }
+
+    const collectionId = await getOrCreateCollection(sprint.courseId);
+    const { guid } = await createBunnyVideo(parsed.data.title, collectionId);
     const tus = signTusUpload(guid);
     return NextResponse.json({
       data: {

@@ -379,6 +379,8 @@ model Course {
   // Stamped when the course first transitions to PUBLISHED (admin §6.11.3).
   // Nullable: Draft/Archived courses that were never published have no date.
   publishedAt       DateTime?
+  /** Bunny Stream collection GUID for organising course videos (lazy-created on first upload). */
+  bunnyCollectionId String?   @map("bunny_collection_id")
 
   category Category @relation(fields: [categoryId], references: [id])
 

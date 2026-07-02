@@ -248,6 +248,7 @@ export function SprintCard({ sprint, index, actions }: Props) {
             : undefined
         }
         saving={stepSaving}
+        sprintId={sprint.id}
         onSave={(payload) => {
           const onSettled = {
             onSuccess: () => {
