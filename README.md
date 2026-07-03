@@ -242,6 +242,7 @@ Buka [http://localhost:3000](http://localhost:3000).
 | `npm run verify:bunny`    | Diagnostik konektivitas Bunny.net           |
 | `npm run test:e2e`        | Jalankan Playwright E2E tests               |
 | `npm run clean`           | Bersihkan `.next` cache                     |
+| `npm run fresh`           | Jaalankan `npm run clean && npm run dev`    |
 
 ---
 
