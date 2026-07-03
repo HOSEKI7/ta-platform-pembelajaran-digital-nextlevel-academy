@@ -52,6 +52,8 @@ export function CheckoutForm({
   const { isReady, pay } = useMidtransSnap({ clientKey, isProduction });
   const settledRef = useRef(false);
   const [isSimulating, setIsSimulating] = useState(false);
+  const [snapError, setSnapError] = useState<string | null>(null);
+  const snapOpenedAt = useRef(0);
 
   // Fresh-checkout state.
   const [appliedVoucher, setAppliedVoucher] = useState<AppliedVoucher | null>(null);
@@ -77,12 +79,54 @@ export function CheckoutForm({
 
   /** Opens the Snap popup; every callback only hints the UI — truth is in the DB. */
   function openSnap(token: string, orderId: string) {
+    setSnapError(null);
+    snapOpenedAt.current = Date.now();
+    const CSP_TIMEOUT_MS = 4000;
+    let cspTimer: ReturnType<typeof setTimeout> | undefined;
+    // If onClose fires too fast, likely CSP/ad-blocker blocked the popup content.
+    const onClose = () => {
+      clearTimeout(cspTimer);
+      if (Date.now() - snapOpenedAt.current < CSP_TIMEOUT_MS) {
+        setSnapError(
+          "Ekstensi pemblokir iklan (seperti uBlock Origin atau Brave " +
+            "Shields) menghentikan jendela pembayaran. Nonaktifkan ekstensi " +
+            "untuk halaman ini atau gunakan jendela incognito, lalu coba lagi.",
+        );
+      } else {
+        goToTransaction(orderId);
+      }
+    };
     pay(token, {
-      onSuccess: () => goToTransaction(orderId),
-      onPending: () => goToTransaction(orderId),
-      onClose: () => goToTransaction(orderId),
-      onError: () => toast.error("Pembayaran gagal. Silakan coba lagi."),
+      onSuccess: () => {
+        clearTimeout(cspTimer);
+        goToTransaction(orderId);
+      },
+      onPending: () => {
+        clearTimeout(cspTimer);
+        goToTransaction(orderId);
+      },
+      onClose,
+      onError: () => {
+        clearTimeout(cspTimer);
+        setSnapError(
+          "Pembayaran gagal. Ekstensi pemblokir iklan (seperti uBlock Origin " +
+            "atau Brave Shields) dapat menghentikan jendela pembayaran Midtrans. " +
+            "Nonaktifkan ekstensi untuk halaman ini atau gunakan jendela incognito.",
+        );
+      },
     });
+    // Guard: if no callback fired within CSP_TIMEOUT_MS, likely popup silently
+    // failed (e.g. CSP on the iframe itself without an error callback).
+    cspTimer = setTimeout(() => {
+      // onClose/onError already cleared; snapOpenedAt still > 0 if nothing fired.
+      if (snapOpenedAt.current > 0) {
+        setSnapError(
+          "Jendela pembayaran tidak muncul. Nonaktifkan ekstensi pemblokir " +
+            "iklan (uBlock Origin, Brave Shields) atau gunakan jendela " +
+            "incognito, lalu coba lagi.",
+        );
+      }
+    }, CSP_TIMEOUT_MS);
   }
 
   /** Dev fallback when Midtrans isn't configured. */
@@ -193,21 +237,40 @@ export function CheckoutForm({
               <h2 className="font-heading text-lg font-extrabold tracking-tight text-zinc-900">
                 Lanjutkan Pembayaran
               </h2>
-              <PendingCountdown expiresAt={resume.expiresAt} onExpire={() => router.refresh()} />
+              <PendingCountdown
+                expiresAt={resume.expiresAt}
+                onExpire={() => router.refresh()}
+              />
             </div>
             <p className="mt-2 text-xs text-zinc-500">
               Kamu punya pesanan yang belum dibayar. Buka kembali jendela
               pembayaran untuk menyelesaikannya sebelum waktu habis.
             </p>
 
-            <button type="button" onClick={handleResume} disabled={busy} className={cn(primaryBtn, "mt-5")}>
+            <button
+              type="button"
+              onClick={handleResume}
+              disabled={busy}
+              className={cn(primaryBtn, "mt-5")}
+            >
               {busy ? (
                 <Loader2 className="size-4 animate-spin" strokeWidth={2.4} />
               ) : (
                 <Lock className="size-4" strokeWidth={2.4} />
               )}
-              {snapNeeded && !isReady ? "Menyiapkan pembayaran…" : "Bayar Sekarang"}
+              {snapNeeded && !isReady
+                ? "Menyiapkan pembayaran…"
+                : "Bayar Sekarang"}
             </button>
+
+            {snapError ? (
+              <p
+                role="alert"
+                className="mt-3 rounded-xl bg-[color:var(--color-error)]/8 px-3.5 py-2.5 text-xs font-medium text-[color:var(--color-error)] ring-1 ring-[color:var(--color-error)]/20"
+              >
+                {snapError}
+              </p>
+            ) : null}
 
             <Link
               href={`/transactions/${resume.orderId}`}
@@ -265,24 +328,38 @@ export function CheckoutForm({
             />
             <span className="leading-snug">
               Saya menyetujui{" "}
-              <Link href="#" className="font-semibold text-[color:var(--color-brand-700)] underline underline-offset-4">
+              <Link
+                href="#"
+                className="font-semibold text-[color:var(--color-brand-700)] underline underline-offset-4"
+              >
                 Syarat &amp; Ketentuan
               </Link>{" "}
               dan{" "}
-              <Link href="#" className="font-semibold text-[color:var(--color-brand-700)] underline underline-offset-4">
+              <Link
+                href="#"
+                className="font-semibold text-[color:var(--color-brand-700)] underline underline-offset-4"
+              >
                 Kebijakan Tanpa Refund
               </Link>
               .
             </span>
           </label>
 
-          {submitError ? (
-            <p role="alert" className="mt-4 rounded-xl bg-[color:var(--color-error)]/8 px-3.5 py-2.5 text-xs font-medium text-[color:var(--color-error)] ring-1 ring-[color:var(--color-error)]/20">
-              {submitError}
+          {submitError || snapError ? (
+            <p
+              role="alert"
+              className="mt-4 rounded-xl bg-[color:var(--color-error)]/8 px-3.5 py-2.5 text-xs font-medium text-[color:var(--color-error)] ring-1 ring-[color:var(--color-error)]/20"
+            >
+              {snapError ?? submitError}
             </p>
           ) : null}
 
-          <button type="button" onClick={handleSubmit} disabled={!canSubmit} className={cn(primaryBtn, "mt-5")}>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={!canSubmit}
+            className={cn(primaryBtn, "mt-5")}
+          >
             {submitting ? (
               <Loader2 className="size-4 animate-spin" strokeWidth={2.4} />
             ) : (
