@@ -329,7 +329,7 @@ export function CheckoutForm({
             <span className="leading-snug">
               Saya menyetujui{" "}
               <Link
-                href="#"
+                href="/legal/terms"
                 className="font-semibold text-[color:var(--color-brand-700)] underline underline-offset-4"
               >
                 Syarat &amp; Ketentuan
