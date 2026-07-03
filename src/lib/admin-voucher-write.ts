@@ -21,6 +21,8 @@ export type VoucherWriteFailure =
   | "not_found"
   | "code_taken"
   | "in_use"
+  | "inconsistent_category"
+  | "max_one_per_user_conflict"
   | "error";
 
 export type VoucherCreateResult =
@@ -46,9 +48,42 @@ export function describeVoucherFailure(reason: VoucherWriteFailure): {
         status: 409,
         error: "Voucher sudah pernah dipakai dan tidak bisa dihapus. Nonaktifkan saja.",
       };
+    case "inconsistent_category":
+      return {
+        status: 409,
+        error: "Kursus yang dipilih tidak termasuk dalam kategori yang ditentukan.",
+      };
+    case "max_one_per_user_conflict":
+      return {
+        status: 400,
+        error: "Voucher dengan batas 1 kali per pengguna tidak bisa dikombinasikan dengan kursus tertentu.",
+      };
     case "error":
       return { status: 500, error: "Gagal memproses voucher. Coba lagi." };
   }
+}
+
+/**
+ * Server-side safety net: if both allowedCourseId and allowedCategoryId are set,
+ * verify the course actually belongs to that category. Also reject
+ * maxOneUsePerUser + allowedCourseId (inconsistent).
+ */
+async function validateScopeConsistency(
+  input: VoucherFormInput,
+): Promise<VoucherWriteFailure | null> {
+  if (input.maxOneUsePerUser && input.allowedCourseId) {
+    return "max_one_per_user_conflict";
+  }
+  if (input.allowedCourseId && input.allowedCategoryId) {
+    const course = await prisma.course.findUnique({
+      where: { id: input.allowedCourseId },
+      select: { categoryId: true },
+    });
+    if (course && course.categoryId !== input.allowedCategoryId) {
+      return "inconsistent_category";
+    }
+  }
+  return null;
 }
 
 /** Duck-typed Prisma unique-constraint check — `instanceof` is unreliable here. */
@@ -74,6 +109,9 @@ function toVoucherData(input: VoucherFormInput): {
   maxUsage: number | null;
   startDate: Date;
   endDate: Date;
+  allowedCourseId: string | null;
+  allowedCategoryId: string | null;
+  maxUsagePerUser: number | null;
 } {
   const isPct = input.discountType === "PERCENTAGE";
   return {
@@ -84,6 +122,9 @@ function toVoucherData(input: VoucherFormInput): {
     maxUsage: input.maxUsage,
     startDate: input.startDate ? new Date(input.startDate) : new Date(),
     endDate: new Date(input.endDate),
+    allowedCourseId: input.allowedCourseId ?? null,
+    allowedCategoryId: input.allowedCategoryId ?? null,
+    maxUsagePerUser: input.maxOneUsePerUser ? 1 : null,
   };
 }
 
@@ -108,6 +149,9 @@ export async function createVoucher(
   input: VoucherFormInput,
   ctx: AdminActionContext,
 ): Promise<VoucherCreateResult> {
+  const consistency = await validateScopeConsistency(input);
+  if (consistency) return { ok: false, reason: consistency };
+
   const data = toVoucherData(input);
   try {
     const voucher = await prisma.$transaction(async (tx) => {
@@ -119,6 +163,9 @@ export async function createVoucher(
         data: auditData(ctx, "VOUCHER_CREATE", created.id, {
           code: input.code,
           discountType: data.discountType,
+          allowedCourseId: data.allowedCourseId,
+          allowedCategoryId: data.allowedCategoryId,
+          maxUsagePerUser: data.maxUsagePerUser,
         }),
       });
       return created;
@@ -136,6 +183,9 @@ export async function updateVoucher(
   input: VoucherFormInput,
   ctx: AdminActionContext,
 ): Promise<VoucherWriteResult> {
+  const consistency = await validateScopeConsistency(input);
+  if (consistency) return { ok: false, reason: consistency };
+
   const existing = await prisma.voucher.findFirst({
     where: { id, isSystemGenerated: false },
     select: { id: true },
@@ -153,6 +203,9 @@ export async function updateVoucher(
         data: auditData(ctx, "VOUCHER_UPDATE", id, {
           code: input.code,
           discountType: data.discountType,
+          allowedCourseId: data.allowedCourseId,
+          allowedCategoryId: data.allowedCategoryId,
+          maxUsagePerUser: data.maxUsagePerUser,
         }),
       }),
     ]);

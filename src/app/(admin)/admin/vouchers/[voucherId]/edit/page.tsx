@@ -3,7 +3,10 @@ import { notFound } from "next/navigation";
 
 import { Role } from "@/generated/prisma";
 import { requireRole } from "@/lib/auth-server";
-import { loadAdminVoucherForEdit } from "@/lib/admin-vouchers-loader";
+import {
+  loadAdminVoucherForEdit,
+  loadAdminVoucherFormOptions,
+} from "@/lib/admin-vouchers-loader";
 
 import { EditVoucherView } from "@/components/admin/vouchers/edit-voucher-view";
 import { StudentPageContainer } from "@/components/dashboard/shared/student-page-container";
@@ -24,12 +27,19 @@ export default async function EditVoucherPage({ params }: Props) {
     redirectTo: `/admin/vouchers/${voucherId}/edit`,
   });
 
-  const voucher = await loadAdminVoucherForEdit(voucherId);
+  const [voucher, { courses, categories }] = await Promise.all([
+    loadAdminVoucherForEdit(voucherId),
+    loadAdminVoucherFormOptions(),
+  ]);
   if (!voucher) notFound();
 
   return (
     <StudentPageContainer width="narrow">
-      <EditVoucherView voucher={voucher} />
+      <EditVoucherView
+        voucher={voucher}
+        courses={courses}
+        categories={categories}
+      />
     </StudentPageContainer>
   );
 }

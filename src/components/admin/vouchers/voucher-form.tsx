@@ -11,11 +11,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   type VoucherDiscountTypeValue,
   type VoucherFormInput,
   voucherFormSchema,
 } from "@/lib/validations/admin-voucher";
+import { Badge } from "@/components/ui/badge";
+import { ComboboxField } from "./combobox-field";
 
 const WIB_TZ = "Asia/Jakarta";
 
@@ -28,6 +31,9 @@ const EMPTY: VoucherFormInput = {
   maxUsage: null,
   startDate: "",
   endDate: "",
+  allowedCourseId: null,
+  allowedCategoryId: null,
+  maxOneUsePerUser: false,
 };
 
 /** UTC ISO → WIB wall-clock string for `<input type="datetime-local">`. */
@@ -42,12 +48,17 @@ function wibInputToIso(wall: string): string {
   return fromZonedTime(wall, WIB_TZ).toISOString();
 }
 
+type CourseOption = { id: string; title: string; categoryId: string; status: string };
+type CategoryOption = { id: string; name: string };
+
 type Props = {
   mode: "create" | "edit";
   initial?: VoucherFormInput;
   submitting: boolean;
   onSubmit: (values: VoucherFormInput) => void;
   onCancel: () => void;
+  courses: CourseOption[];
+  categories: CategoryOption[];
   /** Rendered below the form (Edit action zone: deactivate / delete). */
   footerSlot?: React.ReactNode;
 };
@@ -103,16 +114,27 @@ export function VoucherForm({
   submitting,
   onSubmit,
   onCancel,
+  courses,
+  categories,
   footerSlot,
 }: Props) {
   const form = useForm<VoucherFormInput>({
     resolver: zodResolver(voucherFormSchema),
     defaultValues: initial ?? EMPTY,
   });
-  const { register, control, handleSubmit, watch, formState } = form;
+  const {
+    register,
+    control,
+    handleSubmit,
+    watch,
+    setValue,
+    getValues,
+    formState,
+  } = form;
   const errors = formState.errors;
 
   const discountType = watch("discountType");
+  const maxOneUsePerUser = watch("maxOneUsePerUser");
 
   const submit = handleSubmit((values) => onSubmit(values));
 
@@ -263,36 +285,6 @@ export function VoucherForm({
           </Field>
         )}
 
-        <Field
-          label="Batas Pemakaian"
-          htmlFor="maxUsage"
-          optional
-          hint="Total maksimal voucher dipakai semua pengguna. Kosongkan untuk tak terbatas."
-          error={errors.maxUsage?.message}
-        >
-          <Controller
-            control={control}
-            name="maxUsage"
-            render={({ field }) => (
-              <Input
-                id="maxUsage"
-                type="number"
-                min={1}
-                inputMode="numeric"
-                placeholder="Tak terbatas"
-                value={field.value ?? ""}
-                onChange={(e) =>
-                  field.onChange(
-                    e.target.value === "" ? null : Number(e.target.value),
-                  )
-                }
-                disabled={submitting}
-                className="h-10 w-40 tabular-nums"
-              />
-            )}
-          />
-        </Field>
-
         <div className="grid gap-5 sm:grid-cols-2">
           <Field
             label="Mulai Berlaku"
@@ -343,6 +335,157 @@ export function VoucherForm({
             />
           </Field>
         </div>
+      </section>
+
+      {/* Scope & restrictions */}
+      <section className="flex flex-col gap-5 rounded-3xl bg-white p-5 ring-1 ring-zinc-200 dark:bg-[color:var(--color-surface-card)] dark:ring-[color:var(--color-surface-border)] sm:p-6">
+        <h3 className="font-heading text-sm font-bold text-zinc-900 dark:text-zinc-100">
+          Batasan Pemakaian
+        </h3>
+
+        <Controller
+          control={control}
+          name="allowedCategoryId"
+          render={({ field }) => (
+            <Field
+              label="Berlaku untuk kategori"
+              hint='Pilih kategori tertentu atau biarkan "Semua Kategori".'
+              error={errors.allowedCategoryId?.message}
+            >
+              <ComboboxField
+                label="kategori"
+                items={categories.map((c) => ({ value: c.id, label: c.name }))}
+                value={field.value}
+                onValueChange={(v) => {
+                  field.onChange(v);
+                  // Manual override: if course is selected but category differs, reset course
+                  const currentCourseId = getValues("allowedCourseId");
+                  if (currentCourseId) {
+                    const course = courses.find(
+                      (c) => c.id === currentCourseId,
+                    );
+                    if (course && v !== course.categoryId) {
+                      setValue("allowedCourseId", null);
+                    }
+                  }
+                }}
+                placeholder="Semua Kategori"
+                searchPlaceholder="Cari kategori…"
+              />
+            </Field>
+          )}
+        />
+
+        <Controller
+          control={control}
+          name="allowedCourseId"
+          render={({ field }) => (
+            <Field
+              label="Berlaku untuk kursus"
+              hint={
+                maxOneUsePerUser
+                  ? "Tidak bisa dikombinasikan dengan batas 1 kali per pengguna."
+                  : 'Pilih kursus tertentu atau biarkan "Semua Kursus".'
+              }
+              error={errors.allowedCourseId?.message}
+            >
+              <ComboboxField
+                label="kursus"
+                items={courses.map((c) => ({ value: c.id, label: c.title }))}
+                value={field.value}
+                onValueChange={(v) => {
+                  field.onChange(v);
+                  if (v) {
+                    const course = courses.find((c) => c.id === v);
+                    if (course)
+                      setValue("allowedCategoryId", course.categoryId);
+                  }
+                }}
+                placeholder="Semua Kursus"
+                disabled={maxOneUsePerUser}
+                searchPlaceholder="Cari kursus…"
+                renderItem={(item) => {
+                  const course = courses.find(
+                    (c) => c.id === item.value,
+                  );
+                  if (!course || course.status === "PUBLISHED")
+                    return <>{item.label}</>;
+                  const isDraft = course.status === "DRAFT";
+                  return (
+                    <>
+                      {item.label}
+                      <Badge
+                        className={cn(
+                          "ml-auto text-[10px] font-bold capitalize ring-1",
+                          isDraft
+                            ? "bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30"
+                            : "bg-zinc-100 text-zinc-600 ring-zinc-200 dark:bg-white/10 dark:text-zinc-300 dark:ring-white/15",
+                        )}
+                      >
+                        {isDraft ? "Draft" : "Archived"}
+                      </Badge>
+                    </>
+                  );
+                }}
+              />
+            </Field>
+          )}
+        />
+
+        <Field
+          label="Batas Pemakaian"
+          htmlFor="scopeMaxUsage"
+          optional
+          hint="Total maksimal voucher dipakai semua pengguna. Kosongkan untuk tak terbatas."
+          error={errors.maxUsage?.message}
+        >
+          <Controller
+            control={control}
+            name="maxUsage"
+            render={({ field }) => (
+              <Input
+                id="scopeMaxUsage"
+                type="number"
+                min={1}
+                inputMode="numeric"
+                placeholder="Tak terbatas"
+                value={field.value ?? ""}
+                onChange={(e) =>
+                  field.onChange(
+                    e.target.value === "" ? null : Number(e.target.value),
+                  )
+                }
+                disabled={submitting}
+                className="h-10 w-40 tabular-nums"
+              />
+            )}
+          />
+        </Field>
+
+        <Controller
+          control={control}
+          name="maxOneUsePerUser"
+          render={({ field }) => (
+            <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50/50 px-4 py-3 transition hover:bg-zinc-100 dark:border-[color:var(--color-surface-border)] dark:bg-white/[.02] dark:hover:bg-white/[.06]">
+              <span className="flex flex-col gap-0.5">
+                <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                  Maksimal 1 kali per pengguna
+                </span>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Setiap pengguna hanya bisa memakai voucher ini satu kali.
+                  Pesanan gagal/batal dapat dicoba ulang.
+                </span>
+              </span>
+              <Switch
+                checked={field.value}
+                onCheckedChange={(v) => {
+                  field.onChange(v);
+                  if (v) setValue("allowedCourseId", null);
+                }}
+              />
+            </label>
+          )}
+        />
       </section>
 
       <div className="flex items-center justify-end gap-3 rounded-2xl border border-zinc-200 bg-white/90 px-4 py-3 dark:border-[color:var(--color-surface-border)] dark:bg-[color:var(--color-surface-card)]/90">

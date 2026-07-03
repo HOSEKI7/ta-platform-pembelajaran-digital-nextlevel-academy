@@ -89,6 +89,9 @@ export type AdminVoucherDetail = {
   endDate: string;
   isActive: boolean;
   status: VoucherDerivedStatus;
+  allowedCourseId: string | null;
+  allowedCategoryId: string | null;
+  maxUsagePerUser: number | null;
 };
 
 export function adminVouchersKey(params: AdminVouchersParams) {

@@ -164,7 +164,8 @@ export async function loadCheckoutPageData(
  *  1. Code exists and is active
  *  2. Within startDate/endDate
  *  3. Global cap (maxUsage) not exhausted
- *  4. Per-user cap (maxUsagePerUser) not exhausted — looks at VoucherUsage
+ *  4. Per-user state-machine lock (maxUsagePerUser):
+ *     PENDING → locked, SUCCESS → permanent, FAILED/etc → released
  *  5. allowedUser scope matches (or null)
  *  6. allowedCourse scope matches (or null)
  *  7. allowedCategory scope matches the course's category (or null)
@@ -187,7 +188,8 @@ export type VoucherErrorCode =
   | "inactive"
   | "out_of_window"
   | "global_cap"
-  | "user_cap"
+  | "max_use_locked"
+  | "max_use_exhausted"
   | "wrong_user"
   | "wrong_course"
   | "wrong_category";
@@ -224,15 +226,32 @@ export async function validateVoucher(args: {
     };
   }
 
-  const userUses = await prisma.voucherUsage.count({
-    where: { voucherId: voucher.id, userId },
-  });
-  if (userUses >= voucher.maxUsagePerUser) {
-    return {
-      ok: false,
-      code: "user_cap",
-      error: "Kamu sudah menggunakan voucher ini.",
-    };
+  // Per-user state-machine lock (PRD §6.8):
+  // PENDING  → lock (order in progress)
+  // SUCCESS  → permanent lock (already used)
+  // FAILED | EXPIRED | CANCELED → released (can retry)
+  if (voucher.maxUsagePerUser != null) {
+    const usages = await prisma.voucherUsage.findMany({
+      where: { voucherId: voucher.id, userId },
+      include: { order: { select: { status: true } } },
+    });
+    for (const u of usages) {
+      if (u.order.status === "PENDING") {
+        return {
+          ok: false,
+          code: "max_use_locked",
+          error: "Kamu sudah memiliki pesanan aktif dengan voucher ini.",
+        };
+      }
+      if (u.order.status === "SUCCESS") {
+        return {
+          ok: false,
+          code: "max_use_exhausted",
+          error: "Kamu sudah menggunakan voucher ini.",
+        };
+      }
+      // FAILED | EXPIRED | CANCELED → released
+    }
   }
 
   if (voucher.allowedUserId && voucher.allowedUserId !== userId) {

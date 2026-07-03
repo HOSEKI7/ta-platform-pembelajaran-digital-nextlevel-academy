@@ -51,6 +51,9 @@ const baseVoucherSchema = z
     startDate: z.string().trim(),
     /** ISO string — required. */
     endDate: z.string().trim().min(1, "Tanggal berakhir wajib diisi."),
+    allowedCourseId: z.string().nullable(),
+    allowedCategoryId: z.string().nullable(),
+    maxOneUsePerUser: z.boolean(),
   })
   .superRefine((d, ctx) => {
     if (d.discountType === "PERCENTAGE") {

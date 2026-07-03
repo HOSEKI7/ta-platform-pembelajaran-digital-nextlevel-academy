@@ -21,7 +21,11 @@ import { VoucherStatusBadge } from "./voucher-status-badge";
 import { DeactivateVoucherDialog } from "./deactivate-voucher-dialog";
 import { DeleteVoucherDialog } from "./delete-voucher-dialog";
 
-type Props = { voucher: AdminVoucherDetail };
+type Props = {
+  voucher: AdminVoucherDetail;
+  courses: { id: string; title: string; categoryId: string; status: string }[];
+  categories: { id: string; name: string }[];
+};
 
 function toFormInput(v: AdminVoucherDetail): VoucherFormInput {
   return {
@@ -33,10 +37,13 @@ function toFormInput(v: AdminVoucherDetail): VoucherFormInput {
     maxUsage: v.maxUsage,
     startDate: v.startDate,
     endDate: v.endDate,
+    allowedCourseId: v.allowedCourseId,
+    allowedCategoryId: v.allowedCategoryId,
+    maxOneUsePerUser: v.maxUsagePerUser === 1,
   };
 }
 
-export function EditVoucherView({ voucher }: Props) {
+export function EditVoucherView({ voucher, courses, categories }: Props) {
   const router = useRouter();
 
   const updateMutation = useUpdateVoucherMutation(voucher.id);
@@ -132,6 +139,8 @@ export function EditVoucherView({ voucher }: Props) {
         submitting={busy}
         onSubmit={handleSubmit}
         onCancel={() => router.push("/admin/vouchers")}
+        courses={courses}
+        categories={categories}
         footerSlot={
           <section className="flex flex-col gap-4 rounded-3xl border border-dashed border-zinc-300 p-5 dark:border-[color:var(--color-surface-border)] sm:p-6">
             <div>

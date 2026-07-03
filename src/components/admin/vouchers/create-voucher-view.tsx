@@ -12,7 +12,12 @@ import type { VoucherFormInput } from "@/lib/validations/admin-voucher";
 
 import { VoucherForm } from "./voucher-form";
 
-export function CreateVoucherView() {
+type Props = {
+  courses: { id: string; title: string; categoryId: string; status: string }[];
+  categories: { id: string; name: string }[];
+};
+
+export function CreateVoucherView({ courses, categories }: Props) {
   const router = useRouter();
   const createMutation = useCreateVoucherMutation();
   const [redirecting, setRedirecting] = useState(false);
@@ -56,6 +61,8 @@ export function CreateVoucherView() {
         submitting={busy}
         onSubmit={handleSubmit}
         onCancel={() => router.push("/admin/vouchers")}
+        courses={courses}
+        categories={categories}
       />
     </div>
   );

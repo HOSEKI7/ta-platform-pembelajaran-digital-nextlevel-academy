@@ -172,6 +172,20 @@ export async function loadAdminVouchersPage(
  * Loads one admin voucher for the Edit form. Returns null when not found or
  * when it is a system-generated reward voucher (not editable here).
  */
+export async function loadAdminVoucherFormOptions() {
+  const [courses, categories] = await Promise.all([
+    prisma.course.findMany({
+      select: { id: true, title: true, categoryId: true, status: true },
+      orderBy: { title: "asc" },
+    }),
+    prisma.category.findMany({
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    }),
+  ]);
+  return { courses, categories };
+}
+
 export async function loadAdminVoucherForEdit(
   id: string,
 ): Promise<AdminVoucherDetail | null> {
@@ -189,6 +203,9 @@ export async function loadAdminVoucherForEdit(
       startDate: true,
       endDate: true,
       isActive: true,
+      allowedCourseId: true,
+      allowedCategoryId: true,
+      maxUsagePerUser: true,
     },
   });
   if (!v) return null;
@@ -206,5 +223,8 @@ export async function loadAdminVoucherForEdit(
     endDate: v.endDate.toISOString(),
     isActive: v.isActive,
     status: deriveVoucherStatus(v, new Date()),
+    allowedCourseId: v.allowedCourseId,
+    allowedCategoryId: v.allowedCategoryId,
+    maxUsagePerUser: v.maxUsagePerUser,
   };
 }

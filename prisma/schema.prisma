@@ -715,7 +715,7 @@ model Voucher {
   endDate           DateTime
   maxUsage          Int?
   usageCount        Int             @default(0)
-  maxUsagePerUser   Int             @default(1)
+  maxUsagePerUser   Int?
   allowedRole       VoucherAudience @default(ALL)
   allowedCategoryId String?
   allowedUserId     String?
