@@ -82,6 +82,7 @@ export function CheckoutForm({
     setSnapError(null);
     snapOpenedAt.current = Date.now();
     const CSP_TIMEOUT_MS = 4000;
+    // eslint-disable-next-line prefer-const -- false positive: TS confirms reassignment at L122
     let cspTimer: ReturnType<typeof setTimeout> | undefined;
     // If onClose fires too fast, likely CSP/ad-blocker blocked the popup content.
     const onClose = () => {
