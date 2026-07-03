@@ -52,7 +52,12 @@ export function proxy(request: NextRequest) {
   // dashboard by the `(auth)` layout (Node runtime — it can read the role; the
   // edge proxy can't, so it's handled there rather than guessing here).
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+  response.headers.set(
+    "Permissions-Policy",
+    "camera=(), microphone=(), geolocation=()",
+  );
+  return response;
 }
 
 export const config = {
