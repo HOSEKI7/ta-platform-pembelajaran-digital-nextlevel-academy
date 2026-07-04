@@ -1,18 +1,26 @@
+import { Suspense } from "react";
+
 import { getSession } from "@/lib/auth-server";
 
 import { PublicFooter } from "@/components/public/public-footer";
 import { PublicNavbar } from "@/components/public/public-navbar";
 
-export default async function PublicLayout({ children }: { children: React.ReactNode }) {
+// ponytail: navbar session fetched lazily so layout resolves instantly
+async function NavbarWithSession() {
   const session = await getSession();
+  return <PublicNavbar session={session} />;
+}
 
-  // The landing surface is light-only by design — enforced by hardcoded light
-  // colors here and in the public components. (The previous nested
-  // `ThemeProvider forcedTheme="light"` was a no-op under next-themes, which
-  // ignores nested providers, so removing it changes nothing visually.)
+export default function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-white text-zinc-900">
-      <PublicNavbar session={session} />
+      <Suspense
+        fallback={
+          <div className="h-16 sm:h-[68px] min-[1920px]:h-[72px]" />
+        }
+      >
+        <NavbarWithSession />
+      </Suspense>
       <main className="flex-1">{children}</main>
       <PublicFooter />
     </div>

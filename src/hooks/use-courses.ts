@@ -29,6 +29,6 @@ export function useCoursesQuery(params: CoursesPageParams) {
     queryKey: coursesQueryKey(params),
     queryFn: () => fetchCoursesPage(params),
     placeholderData: (prev) => prev,
-    staleTime: 30 * 1000, // 30 detik
+    staleTime: 120 * 1000, // 2 menit — ponytail: reduces refetchs on rapid filter changes
   });
 }

@@ -59,7 +59,7 @@ export function FeaturedCoursesSkeleton() {
       aria-live="polite"
       className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
     >
-      {Array.from({ length: 6 }).map((_, i) => (
+      {Array.from({ length: 3 }).map((_, i) => (
         <article
           key={i}
           className="relative flex h-full flex-col overflow-hidden rounded-3xl bg-white ring-1 ring-zinc-200/80"

@@ -92,54 +92,8 @@ export default async function CoursesPage({ searchParams }: Props) {
     sort: parseSort(sp.sort) as Sort,
   };
 
-  const queryClient = getQueryClient();
-
-  // Prefetch on the server so the first paint already has data and the
-  // client useQuery hydrates without an extra round-trip.
-  await Promise.all([
-    queryClient.prefetchQuery({
-      queryKey: coursesQueryKey(params),
-      queryFn: () => loadCoursesPage(params),
-    }),
-    queryClient.prefetchQuery({
-      queryKey: ["public", "categories"],
-      queryFn: async () => {
-        const [categories, totalPublished] = await Promise.all([
-          prisma.category.findMany({
-            select: {
-              name: true,
-              _count: {
-                select: { courses: { where: { status: "PUBLISHED" } } },
-              },
-            },
-            orderBy: { name: "asc" },
-          }),
-          prisma.course.count({ where: { status: "PUBLISHED" } }),
-        ]);
-        return {
-          categories: categories
-            .filter((c) => c._count.courses > 0)
-            .map((c) => ({ name: c.name, courseCount: c._count.courses })),
-          totalPublished,
-        };
-      },
-    }),
-  ]);
-
-  const initial = queryClient.getQueryData<
-    Awaited<ReturnType<typeof loadCoursesPage>>
-  >(coursesQueryKey(params));
-
   return (
     <>
-      {/* JSON-LD for the catalog */}
-      <CatalogJsonLd
-        siteUrl={siteUrl}
-        category={params.category}
-        page={params.page}
-        courses={initial?.courses ?? []}
-      />
-
       {/* Hero (SSR, static) */}
       <section className="relative isolate overflow-hidden pt-16 pb-12 sm:pt-20">
         <div

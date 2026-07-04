@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Filter, Loader2, Sparkles } from "lucide-react";
 
-import { type Sort, parsePage, parseSort } from "@/lib/courses-query";
+import { type CoursesPageParams, type Sort, parsePage, parseSort } from "@/lib/courses-query";
 import { useCategoriesQuery } from "@/hooks/use-categories";
 import { useCoursesQuery } from "@/hooks/use-courses";
 import { cn } from "@/lib/utils";
@@ -22,45 +22,45 @@ const SORT_LABELS: Record<Sort, string> = {
   "price-desc": "Harga: tinggi → rendah",
 };
 
+function paramsFromSearchParams(sp: URLSearchParams): CoursesPageParams {
+  return {
+    page: parsePage(sp.get("page")),
+    category: sp.get("category") ?? null,
+    sort: parseSort(sp.get("sort")),
+  };
+}
+
 export function CatalogClient() {
-  const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const page = parsePage(searchParams.get("page"));
-  const category = searchParams.get("category");
-  const sort = parseSort(searchParams.get("sort"));
-
-  const params = useMemo(
-    () => ({ page, category: category ?? null, sort }),
-    [page, category, sort],
-  );
+  // ponytail: local state so filter changes don't trigger server round-trip.
+  const [params, setParams] = useState(() => paramsFromSearchParams(searchParams));
+  const [prevSp, setPrevSp] = useState(searchParams);
+  if (searchParams !== prevSp) {
+    setPrevSp(searchParams);
+    setParams(paramsFromSearchParams(searchParams));
+  }
 
   const coursesQuery = useCoursesQuery(params);
   const categoriesQuery = useCategoriesQuery();
 
+  const { page, category, sort } = params;
+
   const updateUrl = useCallback(
     (next: Partial<{ page: number; category: string | null; sort: Sort }>) => {
-      const sp = new URLSearchParams(searchParams.toString());
-      if ("category" in next) {
-        if (next.category) sp.set("category", next.category);
-        else sp.delete("category");
-      }
-      if ("sort" in next) {
-        if (next.sort && next.sort !== "latest") sp.set("sort", next.sort);
-        else sp.delete("sort");
-      }
-      if ("page" in next) {
-        if (next.page && next.page > 1) sp.set("page", String(next.page));
-        else sp.delete("page");
-      } else if ("category" in next || "sort" in next) {
-        // Filter / sort changes always reset to page 1.
-        sp.delete("page");
-      }
+      const newParams = { ...params, ...next };
+      if ("category" in next || "sort" in next) newParams.page = 1;
+
+      const sp = new URLSearchParams();
+      if (newParams.category) sp.set("category", newParams.category);
+      if (newParams.sort && newParams.sort !== "latest") sp.set("sort", newParams.sort);
+      if (newParams.page > 1) sp.set("page", String(newParams.page));
       const qs = sp.toString();
-      router.replace(`${pathname}${qs ? `?${qs}` : ""}#courses-grid`, { scroll: false });
+
+      window.history.replaceState(null, "", `/courses${qs ? `?${qs}` : ""}#courses-grid`);
+      setParams(newParams);
     },
-    [searchParams, router, pathname],
+    [params],
   );
 
   const data = coursesQuery.data;
@@ -191,7 +191,7 @@ export function CatalogClient() {
               <CoursesPagination
                 current={page}
                 totalPages={totalPages}
-                hrefFor={(p) => buildPageHref(searchParams, p)}
+                hrefFor={(p) => buildPageHref(params, p)}
               />
             </>
           )}
@@ -201,10 +201,11 @@ export function CatalogClient() {
   );
 }
 
-function buildPageHref(current: URLSearchParams, page: number): string {
-  const sp = new URLSearchParams(current.toString());
-  if (page <= 1) sp.delete("page");
-  else sp.set("page", String(page));
+function buildPageHref(current: CoursesPageParams, page: number): string {
+  const sp = new URLSearchParams();
+  if (current.category) sp.set("category", current.category);
+  if (current.sort && current.sort !== "latest") sp.set("sort", current.sort);
+  if (page > 1) sp.set("page", String(page));
   const qs = sp.toString();
   return qs ? `/courses?${qs}#courses-grid` : "/courses#courses-grid";
 }
