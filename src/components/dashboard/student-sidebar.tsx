@@ -36,10 +36,8 @@ export function StudentSidebar({ collapsed, variant = "rail", onNavigate }: Prop
           (slightly taller than the 64px topbar). */}
       <div className="flex h-20 items-center justify-center px-3 py-3">
         <Link
-          href="/"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="NextLevel Academy beranda (buka di tab baru)"
+          href="/dashboard"
+          aria-label="NextLevel Academy dashboard"
           onClick={onNavigate}
           className="inline-flex items-center rounded-xl p-1 transition hover:bg-zinc-100/70 dark:hover:bg-white/5"
         >
