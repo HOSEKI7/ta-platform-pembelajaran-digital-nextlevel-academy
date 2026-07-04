@@ -1,21 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-
-import { getSession } from "@/lib/auth-server";
-import { dashboardPathForRole } from "@/lib/role-routes";
 
 import { AuthBrandPanel } from "./_components/brand-panel";
 import { ForceLightTheme } from "./_components/force-light-theme";
 
-export default async function AuthLayout({ children }: { children: React.ReactNode }) {
-  // Already-authenticated users have no business on the auth pages — send them
-  // straight to their own role's dashboard (the proxy only does a cheap cookie
-  // check and can't read the role at the edge).
-  const session = await getSession();
-  if (session) {
-    redirect(dashboardPathForRole(session.user.role));
-  }
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
+  // ponytail: auth-page redirect handled by proxy.ts (cookie-only, no DB).
 
   return (
     <>

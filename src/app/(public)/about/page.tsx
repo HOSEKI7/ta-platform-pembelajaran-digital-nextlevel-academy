@@ -6,7 +6,7 @@ import { loadPlatformInfo } from "@/lib/platform-info";
 import { SiteContainer } from "@/components/public/site-container";
 
 export const metadata = { title: "Tentang Kami" };
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 const PILLARS = [
   {

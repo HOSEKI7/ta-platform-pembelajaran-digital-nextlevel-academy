@@ -5,7 +5,7 @@ import { ContactForm } from "@/components/public/contact-form";
 import { SiteContainer } from "@/components/public/site-container";
 
 export const metadata = { title: "Kontak" };
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 type Info = {
   icon: typeof Mail;

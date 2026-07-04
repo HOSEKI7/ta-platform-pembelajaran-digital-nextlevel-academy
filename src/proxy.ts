@@ -31,8 +31,24 @@ const PROTECTED_PREFIXES = [
   "/admin",
 ];
 
+// ponytail: cookie-only redirect (no DB), beats a Prisma call in every auth
+// page.  Lands on /dashboard; the student layout redirects non-students.
+const AUTH_PREFIXES = [
+  "/login",
+  "/register",
+  "/forgot-password",
+  "/reset-password",
+  "/verify-email",
+];
+
 function isProtectedPath(pathname: string): boolean {
   return PROTECTED_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
+
+function isAuthPath(pathname: string): boolean {
+  return AUTH_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
 }
@@ -48,9 +64,11 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Authenticated users hitting an auth page are bounced to their role
-  // dashboard by the `(auth)` layout (Node runtime — it can read the role; the
-  // edge proxy can't, so it's handled there rather than guessing here).
+  // ponytail: cookie-only redirect (no DB) for already-logged-in users.
+  // /dashboard layout handles the role-specific redirect if needed.
+  if (hasSession && isAuthPath(pathname)) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
 
   const response = NextResponse.next();
   response.headers.set(
