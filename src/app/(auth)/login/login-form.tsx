@@ -66,7 +66,6 @@ export function LoginForm() {
       role = session.data?.user?.role;
     }
     router.push(explicitNext ?? dashboardPathForRole(role));
-    router.refresh();
   }
 
   async function handleResendVerification() {

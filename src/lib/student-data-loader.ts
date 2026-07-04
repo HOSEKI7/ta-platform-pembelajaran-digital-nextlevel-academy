@@ -80,6 +80,7 @@ export async function loadInProgressCourses(
       },
     },
     orderBy: { enrolledAt: "desc" },
+    take: 60,
   });
 
   return {
