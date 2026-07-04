@@ -6,9 +6,7 @@ import { requireRole } from "@/lib/auth-server";
 import { getQueryClient } from "@/lib/query-client";
 import {
   loadDashboardStats,
-  loadGameProfile,
   loadInProgressCourses,
-  loadNotifications,
   loadRecommendedCourses,
 } from "@/lib/student-data-loader";
 import { studentKeys } from "@/lib/student-query-keys";
@@ -37,13 +35,7 @@ export default async function DashboardPage() {
 
   const queryClient = getQueryClient();
 
-  // Prefetch all dashboard surfaces in parallel so the first paint already has
-  // data — skeletons only show on subsequent client refetches.
   await Promise.all([
-    queryClient.prefetchQuery({
-      queryKey: studentKeys.gameProfile(),
-      queryFn: () => loadGameProfile(userId),
-    }),
     queryClient.prefetchQuery({
       queryKey: studentKeys.dashboard.stats(),
       queryFn: () => loadDashboardStats(userId),
@@ -55,10 +47,6 @@ export default async function DashboardPage() {
     queryClient.prefetchQuery({
       queryKey: studentKeys.dashboard.recommendations(),
       queryFn: () => loadRecommendedCourses(userId),
-    }),
-    queryClient.prefetchQuery({
-      queryKey: studentKeys.notifications(),
-      queryFn: () => loadNotifications(userId),
     }),
   ]);
 

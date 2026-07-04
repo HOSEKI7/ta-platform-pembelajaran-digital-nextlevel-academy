@@ -491,11 +491,11 @@ export type ExpLevelPageData = {
 export async function loadExpLevelPage(
   userId: string,
 ): Promise<ExpLevelPageData> {
-  const summary = await loadGameSummary(userId);
-  await reconcileLevelBadges(userId, summary.level);
-  const [badges, vouchers] = await Promise.all([
+  const [summary, badges, vouchers] = await Promise.all([
+    loadGameSummary(userId),
     loadBadges(userId),
     loadRewardVouchers(userId),
   ]);
+  await reconcileLevelBadges(userId, summary.level);
   return { summary, badges, vouchers };
 }

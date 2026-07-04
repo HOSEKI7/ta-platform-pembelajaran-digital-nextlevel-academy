@@ -33,6 +33,7 @@ export function useStudentCatalogQuery(params: StudentCatalogParams) {
   return useQuery({
     queryKey: studentCatalogKey(params),
     queryFn: () => fetchStudentCatalog(params),
+    staleTime: 30_000,
     placeholderData: (prev) => prev,
   });
 }

@@ -1,21 +1,18 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { env } from "@/lib/env";
+import { reconcileOrder } from "@/lib/payment/reconcile";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Cron: flip abandoned PENDING orders past their 60-minute window to EXPIRED
- * (PRD §6.4 — "Timer habis → EXPIRED, job scheduler").
+ * Cron: reconcile past-due PENDING orders.
  *
- * Protected by the `CRON_SECRET` bearer token. Configure a scheduler (e.g.
- * Vercel Cron) to hit this every few minutes:
- *   Authorization: Bearer <CRON_SECRET>
- *
- * Note: this only changes status. SUCCESS orders are never touched (the webhook
- * is the source of truth), so a late webhook can still win a race against the
- * window — but only PENDING rows are eligible here.
+ * Orders with a `paymentInvoiceId` (user opened Snap) are reconciled against
+ * Midtrans so a paid-but-no-webhook order gets fulfilled instead of silently
+ * expiring. Orders without an invoice are just expired (user never paid).
+ * BATCH_SIZE=5 limits concurrent Midtrans API calls (flash-sale volume).
  */
 async function handle(request: NextRequest) {
   const secret = env.cronSecret();
@@ -28,12 +25,39 @@ async function handle(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const result = await prisma.order.updateMany({
+  const expired = await prisma.order.findMany({
     where: { status: "PENDING", expiresAt: { lt: new Date() } },
-    data: { status: "EXPIRED" },
+    select: { id: true, status: true, paymentInvoiceId: true, finalPrice: true, expiresAt: true },
   });
 
-  return NextResponse.json({ data: { expired: result.count } });
+  const withoutInvoice = expired.filter((o) => !o.paymentInvoiceId);
+  const withInvoice = expired.filter((o) => o.paymentInvoiceId);
+
+  // ponytail: BATCH_SIZE=5, increase if Midtrans SLA confirms higher throughput.
+  const BATCH_SIZE = 5;
+  let reconciled = 0;
+  let failed = 0;
+  for (let i = 0; i < withInvoice.length; i += BATCH_SIZE) {
+    const batch = withInvoice.slice(i, i + BATCH_SIZE);
+    const results = await Promise.allSettled(
+      batch.map((o) => reconcileOrder(o)),
+    );
+    for (const r of results) {
+      if (r.status === "fulfilled") reconciled += 1;
+      else failed += 1;
+    }
+  }
+
+  let expiredCount = 0;
+  if (withoutInvoice.length > 0) {
+    const r = await prisma.order.updateMany({
+      where: { id: { in: withoutInvoice.map((o) => o.id) }, status: "PENDING" },
+      data: { status: "EXPIRED" },
+    });
+    expiredCount = r.count;
+  }
+
+  return NextResponse.json({ data: { reconciled, expired: expiredCount, failed } });
 }
 
 export async function GET(request: NextRequest) {

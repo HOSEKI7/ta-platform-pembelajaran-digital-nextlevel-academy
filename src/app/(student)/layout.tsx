@@ -1,8 +1,15 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 
 import { Role } from "@/generated/prisma";
 import { requireRole } from "@/lib/auth-server";
+import { getQueryClient } from "@/lib/query-client";
+import {
+  loadGameProfile,
+  loadNotifications,
+} from "@/lib/student-data-loader";
+import { studentKeys } from "@/lib/student-query-keys";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 
@@ -17,9 +24,6 @@ export default async function StudentDashboardLayout({
     redirectTo: "/dashboard",
   });
 
-  // Admin-issued temporary password: force a change before any student page is
-  // accessible (PRD §6.11.4). The /ganti-password route lives outside this
-  // group, so it isn't caught by this guard.
   if (session.user.mustChangePassword) {
     redirect("/ganti-password");
   }
@@ -27,17 +31,34 @@ export default async function StudentDashboardLayout({
   const cookieStore = await cookies();
   const initialCollapsed = cookieStore.get(COLLAPSED_COOKIE)?.value === "1";
 
+  // Prefetch at layout level so LevelChip (gameProfile) and
+  // NotificationsButton always have data on first mount — no hydration flash.
+  const userId = session.user.id;
+  const queryClient = getQueryClient();
+  await Promise.all([
+    queryClient.prefetchQuery({
+      queryKey: studentKeys.gameProfile(),
+      queryFn: () => loadGameProfile(userId),
+    }),
+    queryClient.prefetchQuery({
+      queryKey: studentKeys.notifications(),
+      queryFn: () => loadNotifications(userId),
+    }),
+  ]);
+
   return (
-    <DashboardShell
-      user={{
-        name: session.user.name,
-        email: session.user.email,
-        username: session.user.username ?? null,
-        image: session.user.image ?? null,
-      }}
-      initialCollapsed={initialCollapsed}
-    >
-      {children}
-    </DashboardShell>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <DashboardShell
+        user={{
+          name: session.user.name,
+          email: session.user.email,
+          username: session.user.username ?? null,
+          image: session.user.image ?? null,
+        }}
+        initialCollapsed={initialCollapsed}
+      >
+        {children}
+      </DashboardShell>
+    </HydrationBoundary>
   );
 }

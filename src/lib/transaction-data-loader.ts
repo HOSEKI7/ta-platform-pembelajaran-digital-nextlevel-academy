@@ -17,13 +17,10 @@ export type TransactionStatus =
   | "CANCELED";
 
 export type TransactionRowDTO = {
-  /** Order id — shown verbatim as the "ID Transaksi". */
   id: string;
   courseTitle: string;
-  /** ISO string — `Order.createdAt` (the moment checkout was created). */
   checkoutAt: string;
   status: TransactionStatus;
-  /** Final amount paid/charged in IDR (whole rupiah). */
   finalPrice: number;
 };
 
@@ -44,12 +41,11 @@ export type TransactionsFilters = {
 };
 
 /**
- * Loads the student's transaction history for the "Transaksi" page.
+ * Loads the student's transaction history.
  *
- * Returns every `Order` the user owns regardless of status — PRD §6.4.4
- * requires the full history (including `FAILED`/`EXPIRED`) to stay visible.
- * Sorted by `createdAt` (checkout time) and paginated; `total` drives the
- * toolbar range and pagination footer.
+ * PENDING status is derived via lazy local expiry only — real reconciliation
+ * runs in the cron (every 5 min) and when the user opens the detail page.
+ * The webhook is the primary success path.
  */
 export async function loadTransactionRows(
   userId: string,
@@ -67,7 +63,6 @@ export async function loadTransactionRows(
         status: true,
         createdAt: true,
         expiresAt: true,
-        paymentInvoiceId: true,
         course: { select: { title: true } },
       },
       orderBy: { createdAt: sort },
@@ -78,24 +73,9 @@ export async function loadTransactionRows(
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
-  // Reconcile PENDING rows against Midtrans (or lazily expire) so the table
-  // reflects payments/expiries the webhook may have missed. Terminal rows are
-  // left untouched; pending orders are few, and a per-row failure is isolated.
-  const statuses = await Promise.all(
-    rows.map(async (r) => {
-      if (r.status !== "PENDING") return r.status;
-      try {
-        return await reconcileOrder({
-          id: r.id,
-          status: r.status,
-          paymentInvoiceId: r.paymentInvoiceId,
-          finalPrice: r.finalPrice,
-          expiresAt: r.expiresAt,
-        });
-      } catch {
-        return r.status;
-      }
-    }),
+  const now = Date.now();
+  const statuses = rows.map((r) =>
+    r.status === "PENDING" && r.expiresAt.getTime() < now ? "EXPIRED" as const : r.status,
   );
 
   return {
@@ -173,28 +153,29 @@ export async function loadTransactionDetail(
 
   if (!order) return null;
 
-  // Reconcile against Midtrans (or lazily expire) so the detail reflects a
-  // payment/expiry the webhook may have missed. On a real transition, re-read
-  // the now-stale status-derived fields (paidAt/paymentMethod).
   let status = order.status;
   let paidAt = order.paidAt;
   let paymentMethod = order.paymentMethod;
   if (order.status === "PENDING") {
-    const reconciled = await reconcileOrder({
-      id: order.id,
-      status: order.status,
-      paymentInvoiceId: order.paymentInvoiceId,
-      finalPrice: order.finalPrice,
-      expiresAt: order.expiresAt,
-    });
-    if (reconciled !== order.status) {
-      const fresh = await prisma.order.findUnique({
-        where: { id: order.id },
-        select: { status: true, paidAt: true, paymentMethod: true },
+    try {
+      const reconciled = await reconcileOrder({
+        id: order.id,
+        status: order.status,
+        paymentInvoiceId: order.paymentInvoiceId,
+        finalPrice: order.finalPrice,
+        expiresAt: order.expiresAt,
       });
-      status = fresh?.status ?? reconciled;
-      paidAt = fresh?.paidAt ?? null;
-      paymentMethod = fresh?.paymentMethod ?? order.paymentMethod;
+      if (reconciled !== order.status) {
+        const fresh = await prisma.order.findUnique({
+          where: { id: order.id },
+          select: { status: true, paidAt: true, paymentMethod: true },
+        });
+        status = fresh?.status ?? reconciled;
+        paidAt = fresh?.paidAt ?? null;
+        paymentMethod = fresh?.paymentMethod ?? order.paymentMethod;
+      }
+    } catch {
+      // Midtrans unreachable — render with current DB status; cron catches up.
     }
   }
 
