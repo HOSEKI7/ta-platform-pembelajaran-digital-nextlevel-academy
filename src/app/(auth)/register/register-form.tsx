@@ -8,7 +8,6 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { AuthInput, AuthPasswordInput } from "@/app/(auth)/_components/form-field";
-import { PrivacyPolicyDialog } from "@/app/(auth)/_components/privacy-policy-dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -140,18 +139,23 @@ export function RegisterForm() {
               className="text-foreground/80 cursor-pointer font-normal leading-relaxed"
             >
               Saya menyetujui{" "}
-              <PrivacyPolicyDialog
-                onAgree={() =>
-                  setValue("agreedToTerms", true, { shouldValidate: true })
-                }
+              <a
+                href="/legal/privacy"
+                target="_blank"
+                rel="noreferrer"
+                className="text-[color:var(--color-brand-700)] hover:text-[color:var(--color-brand-800)] font-medium underline underline-offset-4"
               >
-                <button
-                  type="button"
-                  className="text-[color:var(--color-brand-700)] hover:text-[color:var(--color-brand-800)] font-medium underline underline-offset-4"
-                >
-                  Kebijakan Privasi
-                </button>
-              </PrivacyPolicyDialog>{" "}
+                Kebijakan Privasi
+              </a>{" "}
+              dan{" "}
+              <a
+                href="/legal/terms"
+                target="_blank"
+                rel="noreferrer"
+                className="text-[color:var(--color-brand-700)] hover:text-[color:var(--color-brand-800)] font-medium underline underline-offset-4"
+              >
+                Syarat & Ketentuan
+              </a>{" "}
               NextLevel Academy.
             </Label>
           </label>
