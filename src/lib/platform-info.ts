@@ -85,9 +85,15 @@ function pickTeam(v: unknown): PlatformInfo["tim"] {
 }
 
 export const loadPlatformInfo = cache(async (): Promise<PlatformInfo> => {
-  const row = await prisma.platformSetting.findUnique({
-    where: { key: PLATFORM_INFO_KEY },
-    select: { value: true },
-  });
-  return coercePlatformInfo(row?.value);
+  try {
+    const row = await prisma.platformSetting.findUnique({
+      where: { key: PLATFORM_INFO_KEY },
+      select: { value: true },
+    });
+    return coercePlatformInfo(row?.value);
+  } catch {
+    // DB unreachable during static generation (CI build) or temporary outage.
+    // Return defaults so the page never fails to render.
+    return { ...EMPTY_PLATFORM_INFO };
+  }
 });
