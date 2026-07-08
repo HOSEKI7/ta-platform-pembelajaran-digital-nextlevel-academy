@@ -4,6 +4,7 @@ import { Role } from "@/generated/prisma";
 import { requireRoleInRoute } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
 import { isUniqueError, setUserPassword } from "@/lib/admin-user-write";
+import { generateNomorInduk } from "@/lib/nomor-induk";
 import { editUserSchema } from "@/lib/validations/admin-user";
 
 export const runtime = "nodejs";
@@ -116,18 +117,46 @@ export async function PATCH(
       });
 
       if (role === Role.PESERTA_MAGANG) {
-        await tx.internshipProfile.upsert({
+        const existingProfile = await tx.internshipProfile.findUnique({
           where: { userId },
-          create: {
-            userId,
-            classId: newClassId!,
-            institution: input.institution?.trim() || null,
-          },
-          update: {
-            classId: newClassId!,
-            institution: input.institution?.trim() || null,
-          },
+          select: { id: true, nomor_induk: true },
         });
+
+        if (existingProfile) {
+          await tx.internshipProfile.update({
+            where: { userId },
+            data: {
+              classId: newClassId!,
+              institution: input.institution?.trim() || null,
+            },
+          });
+        } else {
+          const classInfo = await tx.class.findUniqueOrThrow({
+            where: { id: newClassId! },
+            select: {
+              field: {
+                select: {
+                  kode_bidang: true,
+                  batch: { select: { id: true, kode_batch: true } },
+                },
+              },
+            },
+          });
+          const generatedNi = await generateNomorInduk(
+            tx,
+            classInfo.field.batch.id,
+            classInfo.field.batch.kode_batch,
+            classInfo.field.kode_bidang,
+          );
+          await tx.internshipProfile.create({
+            data: {
+              userId,
+              classId: newClassId!,
+              nomor_induk: generatedNi,
+              institution: input.institution?.trim() || null,
+            },
+          });
+        }
       } else if (role === Role.MENTOR) {
         const gender = input.gender ?? null;
         await tx.mentorProfile.upsert({

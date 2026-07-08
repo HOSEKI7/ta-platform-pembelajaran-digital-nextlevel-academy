@@ -110,7 +110,7 @@ export async function createBatch(
   let kodeBatchValue = input.kode_batch?.trim();
   if (!kodeBatchValue) {
     const last = await prisma.batch.findFirst({
-      where: { kode_batch: { not: null } },
+      where: {},
       orderBy: { kode_batch: "desc" },
       select: { kode_batch: true },
     });
