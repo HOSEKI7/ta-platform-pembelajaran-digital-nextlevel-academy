@@ -93,7 +93,13 @@ export async function loadClassOptions(): Promise<ClassOption[]> {
       id: true,
       name: true,
       maxStudents: true,
-      field: { select: { name: true, batch: { select: { name: true } } } },
+      field: {
+        select: {
+          name: true,
+          kode_bidang: true,
+          batch: { select: { name: true, kode_batch: true } },
+        },
+      },
       _count: { select: { internshipProfiles: true } },
     },
     orderBy: [
@@ -112,6 +118,8 @@ export async function loadClassOptions(): Promise<ClassOption[]> {
     }),
     studentCount: c._count.internshipProfiles,
     maxStudents: c.maxStudents,
+    kodeBatch: c.field.batch.kode_batch,
+    kodeBidang: c.field.kode_bidang,
   }));
 }
 

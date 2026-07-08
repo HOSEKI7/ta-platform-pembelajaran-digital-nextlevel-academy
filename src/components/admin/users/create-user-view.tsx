@@ -58,9 +58,18 @@ export function CreateUserView({ classOptions }: Props) {
   } = form;
 
   const role = useWatch({ control, name: "role" });
+  const classId = useWatch({ control, name: "classId" });
   const needsClass = role === Role.PESERTA_MAGANG || role === Role.MENTOR;
   const isMagang = role === Role.PESERTA_MAGANG;
   const isMentor = role === Role.MENTOR;
+
+  const selectedClass = isMagang
+    ? classOptions.find((c) => c.id === classId)
+    : undefined;
+  const nomorIndukPreview =
+    isMagang && selectedClass?.kodeBatch && selectedClass?.kodeBidang
+      ? `${selectedClass.kodeBatch}-${selectedClass.kodeBidang}-XXXX`
+      : null;
 
   const submit = handleSubmit((values) => {
     createMutation.mutate(values, {
@@ -203,6 +212,15 @@ export function CreateUserView({ classOptions }: Props) {
                   disabled={busy}
                   {...register("institution")}
                 />
+              </Field>
+            ) : null}
+
+            {nomorIndukPreview ? (
+              <Field label="Nomor Induk">
+                <div className="flex items-center gap-3 rounded-xl border border-dashed border-amber-300 bg-amber-50/60 px-4 py-3 text-sm text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/[0.07] dark:text-amber-300">
+                  <span className="text-xs font-medium uppercase tracking-wider">Pratinjau</span>
+                  <code className="font-mono text-sm font-semibold">{nomorIndukPreview}</code>
+                </div>
               </Field>
             ) : null}
 

@@ -86,6 +86,10 @@ export type ClassOption = {
   /** Current number of interns assigned (for the magang quota indicator). */
   studentCount: number;
   maxStudents: number;
+  /** Kode batch for this class's parent batch (for nomor_induk preview). */
+  kodeBatch: string | null;
+  /** Kode bidang for this class's parent field (for nomor_induk preview). */
+  kodeBidang: string | null;
 };
 
 export function adminUsersKey(params: AdminUsersParams) {

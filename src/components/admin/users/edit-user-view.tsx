@@ -199,20 +199,31 @@ export function EditUserView({ user, classOptions }: Props) {
             </Field>
 
             {isMagang ? (
-              <Field
-                label="Institusi"
-                htmlFor="institution"
-                optional
-                error={errors.institution?.message}
-              >
-                <Input
-                  id="institution"
-                  placeholder="mis. Universitas Indonesia"
-                  className="h-11 rounded-xl"
-                  disabled={busy}
-                  {...register("institution")}
-                />
-              </Field>
+              <>
+                {user.nomorInduk ? (
+                  <Field label="Nomor Induk">
+                    <div className="flex items-center gap-2 rounded-xl bg-[color:var(--color-brand-50)] px-4 py-3 ring-1 ring-[color:var(--color-brand-200)] dark:bg-[color:var(--color-brand-500)]/10 dark:ring-[color:var(--color-brand-500)]/30">
+                      <code className="font-mono text-sm font-semibold tracking-wide text-[color:var(--color-brand-700)] dark:text-[color:var(--color-brand-200)]">
+                        {user.nomorInduk}
+                      </code>
+                    </div>
+                  </Field>
+                ) : null}
+                <Field
+                  label="Institusi"
+                  htmlFor="institution"
+                  optional
+                  error={errors.institution?.message}
+                >
+                  <Input
+                    id="institution"
+                    placeholder="mis. Universitas Indonesia"
+                    className="h-11 rounded-xl"
+                    disabled={busy}
+                    {...register("institution")}
+                  />
+                </Field>
+              </>
             ) : null}
 
             {isMentor ? (
