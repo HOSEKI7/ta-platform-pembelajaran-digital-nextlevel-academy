@@ -18,6 +18,14 @@ const dateOnly = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Tanggal tidak valid.");
 
+export const kodeBatchSchema = z
+  .string()
+  .regex(/^\d{2}$/, "Kode batch harus 2 digit angka (contoh: 01)");
+
+export const kodeBidangSchema = z
+  .string()
+  .regex(/^\d{3}$/, "Kode bidang harus 3 digit angka (contoh: 111)");
+
 // ---- Batch -----------------------------------------------------------------
 
 export const batchFormSchema = z
@@ -27,6 +35,7 @@ export const batchFormSchema = z
       .trim()
       .min(2, "Nama batch minimal 2 karakter.")
       .max(60, "Nama batch maksimal 60 karakter."),
+    kode_batch: kodeBatchSchema,
     description: z
       .string()
       .trim()
@@ -46,6 +55,7 @@ export type BatchFormInput = z.infer<typeof batchFormSchema>;
 
 export const fieldCreateSchema = z.object({
   batchId: cuid,
+  kode_bidang: kodeBidangSchema,
   name: z
     .string()
     .trim()
@@ -57,6 +67,7 @@ export type FieldCreateInput = z.infer<typeof fieldCreateSchema>;
 
 /** Edit only renames the field; the batch is locked. */
 export const fieldUpdateSchema = z.object({
+  kode_bidang: kodeBidangSchema,
   name: z
     .string()
     .trim()
