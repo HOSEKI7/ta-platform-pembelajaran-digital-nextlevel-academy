@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import { getSession } from "@/lib/auth-server";
+import { BUNNY_CDN_HOST } from "@/lib/bunny-host";
 
 import { PublicFooter } from "@/components/public/public-footer";
 import { PublicNavbar } from "@/components/public/public-navbar";
@@ -14,6 +15,12 @@ async function NavbarWithSession() {
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-white text-zinc-900">
+      {BUNNY_CDN_HOST ? (
+        <>
+          <link rel="dns-prefetch" href={`https://${BUNNY_CDN_HOST}`} />
+          <link rel="preconnect" href={`https://${BUNNY_CDN_HOST}`} />
+        </>
+      ) : null}
       <Suspense
         fallback={
           <div className="h-16 sm:h-[68px] min-[1920px]:h-[72px]" />

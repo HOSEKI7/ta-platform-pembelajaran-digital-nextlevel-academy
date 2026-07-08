@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { resolveCourseImageUrl } from "@/lib/bunny-storage";
 import { prisma } from "@/lib/prisma";
 
-export const revalidate = 60;
+export const revalidate = 300;
 
 const TAKE = 6;
 
@@ -36,7 +36,7 @@ export async function GET() {
       },
       {
         headers: {
-          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
         },
       },
     );

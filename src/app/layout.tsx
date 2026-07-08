@@ -18,6 +18,7 @@ const poppins = Poppins({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://nextlevel.academy";

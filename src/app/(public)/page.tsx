@@ -11,7 +11,7 @@ import { StatsStripSection } from "@/components/public/landing/stats-strip-secti
 import { TestimonialsSection } from "@/components/public/landing/testimonials-section";
 import { LandingJsonLd } from "@/components/public/landing/landing-jsonld";
 
-export const revalidate = 60;
+export const revalidate = 300;
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://nextlevel.academy";
 
