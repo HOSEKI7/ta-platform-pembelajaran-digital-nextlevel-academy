@@ -4,6 +4,7 @@ import { randomBytes } from "node:crypto";
 import { hashPassword } from "better-auth/crypto";
 
 import { Role, type Gender } from "@/generated/prisma";
+import { generateNomorInduk } from "@/lib/nomor-induk";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -124,10 +125,34 @@ export async function createManagedUser(
       if (input.role === Role.PESERTA_DIDIK) {
         await tx.userGameProfile.create({ data: { userId } });
       } else if (input.role === Role.PESERTA_MAGANG) {
+        const classInfo = await tx.class.findUniqueOrThrow({
+          where: { id: input.classId! },
+          select: {
+            field: {
+              select: {
+                kode_bidang: true,
+                batch: { select: { id: true, kode_batch: true } },
+              },
+            },
+          },
+        });
+
+        if (!classInfo.field.kode_bidang || !classInfo.field.batch.kode_batch) {
+          throw new Error("Batch atau Bidang belum memiliki kode. Isi kode batch/bidang terlebih dahulu.");
+        }
+
+        const nomorInduk = await generateNomorInduk(
+          tx,
+          classInfo.field.batch.id,
+          classInfo.field.batch.kode_batch,
+          classInfo.field.kode_bidang,
+        );
+
         await tx.internshipProfile.create({
           data: {
             userId,
             classId: input.classId!,
+            nomor_induk: nomorInduk,
             institution: input.institution?.trim() || null,
           },
         });
