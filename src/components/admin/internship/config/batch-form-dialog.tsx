@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -13,6 +14,7 @@ import {
   useCreateBatchMutation,
   useUpdateBatchMutation,
 } from "@/hooks/use-admin-internship-config-actions";
+import { useInternshipConfigQuery } from "@/hooks/use-admin-internship-config";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -27,6 +29,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 import { Field } from "./form-field";
+import { WarningBanner } from "./warning-banner";
 
 type Props = {
   open: boolean;
@@ -39,6 +42,7 @@ type Props = {
 function buildDefaults(initial?: BatchRow): BatchFormInput {
   return {
     name: initial?.name ?? "",
+    kode_batch: initial?.kodeBatch ?? "",
     description: initial?.description ?? "",
     startDate: initial?.startDate ?? "",
     endDate: initial?.endDate ?? "",
@@ -64,6 +68,21 @@ export function BatchFormDialog({
   const createMutation = useCreateBatchMutation();
   const updateMutation = useUpdateBatchMutation(initial?.id ?? "");
   const submitting = createMutation.isPending || updateMutation.isPending;
+
+  const config = useInternshipConfigQuery();
+
+  const kodeBatchPreview = useMemo(() => {
+    if (mode !== "create" || !config.data) return null;
+    const codes = config.data.batches
+      .map((b) => b.kodeBatch)
+      .filter((k): k is string => k !== null)
+      .sort();
+    const next =
+      codes.length > 0
+        ? String(parseInt(codes[codes.length - 1], 10) + 1).padStart(2, "0")
+        : "01";
+    return next;
+  }, [mode, config.data]);
 
   const onValid = (values: BatchFormInput) => {
     const mutation = mode === "create" ? createMutation : updateMutation;
@@ -103,6 +122,33 @@ export function BatchFormDialog({
               autoFocus
             />
           </Field>
+
+          <Field label="Kode Batch" error={errors.kode_batch?.message}>
+            <Input
+              {...register("kode_batch")}
+              placeholder={kodeBatchPreview ?? "01"}
+              maxLength={2}
+              className="h-11 rounded-xl font-mono"
+            />
+            {mode === "create" && kodeBatchPreview && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Pratinjau: <span className="font-mono">{kodeBatchPreview}</span>
+              </p>
+            )}
+          </Field>
+
+          {mode === "create" && (
+            <WarningBanner severity="soft">
+              Kode batch digunakan sebagai prefix nomor induk peserta magang. Tidak dapat diubah
+              setelah peserta magang terdaftar.
+            </WarningBanner>
+          )}
+
+          {mode === "edit" && (
+            <WarningBanner severity="hard">
+              Jika batch sudah memiliki peserta magang, perubahan kode batch akan ditolak.
+            </WarningBanner>
+          )}
 
           <Field label="Keterangan" error={errors.description?.message}>
             <Textarea

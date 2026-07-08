@@ -51,6 +51,7 @@ export function BatchesTable({ rows, isFetching, onEdit }: Props) {
           <thead>
             <tr className="border-b border-zinc-100 dark:border-[color:var(--color-surface-border)]">
               <SortHeader label="Nama Batch" active={key === "name"} dir={dir} onClick={() => toggle("name")} />
+              <th className={PLAIN_TH}>Kode</th>
               <th className={PLAIN_TH}>Keterangan</th>
               <SortHeader label="Periode" active={key === "period"} dir={dir} onClick={() => toggle("period")} />
               <SortHeader label="Bidang" active={key === "fields"} dir={dir} onClick={() => toggle("fields")} align="center" />
@@ -63,8 +64,13 @@ export function BatchesTable({ rows, isFetching, onEdit }: Props) {
                 key={r.id}
                 className="border-b border-zinc-50 transition-colors last:border-0 hover:bg-zinc-50/80 dark:border-white/[0.04] dark:hover:bg-white/[0.03]"
               >
-                <td className="px-4 py-3">
+                  <td className="px-4 py-3">
                   <p className="font-semibold text-zinc-900 dark:text-zinc-100">{r.name}</p>
+                </td>
+                <td className="px-4 py-3">
+                  <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">
+                    {r.kodeBatch ?? "\u2014"}
+                  </code>
                 </td>
                 <td className="max-w-96 px-4 py-3">
                   <p className="truncate text-sm text-zinc-500 dark:text-zinc-400">{r.description}</p>
@@ -93,6 +99,11 @@ export function BatchesTable({ rows, isFetching, onEdit }: Props) {
             </span>
             <div className="min-w-0 flex-1">
               <p className="truncate font-semibold text-zinc-900 dark:text-zinc-100">{r.name}</p>
+              {r.kodeBatch && (
+                <p className="text-xs font-mono text-zinc-400">
+                  Kode: {r.kodeBatch}
+                </p>
+              )}
               <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
                 {formatDMY(r.startDate)} – {formatDMY(r.endDate)} · {r.fieldCount} bidang
               </p>

@@ -5,9 +5,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 
 import type { BatchRow, FieldRow } from "@/lib/admin-internship-config-query";
+import { z } from "zod";
 import {
   fieldCreateSchema,
-  type FieldCreateInput,
+  fieldUpdateSchema,
 } from "@/lib/validations/admin-internship-config";
 import {
   useCreateFieldMutation,
@@ -33,6 +34,7 @@ import {
 } from "@/components/ui/select";
 
 import { Field } from "./form-field";
+import { WarningBanner } from "./warning-banner";
 
 type Props = {
   open: boolean;
@@ -53,15 +55,24 @@ export function FieldFormDialog({
   initial,
   onSubmitted,
 }: Props) {
+  type FieldFormValues = {
+    batchId: string;
+    kode_bidang: string;
+    name: string;
+  };
+
+  const resolver = mode === "create" ? fieldCreateSchema : fieldUpdateSchema;
+
   const {
     register,
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm<FieldCreateInput>({
-    resolver: zodResolver(fieldCreateSchema),
+  } = useForm<FieldFormValues>({
+    resolver: zodResolver(resolver) as never,
     defaultValues: {
       batchId: initial?.batchId ?? "",
+      kode_bidang: initial?.kodeBidang ?? "",
       name: initial?.name ?? "",
     },
   });
@@ -70,7 +81,7 @@ export function FieldFormDialog({
   const updateMutation = useUpdateFieldMutation(initial?.id ?? "");
   const submitting = createMutation.isPending || updateMutation.isPending;
 
-  const onValid = (values: FieldCreateInput) => {
+  const onValid = (values: { batchId: string; kode_bidang: string; name: string }) => {
     if (mode === "create") {
       createMutation.mutate(values, {
         onSuccess: () => {
@@ -83,7 +94,7 @@ export function FieldFormDialog({
       });
     } else {
       updateMutation.mutate(
-        { name: values.name },
+        { kode_bidang: values.kode_bidang, name: values.name },
         {
           onSuccess: () => {
             toast.success("Perubahan bidang tersimpan.");
@@ -158,6 +169,28 @@ export function FieldFormDialog({
               className="h-11 rounded-xl"
             />
           </Field>
+
+          <Field label="Kode Bidang" error={errors.kode_bidang?.message}>
+            <Input
+              {...register("kode_bidang")}
+              placeholder="111"
+              maxLength={3}
+              className="h-11 rounded-xl font-mono"
+            />
+          </Field>
+
+          {mode === "create" && (
+            <WarningBanner severity="soft">
+              Kode bidang digunakan dalam nomor induk peserta magang. Tidak dapat diubah setelah
+              bidang memiliki peserta.
+            </WarningBanner>
+          )}
+
+          {mode === "edit" && (
+            <WarningBanner severity="hard">
+              Jika bidang sudah memiliki peserta magang, perubahan kode bidang akan ditolak.
+            </WarningBanner>
+          )}
 
           <DialogFooter>
             <Button

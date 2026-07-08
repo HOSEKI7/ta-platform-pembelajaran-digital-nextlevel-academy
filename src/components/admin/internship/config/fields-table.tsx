@@ -47,6 +47,7 @@ export function FieldsTable({ rows, isFetching, onEdit }: Props) {
             <tr className="border-b border-zinc-100 dark:border-[color:var(--color-surface-border)]">
               <th className={cn(PLAIN_TH, "w-16")}>No</th>
               <SortHeader label="Batch" active={key === "batch"} dir={dir} onClick={() => toggle("batch")} />
+              <th className={PLAIN_TH}>Kode</th>
               <SortHeader label="Nama Bidang" active={key === "name"} dir={dir} onClick={() => toggle("name")} />
               <SortHeader label="Kelas" active={key === "classes"} dir={dir} onClick={() => toggle("classes")} align="center" />
               <th className={cn(PLAIN_TH, "text-right")}>Aksi</th>
@@ -60,6 +61,11 @@ export function FieldsTable({ rows, isFetching, onEdit }: Props) {
               >
                 <td className="px-4 py-3 text-sm tabular-nums text-zinc-400">{i + 1}</td>
                 <td className="px-4 py-3 text-sm text-zinc-600 dark:text-zinc-300">{r.batchName}</td>
+                <td className="px-4 py-3">
+                  <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">
+                    {r.kodeBidang ?? "\u2014"}
+                  </code>
+                </td>
                 <td className="px-4 py-3">
                   <p className="font-semibold text-zinc-900 dark:text-zinc-100">{r.name}</p>
                 </td>
@@ -84,6 +90,11 @@ export function FieldsTable({ rows, isFetching, onEdit }: Props) {
             </span>
             <div className="min-w-0 flex-1">
               <p className="truncate font-semibold text-zinc-900 dark:text-zinc-100">{r.name}</p>
+              {r.kodeBidang && (
+                <p className="text-xs font-mono text-zinc-400">
+                  Kode: {r.kodeBidang}
+                </p>
+              )}
               <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
                 {r.batchName} · {r.classCount} kelas
               </p>
