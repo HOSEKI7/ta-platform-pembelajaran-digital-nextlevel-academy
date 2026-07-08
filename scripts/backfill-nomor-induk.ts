@@ -10,61 +10,40 @@
  * applied via `prisma db push` / `prisma migrate`. The schema already declares
  * these fields as `String`, but the DB may still have NULLs at this point, so
  * the script uses raw SQL to bypass the type system.
+ *
+ * Column names use Prisma's camelCase (no @map on individual fields, so
+ * e.g. "batchId" not "batch_id", "createdAt" not "created_at").
  */
 import { config as loadEnv } from "dotenv";
 loadEnv({ path: ".env.local" });
 
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma";
-import { createInterface } from "node:readline/promises";
-import { stdin, stdout } from "node:process";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter, log: ["error"] });
 const isDryRun = process.argv.includes("--dry-run");
+const kodeBidangArgs = process.argv
+  .filter((a) => /^\d{3}$/.test(a))
+  .slice(0, 100);
 
 function log(msg: string) {
   console.log(isDryRun ? `[DRY-RUN] ${msg}` : msg);
 }
 
-/**
- * Raw wrapper: find rows where the column IS NULL, bypassing the NOT NULL
- * type constraint that Prisma's generated client enforces.
- */
-async function queryNullable<T>(
-  table: string,
-  column: string,
-  orderBy: string,
-): Promise<{ id: string; name: string; batchName?: string }[]> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const rows: any[] = await prisma.$queryRawUnsafe(
-    `SELECT id, name FROM "${table}" WHERE "${column}" IS NULL ORDER BY "${orderBy}"`,
-  );
-  return rows;
-}
-
-async function updateField(
-  table: string,
-  id: string,
-  column: string,
-  value: string,
-) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await prisma.$executeRawUnsafe(
-    `UPDATE "${table}" SET "${column}" = $1 WHERE id = $2`,
-    value,
-    id,
-  );
-}
-
 async function main() {
   // === Step 1: Backfill kode_batch ===
-  const batchRows = await queryNullable("batch", "kode_batch", "created_at");
+  type BatchRow = { id: string; name: string };
+  const batchRows: BatchRow[] = await prisma.$queryRawUnsafe(
+    `SELECT id, name FROM "batch" WHERE kode_batch IS NULL ORDER BY "createdAt"`,
+  );
 
   if (batchRows.length === 0) {
     log("All batches already have kode_batch.");
   } else {
-    const [maxRow] = await prisma.$queryRawUnsafe<{ kode_batch: string }[]>(
+    const [maxRow] = await prisma.$queryRawUnsafe<
+      { kode_batch: string }[]
+    >(
       `SELECT kode_batch FROM "batch" WHERE kode_batch IS NOT NULL ORDER BY kode_batch DESC LIMIT 1`,
     );
     let nextCode = maxRow?.kode_batch
@@ -75,77 +54,70 @@ async function main() {
       const code = String(nextCode).padStart(2, "0");
       log(`Batch "${batch.name}" → kode_batch = ${code}`);
       if (!isDryRun) {
-        await updateField("batch", batch.id, "kode_batch", code);
+        await prisma.$executeRawUnsafe(
+          `UPDATE "batch" SET kode_batch = $1 WHERE id = $2`,
+          code,
+          batch.id,
+        );
       }
       nextCode++;
     }
   }
 
   // === Step 2: Backfill kode_bidang (MANUAL INPUT) ===
-  const fieldRows = await prisma.$queryRawUnsafe<
-    { id: string; name: string; batch_name: string }[]
-  >(
-    `SELECT f.id, f.name, b.name as batch_name FROM "field" f JOIN "batch" b ON b.id = f.batch_id WHERE f.kode_bidang IS NULL ORDER BY b.name, f.name`,
+  type FieldRow = { id: string; name: string; batch_name: string };
+  const fieldRows: FieldRow[] = await prisma.$queryRawUnsafe(
+    `SELECT f.id, f.name, b.name AS batch_name FROM "field" f JOIN "batch" b ON b.id = f."batchId" WHERE f.kode_bidang IS NULL ORDER BY b.name, f.name`,
   );
 
   if (fieldRows.length === 0) {
     log("All fields already have kode_bidang.");
-  } else {
-    const rl = createInterface({ input: stdin, output: stdout });
-
+  } else if (isDryRun) {
+    log(`Fields needing kode_bidang (${fieldRows.length}):`);
     for (const field of fieldRows) {
-      const [existing] = await prisma.$queryRawUnsafe<
-        { kode_bidang: string }[]
-      >(
-        `SELECT kode_bidang FROM "field" WHERE kode_bidang IS NOT NULL`,
+      log(`  [${field.batch_name}] "${field.name}" → kode_bidang = ???`);
+    }
+    log("(Run without --dry-run to assign codes interactively)");
+  } else {
+    if (kodeBidangArgs.length < fieldRows.length) {
+      console.error(
+        `ERROR: ${fieldRows.length} fields need kode_bidang, but only ${kodeBidangArgs.length} codes provided.\n` +
+          `Pass 3-digit codes as arguments: npx tsx scripts/backfill-nomor-induk.ts 121 111 112`,
       );
-      const usedCodes = new Set(
-        existing ? [existing.kode_bidang] : [],
-      );
-
-      let code: string | null = null;
-      while (!code) {
-        const answer = await rl.question(
-          `[${field.batch_name}] "${field.name}" — Enter 3-digit kode_bidang: `,
-        );
-        const trimmed = answer.trim();
-        if (!/^\d{3}$/.test(trimmed)) {
-          console.log("  Invalid. Must be exactly 3 digits (e.g. 111). Try again.");
-          continue;
-        }
-        if (usedCodes.has(trimmed)) {
-          console.log(`  Code ${trimmed} already in use. Try again.`);
-          continue;
-        }
-        code = trimmed;
-      }
-
-      log(`Field "${field.name}" → kode_bidang = ${code}`);
-      if (!isDryRun) {
-        await updateField("field", field.id, "kode_bidang", code);
-      }
+      process.exit(1);
     }
 
-    rl.close();
+    for (let i = 0; i < fieldRows.length; i++) {
+      const field = fieldRows[i];
+      const code = kodeBidangArgs[i];
+
+      log(`Field "${field.name}" (${field.batch_name}) → kode_bidang = ${code}`);
+      if (!isDryRun) {
+        await prisma.$executeRawUnsafe(
+          `UPDATE "field" SET kode_bidang = $1 WHERE id = $2`,
+          code,
+          field.id,
+        );
+      }
+    }
   }
 
   // === Step 3: Backfill nomor_induk ===
-  const profileRows = await prisma.$queryRawUnsafe<
-    {
-      id: string;
-      user_id: string;
-      batch_id: string;
-      batch_kode: string | null;
-      bidang_kode: string | null;
-    }[]
-  >(
-    `SELECT ip.id, ip.user_id, b.id as batch_id, b.kode_batch as batch_kode, f.kode_bidang as bidang_kode
-     FROM internship_profile ip
-     JOIN "class" c ON c.id = ip.class_id
-     JOIN "field" f ON f.id = c.field_id
-     JOIN "batch" b ON b.id = f.batch_id
+  type ProfileRow = {
+    id: string;
+    user_id: string;
+    batch_id: string;
+    batch_kode: string | null;
+    bidang_kode: string | null;
+  };
+  const profileRows: ProfileRow[] = await prisma.$queryRawUnsafe(
+    `SELECT ip.id, ip."userId" AS user_id, b.id AS batch_id, b.kode_batch AS batch_kode, f.kode_bidang AS bidang_kode
+     FROM "internship_profile" ip
+     JOIN "class" c ON c.id = ip."classId"
+     JOIN "field" f ON f.id = c."fieldId"
+     JOIN "batch" b ON b.id = f."batchId"
      WHERE ip.nomor_induk IS NULL
-     ORDER BY b.name, f.name, ip.user_id`,
+     ORDER BY b.name, f.name, ip."userId"`,
   );
 
   if (profileRows.length === 0) {
@@ -159,10 +131,10 @@ async function main() {
         const [countResult] = await prisma.$queryRawUnsafe<
           { cnt: number }[]
         >(
-          `SELECT COUNT(*)::int as cnt FROM internship_profile ip
-           JOIN "class" c ON c.id = ip.class_id
-           JOIN "field" f ON f.id = c.field_id
-           WHERE f.batch_id = $1 AND ip.nomor_induk IS NOT NULL`,
+          `SELECT COUNT(*)::int AS cnt FROM "internship_profile" ip
+           JOIN "class" c ON c.id = ip."classId"
+           JOIN "field" f ON f.id = c."fieldId"
+           WHERE f."batchId" = $1 AND ip.nomor_induk IS NOT NULL`,
           batchId,
         );
         batchCounts.set(batchId, countResult?.cnt ?? 0);
@@ -182,7 +154,11 @@ async function main() {
       log(`  userId=${profile.user_id} → nomor_induk = ${nomorInduk}`);
 
       if (!isDryRun) {
-        await updateField("internship_profile", profile.id, "nomor_induk", nomorInduk);
+        await prisma.$executeRawUnsafe(
+          `UPDATE "internship_profile" SET nomor_induk = $1 WHERE id = $2`,
+          nomorInduk,
+          profile.id,
+        );
       }
     }
   }
