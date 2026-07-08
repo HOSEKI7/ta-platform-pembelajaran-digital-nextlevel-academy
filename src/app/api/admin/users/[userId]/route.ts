@@ -68,6 +68,24 @@ export async function PATCH(
     return NextResponse.json({ error: "Kelas wajib dipilih." }, { status: 400 });
   }
 
+  // Guard: block class change if magang already has nomor_induk
+  if (
+    role === Role.PESERTA_MAGANG &&
+    newClassId &&
+    newClassId !== existing.internshipProfile?.classId
+  ) {
+    const profile = await prisma.internshipProfile.findUnique({
+      where: { userId },
+      select: { nomor_induk: true },
+    });
+    if (profile?.nomor_induk) {
+      return NextResponse.json(
+        { error: "Kelas tidak dapat diubah setelah Nomor Induk diterbitkan." },
+        { status: 409 },
+      );
+    }
+  }
+
   // Magang quota guard when moving into a (different) class.
   if (
     role === Role.PESERTA_MAGANG &&

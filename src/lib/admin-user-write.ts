@@ -43,7 +43,7 @@ export type CreateManagedUserInput = {
 };
 
 export type CreateUserResult =
-  | { ok: true; id: string }
+  | { ok: true; id: string; nomorInduk?: string }
   | { ok: false; status: number; error: string };
 
 /**
@@ -94,6 +94,7 @@ export async function createManagedUser(
   const passwordHash = await hashPassword(input.password);
   const userId = genId("user");
   const now = new Date();
+  let nomorInduk: string | undefined;
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -141,7 +142,7 @@ export async function createManagedUser(
           throw new Error("Batch atau Bidang belum memiliki kode. Isi kode batch/bidang terlebih dahulu.");
         }
 
-        const nomorInduk = await generateNomorInduk(
+        const generatedNomorInduk = await generateNomorInduk(
           tx,
           classInfo.field.batch.id,
           classInfo.field.batch.kode_batch,
@@ -152,10 +153,11 @@ export async function createManagedUser(
           data: {
             userId,
             classId: input.classId!,
-            nomor_induk: nomorInduk,
+            nomor_induk: generatedNomorInduk,
             institution: input.institution?.trim() || null,
           },
         });
+        nomorInduk = generatedNomorInduk;
       } else if (input.role === Role.MENTOR) {
         await tx.mentorProfile.create({
           data: { userId, classId: input.classId!, gender: input.gender ?? null },
@@ -170,7 +172,7 @@ export async function createManagedUser(
     return { ok: false, status: 500, error: "Gagal membuat akun. Coba lagi." };
   }
 
-  return { ok: true, id: userId };
+  return { ok: true, id: userId, nomorInduk };
 }
 
 /**
