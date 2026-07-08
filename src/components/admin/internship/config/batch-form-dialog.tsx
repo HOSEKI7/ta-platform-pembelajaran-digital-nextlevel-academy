@@ -39,7 +39,6 @@ type Props = {
 function buildDefaults(initial?: BatchRow): BatchFormInput {
   return {
     name: initial?.name ?? "",
-    kode_batch: initial?.kodeBatch ?? "",
     description: initial?.description ?? "",
     startDate: initial?.startDate ?? "",
     endDate: initial?.endDate ?? "",
@@ -102,14 +101,6 @@ export function BatchFormDialog({
               placeholder="cth. Batch 1"
               className="h-11 rounded-xl"
               autoFocus
-            />
-          </Field>
-
-          <Field label="Kode Batch" error={errors.kode_batch?.message}>
-            <Input
-              {...register("kode_batch")}
-              placeholder="cth. 01 (biarkan kosong untuk otomatis)"
-              className="h-11 rounded-xl"
             />
           </Field>
 

@@ -119,6 +119,13 @@ export async function createBatch(
     kodeBatchValue = String(next).padStart(2, "0");
   }
 
+  // Explicit duplicate check — unique constraint will be added at schema finalisation (Task 12).
+  const dupCode = await prisma.batch.findFirst({
+    where: { kode_batch: kodeBatchValue },
+    select: { id: true },
+  });
+  if (dupCode) return { ok: false, reason: "kode_duplicate" };
+
   const data = {
     name: input.name.trim(),
     kode_batch: kodeBatchValue,
@@ -245,17 +252,26 @@ export async function createField(
   });
   if (!batch) return { ok: false, reason: "batch_not_found" };
 
+  const kodeBidangValue = input.kode_bidang.trim();
+
+  // Explicit duplicate check — unique constraint will be added at schema finalisation (Task 12).
+  const dupCode = await prisma.field.findFirst({
+    where: { kode_bidang: kodeBidangValue },
+    select: { id: true },
+  });
+  if (dupCode) return { ok: false, reason: "kode_duplicate" };
+
   const name = input.name.trim();
   try {
     const created = await prisma.$transaction(async (tx) => {
       const field = await tx.field.create({
-        data: { batchId: input.batchId, name, kode_bidang: input.kode_bidang.trim() },
+        data: { batchId: input.batchId, name, kode_bidang: kodeBidangValue },
         select: { id: true },
       });
       await tx.auditLog.create({
         data: audit(ctx, "FIELD_CREATE", "Field", field.id, {
           name,
-          kode_bidang: input.kode_bidang.trim(),
+          kode_bidang: kodeBidangValue,
           batchId: input.batchId,
         }),
       });
