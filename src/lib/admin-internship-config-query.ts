@@ -11,6 +11,7 @@
 export type BatchRow = {
   id: string;
   name: string;
+  kodeBatch: string | null;
   description: string;
   /** Date-only ISO "YYYY-MM-DD" (WIB calendar date). */
   startDate: string;
@@ -23,6 +24,7 @@ export type BatchRow = {
 export type FieldRow = {
   id: string;
   name: string;
+  kodeBidang: string | null;
   batchId: string;
   batchName: string;
   /** Number of Kelas under this field. */

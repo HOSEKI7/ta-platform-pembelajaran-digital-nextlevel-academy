@@ -28,6 +28,7 @@ export async function loadInternshipConfig(): Promise<InternshipConfigData> {
       select: {
         id: true,
         name: true,
+        kode_batch: true,
         description: true,
         startDate: true,
         endDate: true,
@@ -40,6 +41,7 @@ export async function loadInternshipConfig(): Promise<InternshipConfigData> {
       select: {
         id: true,
         name: true,
+        kode_bidang: true,
         batchId: true,
         createdAt: true,
         batch: { select: { name: true } },
@@ -65,6 +67,7 @@ export async function loadInternshipConfig(): Promise<InternshipConfigData> {
   const batchRows: BatchRow[] = batches.map((b) => ({
     id: b.id,
     name: b.name,
+    kodeBatch: b.kode_batch,
     description: b.description,
     startDate: dbDateToISO(b.startDate),
     endDate: dbDateToISO(b.endDate),
@@ -75,6 +78,7 @@ export async function loadInternshipConfig(): Promise<InternshipConfigData> {
   const fieldRows: FieldRow[] = fields.map((f) => ({
     id: f.id,
     name: f.name,
+    kodeBidang: f.kode_bidang,
     batchId: f.batchId,
     batchName: f.batch.name,
     classCount: f._count.classes,
