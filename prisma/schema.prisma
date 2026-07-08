@@ -266,7 +266,7 @@ model AdminInvite {
 model Batch {
   id          String   @id @default(cuid())
   name        String   @unique
-  kode_batch  String?  // nullable until backfilled
+  kode_batch  String?  @unique // nullable until backfilled
   description String
   // Internship period (WIB calendar dates). Bounds the attendance calendar and
   // defines when the program runs. Inherited by every Field/Class under it.
@@ -283,7 +283,7 @@ model Batch {
 model Field {
   id          String   @id @default(cuid())
   batchId     String
-  kode_bidang String?  // nullable until backfilled
+  kode_bidang String?  @unique // nullable until backfilled
   // Field name is unique *within* a batch (not globally) so the same field
   // (e.g. "Data Analyst") can run across multiple batches. Class names stay
   // globally unique via their composite "<Batch> - <Field> - <Letter>" form.

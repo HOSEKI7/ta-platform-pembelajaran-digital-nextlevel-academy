@@ -62,6 +62,7 @@ export function FieldFormDialog({
     resolver: zodResolver(fieldCreateSchema),
     defaultValues: {
       batchId: initial?.batchId ?? "",
+      kode_bidang: initial?.kodeBidang ?? "",
       name: initial?.name ?? "",
     },
   });
@@ -83,7 +84,7 @@ export function FieldFormDialog({
       });
     } else {
       updateMutation.mutate(
-        { name: values.name },
+        { name: values.name, kode_bidang: values.kode_bidang },
         {
           onSuccess: () => {
             toast.success("Perubahan bidang tersimpan.");
@@ -149,6 +150,14 @@ export function FieldFormDialog({
                 )}
               />
             )}
+          </Field>
+
+          <Field label="Kode Bidang" error={errors.kode_bidang?.message}>
+            <Input
+              {...register("kode_bidang")}
+              placeholder="cth. 111"
+              className="h-11 rounded-xl"
+            />
           </Field>
 
           <Field label="Nama Bidang" error={errors.name?.message}>

@@ -37,7 +37,10 @@ export type ConfigWriteFailure =
   | "field_not_found"
   | "field_batch_mismatch"
   | "classes_full"
-  | "error";
+  | "error"
+  | "has_students"
+  | "kode_duplicate"
+  | "batch_code_exhausted";
 
 export type ConfigWriteResult =
   | { ok: true; id: string }
@@ -103,8 +106,22 @@ export async function createBatch(
   input: BatchFormInput,
   ctx: AdminActionContext,
 ): Promise<ConfigWriteResult> {
+  // Auto-suggest kode_batch if the caller did not provide one.
+  let kodeBatchValue = input.kode_batch?.trim();
+  if (!kodeBatchValue) {
+    const last = await prisma.batch.findFirst({
+      where: { kode_batch: { not: null } },
+      orderBy: { kode_batch: "desc" },
+      select: { kode_batch: true },
+    });
+    const next = last?.kode_batch ? parseInt(last.kode_batch, 10) + 1 : 1;
+    if (next > 99) return { ok: false, reason: "batch_code_exhausted" };
+    kodeBatchValue = String(next).padStart(2, "0");
+  }
+
   const data = {
     name: input.name.trim(),
+    kode_batch: kodeBatchValue,
     description: input.description.trim(),
     startDate: toUtcMidnight(input.startDate),
     endDate: toUtcMidnight(input.endDate),
@@ -119,7 +136,12 @@ export async function createBatch(
     });
     return { ok: true, id: created.id };
   } catch (err) {
-    if (isUniqueConstraintError(err)) return { ok: false, reason: "duplicate" };
+    if (isUniqueConstraintError(err)) {
+      // Distinguish name duplicate from kode_batch duplicate.
+      const meta = (err as { meta?: { target?: string[] } }).meta;
+      if (meta?.target?.includes("kode_batch")) return { ok: false, reason: "kode_duplicate" };
+      return { ok: false, reason: "duplicate" };
+    }
     console.error("[createBatch] failed", err);
     return { ok: false, reason: "error" };
   }
@@ -132,12 +154,21 @@ export async function updateBatch(
 ): Promise<ConfigWriteResult> {
   const existing = await prisma.batch.findUnique({
     where: { id },
-    select: { id: true, name: true },
+    select: { id: true, name: true, kode_batch: true },
   });
   if (!existing) return { ok: false, reason: "not_found" };
 
+  const kodeBatchValue = input.kode_batch?.trim();
+  if (kodeBatchValue && kodeBatchValue !== existing.kode_batch) {
+    const studentCount = await prisma.internshipProfile.count({
+      where: { class: { field: { batchId: id } } },
+    });
+    if (studentCount > 0) return { ok: false, reason: "has_students" };
+  }
+
   const data = {
     name: input.name.trim(),
+    kode_batch: kodeBatchValue,
     description: input.description.trim(),
     startDate: toUtcMidnight(input.startDate),
     endDate: toUtcMidnight(input.endDate),
@@ -218,12 +249,13 @@ export async function createField(
   try {
     const created = await prisma.$transaction(async (tx) => {
       const field = await tx.field.create({
-        data: { batchId: input.batchId, name },
+        data: { batchId: input.batchId, name, kode_bidang: input.kode_bidang.trim() },
         select: { id: true },
       });
       await tx.auditLog.create({
         data: audit(ctx, "FIELD_CREATE", "Field", field.id, {
           name,
+          kode_bidang: input.kode_bidang.trim(),
           batchId: input.batchId,
         }),
       });
@@ -231,7 +263,12 @@ export async function createField(
     });
     return { ok: true, id: created.id };
   } catch (err) {
-    if (isUniqueConstraintError(err)) return { ok: false, reason: "duplicate" };
+    if (isUniqueConstraintError(err)) {
+      // Two unique constraints on Field: @@unique([batchId, name]) and @unique on kode_bidang.
+      const meta = (err as { meta?: { target?: string[] } }).meta;
+      if (meta?.target?.includes("kode_bidang")) return { ok: false, reason: "kode_duplicate" };
+      return { ok: false, reason: "duplicate" };
+    }
     console.error("[createField] failed", err);
     return { ok: false, reason: "error" };
   }
@@ -244,14 +281,22 @@ export async function updateField(
 ): Promise<ConfigWriteResult> {
   const existing = await prisma.field.findUnique({
     where: { id },
-    select: { id: true, name: true, batch: { select: { name: true } } },
+    select: { id: true, name: true, kode_bidang: true, batch: { select: { name: true } } },
   });
   if (!existing) return { ok: false, reason: "not_found" };
+
+  const kodeBidangValue = input.kode_bidang?.trim();
+  if (kodeBidangValue && kodeBidangValue !== existing.kode_bidang) {
+    const studentCount = await prisma.internshipProfile.count({
+      where: { class: { fieldId: id } },
+    });
+    if (studentCount > 0) return { ok: false, reason: "has_students" };
+  }
 
   const name = input.name.trim();
   try {
     await prisma.$transaction(async (tx) => {
-      await tx.field.update({ where: { id }, data: { name } });
+      await tx.field.update({ where: { id }, data: { name, kode_bidang: kodeBidangValue } });
       // Cascade composite class names when the field is renamed.
       if (name !== existing.name) {
         const classes = await tx.class.findMany({
@@ -447,6 +492,15 @@ export function describeBatchFailure(r: Failure): { status: number; error: strin
         error: `Batch tidak bisa dihapus karena masih terhubung/memiliki ${parts.join(" dan ")}. Hapus atau pindahkan dulu seluruh bidang di batch ini.`,
       };
     }
+    case "has_students":
+      return {
+        status: 409,
+        error: "Batch ini sudah memiliki peserta magang. Kode batch tidak dapat diubah.",
+      };
+    case "kode_duplicate":
+      return { status: 409, error: "Kode batch sudah digunakan." };
+    case "batch_code_exhausted":
+      return { status: 400, error: "Kode batch sudah habis (maks 99)." };
     default:
       return { status: 500, error: "Gagal memproses batch. Coba lagi." };
   }
@@ -471,6 +525,13 @@ export function describeFieldFailure(r: Failure): { status: number; error: strin
         error: `Bidang tidak bisa dihapus karena masih memiliki ${parts.join(" dan ")}. Hapus dulu kelas di bidang ini.`,
       };
     }
+    case "has_students":
+      return {
+        status: 409,
+        error: "Bidang ini sudah memiliki peserta magang. Kode bidang tidak dapat diubah.",
+      };
+    case "kode_duplicate":
+      return { status: 409, error: "Kode bidang sudah digunakan." };
     default:
       return { status: 500, error: "Gagal memproses bidang. Coba lagi." };
   }
