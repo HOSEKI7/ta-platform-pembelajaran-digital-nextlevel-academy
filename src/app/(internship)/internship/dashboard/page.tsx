@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 
-import { Role } from "@/generated/prisma";
-import { requireRole } from "@/lib/auth-server";
+import { getSession } from "@/lib/auth-server";
 import { loadDashboardData } from "@/lib/internship-data-loader";
 
 import { InternshipDashboard } from "@/components/internship/dashboard/internship-dashboard";
 import { InternshipEmptyState } from "@/components/internship/internship-empty-state";
 
+// ponytail: gating is in (internship)/layout.tsx, getSession cheaper than
+// requireRole because cookieCache may have the data already.
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
@@ -16,9 +17,9 @@ export const metadata: Metadata = {
 };
 
 export default async function InternshipDashboardPage() {
-  const session = await requireRole(Role.PESERTA_MAGANG, {
-    redirectTo: "/internship/dashboard",
-  });
+  const session = await getSession();
+  // layout.tsx already gated PESERTA_MAGANG — session is guaranteed.
+  if (!session) return null;
   const firstName = session.user.name.split(" ")[0] ?? session.user.name;
   const displayName = session.user.username?.trim() || firstName;
 

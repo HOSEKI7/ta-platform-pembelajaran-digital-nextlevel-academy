@@ -65,24 +65,14 @@ export function AttendanceHero({
   isPending,
   onCheckIn,
 }: Props) {
-  // Initialise from the server timestamp so SSR and first hydration agree, then
-  // tick every second once mounted (the signature live WIB clock).
-  const [now, setNow] = useState<Date>(() => new Date(serverNowISO));
-
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(t);
-  }, []);
-
-  const hour = parseInt(formatInTimeZone(now, WIB_TZ, "H"), 10);
-  const dateLabel = formatInTimeZone(now, WIB_TZ, "EEEE, d MMMM yyyy", {
+  const hour = parseInt(formatInTimeZone(serverNowISO, WIB_TZ, "H"), 10);
+  const dateLabel = formatInTimeZone(serverNowISO, WIB_TZ, "EEEE, d MMMM yyyy", {
     locale: idLocale,
   });
-  const clock = formatInTimeZone(now, WIB_TZ, "HH:mm:ss");
 
   const nowMin =
-    parseInt(formatInTimeZone(now, WIB_TZ, "H"), 10) * 60 +
-    parseInt(formatInTimeZone(now, WIB_TZ, "m"), 10);
+    parseInt(formatInTimeZone(serverNowISO, WIB_TZ, "H"), 10) * 60 +
+    parseInt(formatInTimeZone(serverNowISO, WIB_TZ, "m"), 10);
   const startMin = toMinutes(window.start);
   const endMin = toMinutes(window.end);
 
@@ -162,7 +152,7 @@ export function AttendanceHero({
                 <Clock className="size-3.5" strokeWidth={2.4} /> Waktu sekarang
               </p>
               <p className="mt-1 font-heading text-4xl font-extrabold leading-none tabular-nums tracking-tight sm:text-5xl">
-                {clock}
+                <LiveClock serverNowISO={serverNowISO} />
               </p>
             </div>
             <WindowBadge state={windowState} checkedIn={checkedIn} offLabel={offCopy?.pill ?? null} />
@@ -241,6 +231,17 @@ export function AttendanceHero({
       </div>
     </section>
   );
+}
+
+/** Client-only live WIB clock. Re-render hanya komponen ini tiap detik, bukan
+    seluruh hero. Menggunakan serverNowISO sebagai initial state biar aman hydration. */
+function LiveClock({ serverNowISO }: { serverNowISO: string }) {
+  const [now, setNow] = useState<Date>(() => new Date(serverNowISO));
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  return <>{formatInTimeZone(now, WIB_TZ, "HH:mm:ss")}</>;
 }
 
 function WindowBadge({

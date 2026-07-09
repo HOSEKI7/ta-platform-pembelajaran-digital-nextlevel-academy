@@ -19,7 +19,10 @@ export function useInternshipNotificationsQuery() {
   return useQuery({
     queryKey: internshipKeys.notifications(),
     queryFn: fetchNotifications,
-    staleTime: 30 * 1000,
+    // ponytail: 1min stale, 5min gc — notifikasi jarang berubah, ga perlu
+    // re-fetch tiap navigasi halaman internship.
+    staleTime: 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
 }
 
