@@ -129,9 +129,18 @@ export async function loadAttendanceMonth(
   userId: string,
   year: number,
   month: number,
+  /** Optional pre-resolved period bounds — skips the duplicate profile fetch
+   *  when the caller already loaded it (e.g. from loadMagangContext). */
+  periodStart?: Date,
+  periodEnd?: Date,
 ): Promise<AttendanceMonthDTO | null> {
-  const p = await fetchProfile(userId);
-  if (!p) return null;
+  // ponytail: caller can supply period dates to avoid a 2nd fetchProfile
+  if (!periodStart || !periodEnd) {
+    const p = await fetchProfile(userId);
+    if (!p) return null;
+    periodStart = p.startDate;
+    periodEnd = p.endDate;
+  }
 
   const monthStart = utcDate(year, month, 1);
   const monthEnd = utcDate(year, month + 1, 0);
@@ -166,8 +175,8 @@ export async function loadAttendanceMonth(
   const windowClosedToday = computeWindow(now, WINDOW).state === "AFTER";
 
   return buildMonthFromData(year, month, now.toISOString(), {
-    periodStartISO: dbDateToISO(p.startDate),
-    periodEndISO: dbDateToISO(p.endDate),
+    periodStartISO: dbDateToISO(periodStart),
+    periodEndISO: dbDateToISO(periodEnd),
     holidayMap,
     presentMap,
     windowClosedToday,

@@ -18,7 +18,9 @@ import type { AttendanceDisplayStatus, CalendarDayStatus } from "@/lib/internshi
 import { AttendanceView } from "@/components/internship/attendance/attendance-view";
 import { InternshipEmptyState } from "@/components/internship/internship-empty-state";
 
-export const dynamic = "force-dynamic";
+// ponytail: data absensi jarang berubah (check-in max 1x/hari) — 5 menit cache
+// cukup. Revalidate by router.refresh() on check-in success.
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "Absensi Magang",
@@ -52,7 +54,15 @@ export default async function InternshipAttendancePage() {
   // Initially-displayed month = current month clamped into the period.
   const { first, last } = periodMonthBounds(bundle.period);
   const initial = clampMonth({ year: today.year, month: today.month }, first, last);
-  const initialData = await loadAttendanceMonth(session.user.id, initial.year, initial.month);
+  // ponytail: pass period dates from bundle (loadMagangContext already fetched
+  // the profile) so loadAttendanceMonth skips its own duplicate fetchProfile.
+  const [sy, sm, sd] = bundle.period.startISO.split("-").map(Number);
+  const [ey, em, ed] = bundle.period.endISO.split("-").map(Number);
+  const initialData = await loadAttendanceMonth(
+    session.user.id, initial.year, initial.month,
+    new Date(Date.UTC(sy, sm - 1, sd)),
+    new Date(Date.UTC(ey, em - 1, ed)),
+  );
   if (!initialData) {
     return (
       <InternshipEmptyState eyebrow="Magang · Absensi" title="Rekam Jejak" accent="Kehadiran" />

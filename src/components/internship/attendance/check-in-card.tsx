@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { formatInTimeZone } from "date-fns-tz";
-import { id as idLocale } from "date-fns/locale";
 import {
   CalendarCheck,
   CalendarOff,
@@ -52,6 +50,26 @@ const STATUS_PILL: Record<AttendanceDisplayStatus, { label: string; cls: string;
   },
 };
 
+/** Client-only live WIB clock. Re-render hanya jam tiap detik, bukan seluruh card. */
+function LiveClock({ serverNowISO }: { serverNowISO: string }) {
+  const [now, setNow] = useState<Date>(() => new Date(serverNowISO));
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <span className="font-heading text-2xl font-extrabold leading-none tabular-nums tracking-tight text-zinc-900 dark:text-zinc-50">
+      {new Intl.DateTimeFormat("id-ID", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        timeZone: WIB_TZ,
+        hour12: false,
+      }).format(now)}
+    </span>
+  );
+}
+
 export function CheckInCard({
   serverNowISO,
   window,
@@ -61,18 +79,17 @@ export function CheckInCard({
   isPending,
   onCheckIn,
 }: Props) {
-  const [now, setNow] = useState<Date>(() => new Date(serverNowISO));
+  const serverDate = new Date(serverNowISO);
 
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(t);
-  }, []);
+  // ponytail: dateLabel pakai Intl.DateTimeFormat, tanpa import date-fns/locale
+  const dateLabel = new Intl.DateTimeFormat("id-ID", {
+    weekday: "long", day: "numeric", month: "long", year: "numeric",
+    timeZone: WIB_TZ,
+  }).format(serverDate);
 
-  const dateLabel = formatInTimeZone(now, WIB_TZ, "EEEE, d MMMM yyyy", {
-    locale: idLocale,
-  });
-  const clock = formatInTimeZone(now, WIB_TZ, "HH:mm:ss");
-  const { state, markerPct } = computeWindow(now, window);
+  // ponytail: window state & marker dari server timestamp — cukup akurat tanpa
+  // re-render tiap detik untuk progress bar yang granularitas per menit.
+  const { state, markerPct } = computeWindow(serverDate, window);
 
   const checkedIn = status === "HADIR";
   const checkInTime = checkInLabel;
@@ -152,9 +169,7 @@ export function CheckInCard({
             <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-500">
               <Clock className="size-3.5" strokeWidth={2.4} /> Waktu sekarang
             </p>
-            <p className="font-heading text-2xl font-extrabold leading-none tabular-nums tracking-tight text-zinc-900 dark:text-zinc-50">
-              {clock}
-            </p>
+            <LiveClock serverNowISO={serverNowISO} />
           </div>
 
           {offCopy ? (
