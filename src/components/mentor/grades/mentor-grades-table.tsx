@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Award, GraduationCap, Pencil, Plus } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { resolveGradeBand, TONE_SURFACE } from "@/components/internship/final-grade/final-grade-helpers";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { StudentPageContainer } from "@/components/dashboard/shared/student-page-container";
@@ -62,17 +63,13 @@ function GradeBadge({ grade }: { grade: number | null }) {
       </span>
     );
   }
-  const tier =
-    grade >= 85
-      ? "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30"
-      : grade >= 70
-        ? "bg-[color:var(--color-brand-50)] text-[color:var(--color-brand-700)] ring-[color:var(--color-brand-100)] dark:bg-[color:var(--color-brand-500)]/15 dark:text-[color:var(--color-brand-200)] dark:ring-[color:var(--color-brand-500)]/30"
-        : "bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30";
+  // ponytail: reuse authoritative 9-tier band instead of inline 3-tier.
+  const band = resolveGradeBand(grade);
   return (
     <span
       className={cn(
         "inline-flex min-w-12 items-center justify-center rounded-full px-3 py-1 font-heading text-sm font-bold tabular-nums ring-1",
-        tier,
+        TONE_SURFACE[band.tone],
       )}
     >
       {grade}

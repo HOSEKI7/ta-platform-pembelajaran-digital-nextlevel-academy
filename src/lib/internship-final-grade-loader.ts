@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 
 import { prisma } from "@/lib/prisma";
 import { expandHolidays, getWibYmd } from "@/components/internship/attendance/attendance-data";
@@ -133,8 +134,25 @@ function pct(numer: number, denom: number): number {
   return Math.max(0, Math.min(100, Math.round((numer / denom) * 100)));
 }
 
-export async function loadFinalGrade(userId: string): Promise<MagangFinalGrade | null> {
-  const profile = await fetchProfile(userId);
+export const loadFinalGrade = cache(async function loadFinalGrade(
+  userId: string,
+): Promise<MagangFinalGrade | null> {
+  // ponytail: run grade query in parallel with profile (grade only needs userId).
+  const [profile, finalGradeRow] = await Promise.all([
+    fetchProfile(userId),
+    prisma.finalGrade.findUnique({
+      where: { studentId: userId },
+      select: {
+        grade: true,
+        gradedAt: true,
+        updatedAt: true,
+        mentorId: true,
+        lastEditedById: true,
+        mentor: { select: { name: true } },
+        lastEditedBy: { select: { id: true, name: true } },
+      },
+    }),
+  ]);
   if (!profile) return null;
 
   // Period bounds are stored as @db.Date (UTC-midnight). "Today" must be the
@@ -147,21 +165,8 @@ export async function loadFinalGrade(userId: string): Promise<MagangFinalGrade |
   const elapsedUpper =
     todayDate.getTime() < profile.endDate.getTime() ? todayDate : profile.endDate;
 
-  const [finalGradeRow, presentCount, holidayRows, taskTotal, submittedCount] =
-    await Promise.all([
-      prisma.finalGrade.findUnique({
-        where: { studentId: userId },
-        select: {
-          grade: true,
-          gradedAt: true,
-          updatedAt: true,
-          mentorId: true,
-          lastEditedById: true,
-          mentor: { select: { name: true } },
-          lastEditedBy: { select: { id: true, name: true } },
-        },
-      }),
-      prisma.attendance.count({
+  const [presentCount, holidayRows, taskTotal, submittedCount] = await Promise.all([
+    prisma.attendance.count({
         where: {
           userId,
           status: "PRESENT",
@@ -237,4 +242,4 @@ export async function loadFinalGrade(userId: string): Promise<MagangFinalGrade |
     period,
     performance,
   };
-}
+});
