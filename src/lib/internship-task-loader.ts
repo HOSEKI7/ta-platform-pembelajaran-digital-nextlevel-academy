@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 
 import { prisma } from "@/lib/prisma";
 import { isExternalUrl, resolveTaskFileUrl } from "@/lib/bunny-storage";
@@ -143,7 +144,9 @@ const TASK_SELECT = {
   },
 } as const;
 
-export async function loadTaskList(userId: string): Promise<MagangTask[] | null> {
+export const loadTaskList = cache(async function loadTaskList(
+  userId: string,
+): Promise<MagangTask[] | null> {
   const profile = await prisma.internshipProfile.findUnique({
     where: { userId },
     select: { classId: true },
@@ -163,9 +166,9 @@ export async function loadTaskList(userId: string): Promise<MagangTask[] | null>
   });
 
   return rows.map((r) => mapToMagangTask(r as TaskRow));
-}
+});
 
-export async function loadTaskDetail(
+export const loadTaskDetail = cache(async function loadTaskDetail(
   userId: string,
   taskId: string,
 ): Promise<MagangTask | null> {
@@ -191,4 +194,4 @@ export async function loadTaskDetail(
   // Detail renders the description as rich text — sign inline image paths now
   // (the list view never shows the body, so signing is detail-only).
   return { ...task, description: signTaskDescriptionImages(task.description) };
-}
+});

@@ -39,7 +39,8 @@ export function useTaskSubmitMutation(taskId: string) {
       return json.data;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: internshipKeys.all });
+      // Narrow: only attendance cache needs invalidation (dashboard uses TCQ).
+      qc.invalidateQueries({ queryKey: internshipKeys.attendancePrefix() });
       router.refresh();
     },
   });

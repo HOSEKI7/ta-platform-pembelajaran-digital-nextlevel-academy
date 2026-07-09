@@ -100,11 +100,19 @@ export function TaskDetailView({ task, serverNowISO }: Props) {
   // router.refresh() and the parent re-renders this view with updated `task`.
   const submittedFile = task.submittedFile ?? null;
 
+  // Derived values (order matters — overdue/submitted needed by the interval effect).
+  const deadline = useMemo(() => new Date(task.deadlineISO), [task.deadlineISO]);
+  const countdown = formatCountdown(deadline, now);
+  const overdue = countdown.overdue;
+  const submitted = submittedFile !== null;
+
   // Live-tick the countdown once per minute (post-hydration only).
+  // ponytail: stop ticking once status is terminal (submitted or overdue).
   useEffect(() => {
+    if (submitted || overdue) return;
     const t = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(t);
-  }, []);
+  }, [submitted, overdue]);
 
   // Transient celebration overlay — unmount shortly after it plays.
   useEffect(() => {
@@ -119,11 +127,6 @@ export function TaskDetailView({ task, serverNowISO }: Props) {
     const t = window.setTimeout(() => setFlash(false), 1200);
     return () => window.clearTimeout(t);
   }, [flash]);
-
-  const deadline = useMemo(() => new Date(task.deadlineISO), [task.deadlineISO]);
-  const countdown = formatCountdown(deadline, now);
-  const overdue = countdown.overdue;
-  const submitted = submittedFile !== null;
 
   // Effective status: a local submission always wins; otherwise derive from data.
   const status: TaskDisplayStatus = submitted ? "TERKUMPUL" : resolveStatus(task, now);
