@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 
-import { publicApi } from "@/lib/server-fetch";
+import { loadLandingStats } from "@/lib/landing-loader";
 
 import { SiteContainer } from "../site-container";
 import { CountUp } from "./count-up";
@@ -44,12 +44,7 @@ export function StatsStripSection() {
 }
 
 async function StatsStripData() {
-  const data = await publicApi<{
-    learners: number;
-    courses: number;
-    enrollments: number;
-    completionRate: number;
-  }>("/api/public/stats");
+  const data = await loadLandingStats();
 
   const items: { num: React.ReactNode; label: string }[] = [
     { num: <CountUp value={data.learners} suffix="+" />, label: "Peserta aktif" },

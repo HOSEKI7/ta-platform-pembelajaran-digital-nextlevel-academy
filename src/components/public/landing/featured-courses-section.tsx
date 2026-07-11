@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
 
-import { publicApi } from "@/lib/server-fetch";
+import { loadFeaturedCourses } from "@/lib/landing-loader";
 
 import { SiteContainer } from "../site-container";
 import { CourseCard, type CourseCardData } from "./course-card";
@@ -46,9 +46,7 @@ export function FeaturedCoursesSection() {
 }
 
 async function FeaturedCoursesData() {
-  const { courses } = await publicApi<{ courses: CourseCardData[] }>(
-    "/api/public/featured-courses",
-  );
+  const courses = await loadFeaturedCourses();
 
   if (courses.length === 0) {
     return <EmptyState />;

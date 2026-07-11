@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, BookOpenCheck, Sparkles, Tag, Trophy } from "lucide-react";
 
-import { publicApi } from "@/lib/server-fetch";
+import { loadHeroStats } from "@/lib/landing-loader";
 
 import { SiteContainer } from "../site-container";
 import { CountUp } from "./count-up";
@@ -204,10 +204,7 @@ export function HeroSection() {
 }
 
 async function HeroStats() {
-  const { courseCount, learnerCount } = await publicApi<{
-    courseCount: number;
-    learnerCount: number;
-  }>("/api/public/hero-stats");
+  const { courseCount, learnerCount } = await loadHeroStats();
 
   return (
     <dl
