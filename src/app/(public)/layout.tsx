@@ -1,16 +1,7 @@
-import { Suspense } from "react";
-
-import { getSession } from "@/lib/auth-server";
 import { BUNNY_CDN_HOST } from "@/lib/bunny-host";
 
 import { PublicFooter } from "@/components/public/public-footer";
 import { PublicNavbar } from "@/components/public/public-navbar";
-
-// ponytail: navbar session fetched lazily so layout resolves instantly
-async function NavbarWithSession() {
-  const session = await getSession();
-  return <PublicNavbar session={session} />;
-}
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -21,13 +12,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
           <link rel="preconnect" href={`https://${BUNNY_CDN_HOST}`} />
         </>
       ) : null}
-      <Suspense
-        fallback={
-          <div className="h-16 sm:h-[68px] min-[1920px]:h-[72px]" />
-        }
-      >
-        <NavbarWithSession />
-      </Suspense>
+      <PublicNavbar />
       <main className="flex-1">{children}</main>
       <PublicFooter />
     </div>

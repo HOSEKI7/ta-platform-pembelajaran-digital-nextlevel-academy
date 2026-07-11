@@ -1,8 +1,11 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight, Sparkles } from "lucide-react";
 
-import type { AuthSession } from "@/lib/auth-server";
+import type { Role } from "@/generated/prisma";
+import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 
 import { MobileNav } from "./mobile-nav";
@@ -10,10 +13,15 @@ import { NavLink } from "./nav-link";
 import { NavScrollEffect } from "./nav-scroll-effect";
 import { PUBLIC_NAV_LINKS, dashboardHrefFor } from "./public-nav-config";
 
-type Props = { session: AuthSession | null };
-
-export function PublicNavbar({ session }: Props) {
-  const user = session?.user ?? null;
+export function PublicNavbar() {
+  const { data: session } = useSession();
+  const user = (session?.user ?? null) as {
+    id: string;
+    name: string;
+    email: string;
+    role: Role;
+    image?: string | null;
+  } | null;
 
   return (
     <>
@@ -54,6 +62,7 @@ export function PublicNavbar({ session }: Props) {
               width={1397}
               height={351}
               priority
+              sizes="(max-width: 640px) 160px, (max-width: 1920px) 176px, 192px"
               className="h-10 w-auto sm:h-11 min-[1920px]:h-12"
             />
           </Link>
