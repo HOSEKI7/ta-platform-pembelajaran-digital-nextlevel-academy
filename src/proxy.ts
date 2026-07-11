@@ -71,6 +71,15 @@ export function proxy(request: NextRequest) {
   }
 
   const response = NextResponse.next();
+
+  // Public routes (no session required): allow bfcache via must-revalidate
+  if (!hasSession && !isProtectedPath(pathname) && !isAuthPath(pathname)) {
+    response.headers.set(
+      "Cache-Control",
+      "public, max-age=0, must-revalidate",
+    );
+  }
+
   response.headers.set(
     "Permissions-Policy",
     "camera=(), microphone=(), geolocation=()",
