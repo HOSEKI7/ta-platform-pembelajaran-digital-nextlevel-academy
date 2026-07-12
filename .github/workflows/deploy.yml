@@ -81,4 +81,4 @@ jobs:
       - name: Aktifkan release (health check + auto-rollback)
         run: >
           ssh "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}"
-          bash -s -- "${RELEASE_SHA}" < scripts/deploy/activate-release.sh
+          bash -s -- "${RELEASE_SHA}" "${{ secrets.REVALIDATION_SECRET }}" < scripts/deploy/activate-release.sh

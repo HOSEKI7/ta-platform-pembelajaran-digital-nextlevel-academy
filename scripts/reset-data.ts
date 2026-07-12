@@ -6,8 +6,8 @@
  * Deletes every domain table (and its children) in leaf→root order so foreign
  * keys with the default Restrict action are not violated. Covers everything the
  * app CRUDs: users (+ sessions/accounts/profiles/progress/notifications),
- * courses (+ sprints/steps/videos/quizzes), orders, certificates, vouchers,
- * badges, attendance, tasks, final grades, the internship org structure
+ * courses (+ slug-history/sprints/steps/videos/quizzes), orders, certificates,
+ * vouchers, badges, attendance, tasks, final grades, the internship org structure
  * (batch/field/class), plus Category, Holiday, AuditLog and stale Verification
  * tokens.
  *
@@ -55,6 +55,7 @@ const DELETIONS: [string, () => Promise<{ count: number }>][] = [
   ["course_faq", () => db.courseFaq.deleteMany()],
   ["badge", () => db.badge.deleteMany()],
   ["voucher", () => db.voucher.deleteMany()],
+  ["course_slug_history", () => db.courseSlugHistory.deleteMany()],
   ["course", () => db.course.deleteMany()],
   ["category", () => db.category.deleteMany()],
   ["admin_invite", () => db.adminInvite.deleteMany()],
