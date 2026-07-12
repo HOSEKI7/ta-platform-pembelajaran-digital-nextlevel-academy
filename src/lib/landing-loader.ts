@@ -8,15 +8,23 @@ import { prisma } from "@/lib/prisma";
 
 import type { CourseCardData } from "@/components/public/landing/course-card";
 
-export const loadHeroStats = cache(async () => {
+// ponytail: fallback during build (CI has no real DB) — ISR replaces on first request
+async function heroStats() {
   const [courseCount, learnerCount] = await Promise.all([
     prisma.course.count({ where: { status: "PUBLISHED" } }),
     prisma.user.count({ where: { role: Role.PESERTA_DIDIK } }),
   ]);
   return { courseCount, learnerCount };
+}
+export const loadHeroStats = cache(async () => {
+  try {
+    return await heroStats();
+  } catch {
+    return { courseCount: 0, learnerCount: 0 };
+  }
 });
 
-export const loadFeaturedCourses = cache(async () => {
+async function featuredCourses() {
   const courses = await prisma.course.findMany({
     where: { status: "PUBLISHED" },
     include: { category: { select: { name: true } } },
@@ -38,9 +46,16 @@ export const loadFeaturedCourses = cache(async () => {
         category: { name: c.category.name },
       }) as CourseCardData,
   );
+}
+export const loadFeaturedCourses = cache(async () => {
+  try {
+    return await featuredCourses();
+  } catch {
+    return [];
+  }
 });
 
-export const loadLandingStats = cache(async () => {
+async function landingStats() {
   const [learners, courses, enrollments, completedEnrollments] =
     await Promise.all([
       prisma.user.count({ where: { role: Role.PESERTA_DIDIK } }),
@@ -55,4 +70,11 @@ export const loadLandingStats = cache(async () => {
       : 0;
 
   return { learners, courses, enrollments, completionRate };
+}
+export const loadLandingStats = cache(async () => {
+  try {
+    return await landingStats();
+  } catch {
+    return { learners: 0, courses: 0, enrollments: 0, completionRate: 0 };
+  }
 });
