@@ -235,7 +235,8 @@ export async function loadDashboardData(
     prisma.task.findMany({
       where: {
         classId: p.classId,
-        submissions: { some: { studentId: userId, status: "NOT_SUBMITTED" } },
+        deadline: { gt: new Date() },
+        NOT: { submissions: { some: { studentId: userId, status: "SUBMITTED" } } },
       },
       select: { id: true, title: true, deadline: true },
       orderBy: { deadline: "asc" },
