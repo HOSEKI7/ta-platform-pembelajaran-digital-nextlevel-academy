@@ -5,7 +5,7 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import { loadFeaturedCourses } from "@/lib/landing-loader";
 
 import { SiteContainer } from "../site-container";
-import { CourseCard, type CourseCardData } from "./course-card";
+import { CourseCard } from "./course-card";
 import { FeaturedCoursesSkeleton } from "./landing-skeletons";
 import { Reveal } from "./reveal";
 
