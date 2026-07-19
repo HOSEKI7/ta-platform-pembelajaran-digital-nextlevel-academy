@@ -47,7 +47,7 @@ export function MentorSidebar({
         >
           {isCollapsed ? (
             <Image
-              src="/NextLevel_Mini_Logo.webp"
+              src="/nla-logo.webp"
               alt="NextLevel Academy"
               width={48}
               height={48}
@@ -56,7 +56,7 @@ export function MentorSidebar({
             />
           ) : (
             <Image
-              src="/NextLevel_LogoXFit.webp"
+              src="/nla-horizontal-logo.webp"
               alt="NextLevel Academy"
               width={1397}
               height={351}
@@ -78,7 +78,10 @@ export function MentorSidebar({
       ) : null}
 
       {/* Nav */}
-      <nav aria-label="Menu mentor" className="flex-1 overflow-hidden px-3 pb-4 pt-2">
+      <nav
+        aria-label="Menu mentor"
+        className="flex-1 overflow-hidden px-3 pb-4 pt-2"
+      >
         <ul className="space-y-1">
           {MENTOR_NAV_ITEMS.map((item) => (
             <li key={item.href}>

@@ -48,9 +48,13 @@ export default async function AcceptAdminInvitePage({ searchParams }: Props) {
       <ForceLightTheme />
       <main className="auth-light-scope grid min-h-screen place-items-center bg-zinc-50 px-4 py-10">
         <div className="flex w-full max-w-md flex-col items-center gap-6">
-          <Link href="/" aria-label="NextLevel Academy beranda" className="inline-flex">
+          <Link
+            href="/"
+            aria-label="NextLevel Academy beranda"
+            className="inline-flex"
+          >
             <Image
-              src="/NextLevel_LogoXFit.webp"
+              src="/nla-horizontal-logo.webp"
               alt="NextLevel Academy"
               width={1397}
               height={351}

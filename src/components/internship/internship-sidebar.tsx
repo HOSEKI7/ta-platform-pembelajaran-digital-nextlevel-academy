@@ -47,7 +47,7 @@ export function InternshipSidebar({
         >
           {isCollapsed ? (
             <Image
-              src="/NextLevel_Mini_Logo.webp"
+              src="/nla-logo.webp"
               alt="NextLevel Academy"
               width={48}
               height={48}
@@ -56,7 +56,7 @@ export function InternshipSidebar({
             />
           ) : (
             <Image
-              src="/NextLevel_LogoXFit.webp"
+              src="/nla-horizontal-logo.webp"
               alt="NextLevel Academy"
               width={1397}
               height={351}

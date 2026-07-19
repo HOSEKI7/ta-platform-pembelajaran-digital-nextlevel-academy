@@ -37,7 +37,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             className="-ml-3 inline-flex w-fit shrink-0 items-center sm:-ml-5 lg:-ml-10 min-[1920px]:-ml-14"
           >
             <Image
-              src="/NextLevel_LogoXFit.webp"
+              src="/nla-horizontal-logo.webp"
               alt="NextLevel Academy"
               width={1397}
               height={351}

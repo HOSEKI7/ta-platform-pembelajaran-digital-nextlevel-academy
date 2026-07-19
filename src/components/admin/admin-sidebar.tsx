@@ -72,7 +72,7 @@ export function AdminSidebar({ collapsed, variant = "rail", onNavigate }: Props)
         >
           {isCollapsed ? (
             <Image
-              src="/NextLevel_Mini_Logo.webp"
+              src="/nla-logo.webp"
               alt="NextLevel Academy"
               width={48}
               height={48}
@@ -81,7 +81,7 @@ export function AdminSidebar({ collapsed, variant = "rail", onNavigate }: Props)
             />
           ) : (
             <Image
-              src="/NextLevel_LogoXFit.webp"
+              src="/nla-horizontal-logo.webp"
               alt="NextLevel Academy"
               width={1397}
               height={351}
@@ -103,7 +103,10 @@ export function AdminSidebar({ collapsed, variant = "rail", onNavigate }: Props)
       ) : null}
 
       {/* Nav */}
-      <nav aria-label="Menu admin" className="flex-1 overflow-hidden px-3 pb-4 pt-2">
+      <nav
+        aria-label="Menu admin"
+        className="flex-1 overflow-hidden px-3 pb-4 pt-2"
+      >
         <ul className="space-y-1">
           {ADMIN_NAV_ITEMS.map((item) =>
             item.kind === "leaf" ? (
@@ -125,11 +128,17 @@ export function AdminSidebar({ collapsed, variant = "rail", onNavigate }: Props)
                   collapsed={isCollapsed}
                   open={openGroup === item.label}
                   onToggle={() =>
-                    setOpenGroup((cur) => (cur === item.label ? null : item.label))
+                    setOpenGroup((cur) =>
+                      cur === item.label ? null : item.label,
+                    )
                   }
                   onNavigate={onNavigate}
-                  showGroupDot={item.label === "Keuangan" && showTransactionsDot}
-                  dotChildHrefs={item.label === "Keuangan" ? txnDotChildren : undefined}
+                  showGroupDot={
+                    item.label === "Keuangan" && showTransactionsDot
+                  }
+                  dotChildHrefs={
+                    item.label === "Keuangan" ? txnDotChildren : undefined
+                  }
                 />
               </li>
             ),

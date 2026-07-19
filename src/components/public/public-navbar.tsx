@@ -57,7 +57,7 @@ export function PublicNavbar() {
             className="group inline-flex shrink-0 items-center"
           >
             <Image
-              src="/NextLevel_LogoXFit.webp"
+              src="/nla-horizontal-logo.webp"
               alt="NextLevel Academy"
               width={1397}
               height={351}
@@ -86,7 +86,10 @@ export function PublicNavbar() {
                     </NavLink>
                   </span>
                   {idx < PUBLIC_NAV_LINKS.length - 1 ? (
-                    <span aria-hidden className="size-1 rounded-full bg-zinc-200" />
+                    <span
+                      aria-hidden
+                      className="size-1 rounded-full bg-zinc-200"
+                    />
                   ) : null}
                 </li>
               ))}

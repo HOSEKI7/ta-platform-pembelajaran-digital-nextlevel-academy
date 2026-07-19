@@ -47,11 +47,9 @@ export const metadata: Metadata = {
   publisher: "NextLevel Academy",
   formatDetection: { email: false, address: false, telephone: false },
   icons: {
-    icon: [
-      { url: "/NextLevel_Mini_Logo.webp", type: "image/webp" },
-    ],
-    shortcut: "/NextLevel_Mini_Logo.webp",
-    apple: "/NextLevel_Mini_Logo.webp",
+    icon: [{ url: "/nla-logo.webp", type: "image/webp" }],
+    shortcut: "/nla-logo.webp",
+    apple: "/nla-logo.webp",
   },
 };
 

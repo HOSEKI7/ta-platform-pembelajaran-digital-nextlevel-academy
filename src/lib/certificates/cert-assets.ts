@@ -15,7 +15,11 @@ import sharp from "sharp";
  * transcoded to PNG via Sharp once and memoised for the process lifetime.
  */
 
-const LOGO_PATH = path.join(process.cwd(), "public", "NextLevel_LogoXFit.webp");
+const LOGO_PATH = path.join(
+  process.cwd(),
+  "public",
+  "nla-horizontal-logo.webp",
+);
 
 let logoPromise: Promise<string> | null = null;
 

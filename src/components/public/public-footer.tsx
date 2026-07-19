@@ -46,10 +46,18 @@ const FOOTER_COLUMNS: { title: string; links: FooterLink[] }[] = [
 ];
 
 const SOCIALS = [
-  { icon: InstagramGlyph, label: "Instagram", href: "#" },
-  { icon: TwitterGlyph, label: "Twitter / X", href: "#" },
-  { icon: YoutubeGlyph, label: "YouTube", href: "#" },
-  { icon: LinkedinGlyph, label: "LinkedIn", href: "#" },
+  {
+    icon: InstagramGlyph,
+    label: "Instagram",
+    href: "https://www.instagram.com/nextlevelacademy.id/",
+  },
+  { icon: TwitterGlyph, label: "Twitter / X", href: "" },
+  { icon: YoutubeGlyph, label: "YouTube", href: "" },
+  {
+    icon: LinkedinGlyph,
+    label: "LinkedIn",
+    href: "https://www.linkedin.com/company/next1evel-academy/",
+  },
 ];
 
 export async function PublicFooter() {
@@ -97,7 +105,7 @@ export async function PublicFooter() {
               className="inline-flex items-center"
             >
               <Image
-                src="/NextLevel_LogoXFit.webp"
+                src="/nla-horizontal-logo.webp"
                 alt={platformName}
                 width={1397}
                 height={351}

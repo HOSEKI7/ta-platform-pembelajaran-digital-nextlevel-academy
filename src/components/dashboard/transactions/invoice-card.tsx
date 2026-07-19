@@ -46,7 +46,7 @@ export function InvoiceCard({ tx, customer }: Props) {
           <div className="flex items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element -- plain <img> required so html-to-image reliably inlines the logo into the downloaded PNG (next/image lazy-loading/srcset breaks the capture). */}
             <img
-              src="/NextLevel_Mini_Logo.webp"
+              src="/nla-logo.webp"
               alt="NextLevel Academy"
               width={40}
               height={40}
@@ -92,7 +92,10 @@ export function InvoiceCard({ tx, customer }: Props) {
               label="Tanggal Bayar"
               value={tx.paidAt ? dt(tx.paidAt) : "—"}
             />
-            <MetaLine label="Metode" value={formatMidtransPaymentType(tx.paymentMethod)} />
+            <MetaLine
+              label="Metode"
+              value={formatMidtransPaymentType(tx.paymentMethod)}
+            />
           </div>
         </div>
 
@@ -153,9 +156,10 @@ export function InvoiceCard({ tx, customer }: Props) {
         {/* Footer */}
         <div className="border-t border-[#f4f4f5] pt-5">
           <p className="text-[11px] leading-relaxed text-[#a1a1aa]">
-            Invoice ini diterbitkan otomatis oleh NextLevel Academy sebagai bukti
-            pembelian yang sah dan tidak memerlukan tanda tangan. Pembelian
-            bersifat final — tidak ada pengembalian dana setelah kursus aktif.
+            Invoice ini diterbitkan otomatis oleh NextLevel Academy sebagai
+            bukti pembelian yang sah dan tidak memerlukan tanda tangan.
+            Pembelian bersifat final — tidak ada pengembalian dana setelah
+            kursus aktif.
           </p>
           <p className="mt-2 font-mono text-[10px] text-[#d4d4d8]">
             ID Transaksi · {tx.id}

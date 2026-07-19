@@ -79,5 +79,5 @@ SKRIPSI BAB 3 2026.docx
 VibeCode.zip
 
 # Scripts
-# /scripts/delete-student.ts
+/scripts/delete-student.mjs
 /scripts/reset-alldata.ts
