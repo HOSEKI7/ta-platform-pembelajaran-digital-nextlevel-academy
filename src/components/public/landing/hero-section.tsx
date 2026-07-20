@@ -76,8 +76,9 @@ export function HeroSection() {
             </h1>
 
             <p className="mt-6 max-w-xl text-[length:var(--fluid-lead)] leading-relaxed text-zinc-600">
-              Kumpulkan EXP, naik level, dan raih sertifikat dari kursus paling relevan untuk
-              karir digital di Indonesia. Akses seumur hidup — tanpa langganan.
+              Kumpulkan EXP, naik level, dan raih sertifikat dari kursus paling
+              relevan untuk karir digital di Indonesia. Akses seumur hidup —
+              tanpa langganan.
             </p>
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -141,7 +142,7 @@ export function HeroSection() {
 
             <div className="relative">
               <Image
-                src="/NextLevel_3D_Logo.webp"
+                src="/nla-3d-logo.webp"
                 alt="NextLevel Academy 3D"
                 width={460}
                 height={460}
@@ -188,7 +189,11 @@ export function HeroSection() {
                 }
                 label="Lv 7"
               />
-              <ProgressOrb className="-bottom-8 -right-4" delay="1.8s" value={78} />
+              <ProgressOrb
+                className="-bottom-8 -right-4"
+                delay="1.8s"
+                value={78}
+              />
 
               {/* Sparkles */}
               <Sparkle className="-top-2 left-6" delay="0.2s" />

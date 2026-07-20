@@ -30,7 +30,7 @@ const FOOTER_COLUMNS: { title: string; links: FooterLink[] }[] = [
     links: [
       { label: "Tentang Kami", href: "/about" },
       { label: "Blog", href: "/blog", comingSoon: true },
-      { label: "Karir", href: "/about#karir" },
+      { label: "Tim", href: "/about#karir" },
       { label: "Kontak", href: "/contact" },
     ],
   },
@@ -51,8 +51,16 @@ const SOCIALS = [
     label: "Instagram",
     href: "https://www.instagram.com/nextlevelacademy.id/",
   },
-  { icon: TwitterGlyph, label: "Twitter / X", href: "" },
-  { icon: YoutubeGlyph, label: "YouTube", href: "" },
+  {
+    icon: TwitterGlyph,
+    label: "Twitter / X",
+    href: "https://x.com/NextLevel-Academy",
+  },
+  {
+    icon: YoutubeGlyph,
+    label: "YouTube",
+    href: "https://www.youtube.com/@nextlevel-academy-ch",
+  },
   {
     icon: LinkedinGlyph,
     label: "LinkedIn",
@@ -124,7 +132,7 @@ export async function PublicFooter() {
               <li className="inline-flex items-center gap-2">
                 <Mail className="size-4 text-[color:var(--color-brand-600)]" />
                 <a
-                  href="mailto:halo@nextlevel.academy"
+                  href="mailto:admin@nextlevelacademy.id"
                   className="hover:text-zinc-900"
                 >
                   admin@nextlevelacademy.id
@@ -139,6 +147,7 @@ export async function PublicFooter() {
             <div className="mt-6 flex items-center gap-2">
               {SOCIALS.map(({ icon: Icon, label, href }) => (
                 <a
+                  target="_blank"
                   key={label}
                   href={href}
                   aria-label={label}

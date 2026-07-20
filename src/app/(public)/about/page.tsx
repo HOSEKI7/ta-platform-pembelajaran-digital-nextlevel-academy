@@ -85,9 +85,10 @@ export default async function AboutPage() {
                 </span>
               </h1>
               <p className="mt-6 max-w-2xl text-base leading-relaxed text-zinc-600 sm:text-lg">
-                NextLevel Academy adalah platform pembelajaran digital untuk pelajar dan
-                profesional muda di Indonesia. Kami menggabungkan kursus berkualitas dengan
-                sistem gamifikasi yang membuat tiap sesi terasa seperti naik level.
+                NextLevel Academy adalah platform pembelajaran digital untuk
+                pelajar dan profesional muda di Indonesia. Kami menggabungkan
+                kursus berkualitas dengan sistem gamifikasi yang membuat tiap
+                sesi terasa seperti naik level.
               </p>
             </div>
 
@@ -102,7 +103,7 @@ export default async function AboutPage() {
                 }}
               />
               <Image
-                src="/NextLevel_3D_Logo.webp"
+                src="/nla-3d-logo.webp"
                 alt=""
                 width={320}
                 height={320}
@@ -128,9 +129,9 @@ export default async function AboutPage() {
                 Visi
               </h2>
               <p className="mt-3 font-heading text-xl font-bold leading-snug text-zinc-900">
-                Menjadi platform pembelajaran digital terpercaya di Indonesia yang membuat
-                pengalaman belajar terasa progresif, terukur, dan menyenangkan melalui pendekatan
-                gamifikasi yang unik.
+                Menjadi platform pembelajaran digital terpercaya di Indonesia
+                yang membuat pengalaman belajar terasa progresif, terukur, dan
+                menyenangkan melalui pendekatan gamifikasi yang unik.
               </p>
             </div>
             <div className="relative overflow-hidden rounded-3xl bg-[color:var(--color-brand-50)] p-8 ring-1 ring-[color:var(--color-brand-100)] sm:p-10">
@@ -140,15 +141,18 @@ export default async function AboutPage() {
               <ul className="mt-3 space-y-3 text-base leading-relaxed text-zinc-700">
                 <li className="flex gap-3">
                   <span className="mt-2 size-1.5 shrink-0 rounded-full bg-[color:var(--color-brand-500)]" />
-                  Menyediakan kursus berkualitas dengan harga sekali bayar, akses seumur hidup.
+                  Menyediakan kursus berkualitas dengan harga sekali bayar,
+                  akses seumur hidup.
                 </li>
                 <li className="flex gap-3">
                   <span className="mt-2 size-1.5 shrink-0 rounded-full bg-[color:var(--color-brand-500)]" />
-                  Membuat progres belajar dapat dirasakan lewat sistem EXP, level, dan sertifikat.
+                  Membuat progres belajar dapat dirasakan lewat sistem EXP,
+                  level, dan sertifikat.
                 </li>
                 <li className="flex gap-3">
                   <span className="mt-2 size-1.5 shrink-0 rounded-full bg-[color:var(--color-brand-500)]" />
-                  Menjembatani belajar dan dunia kerja lewat program magang batch terstruktur.
+                  Menjembatani belajar dan dunia kerja lewat program magang
+                  batch terstruktur.
                 </li>
               </ul>
             </div>
@@ -178,12 +182,16 @@ export default async function AboutPage() {
                   <Icon className="size-6" />
                 </div>
                 <div className="mt-5 flex items-baseline justify-between">
-                  <h3 className="font-heading text-lg font-bold text-zinc-900">{title}</h3>
+                  <h3 className="font-heading text-lg font-bold text-zinc-900">
+                    {title}
+                  </h3>
                   <span className="font-mono text-[11px] font-semibold text-zinc-400">
                     0{i + 1}
                   </span>
                 </div>
-                <p className="mt-2.5 text-sm leading-relaxed text-zinc-600">{body}</p>
+                <p className="mt-2.5 text-sm leading-relaxed text-zinc-600">
+                  {body}
+                </p>
               </article>
             ))}
           </div>

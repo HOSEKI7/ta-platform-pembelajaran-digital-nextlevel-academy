@@ -78,7 +78,7 @@ export function AuthBrandPanel() {
 
           {/* 3D logo hero */}
           <Image
-            src="/NextLevel_3D_Logo.webp"
+            src="/nla-3d-logo.webp"
             alt=""
             width={420}
             height={420}
@@ -123,7 +123,11 @@ export function AuthBrandPanel() {
             }
             label="Lv 7"
           />
-          <ProgressOrb className="-bottom-14 -right-6" delay="1.8s" value={78} />
+          <ProgressOrb
+            className="-bottom-14 -right-6"
+            delay="1.8s"
+            value={78}
+          />
 
           {/* Sparkle dots — scattered further out */}
           <Sparkle className="-top-2 -left-6" delay="0.2s" />

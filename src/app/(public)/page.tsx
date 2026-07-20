@@ -41,7 +41,7 @@ export const metadata: Metadata = {
       "Platform e-learning Indonesia dengan gamifikasi EXP/level/voucher & sistem magang terintegrasi.",
     images: [
       {
-        url: "/NextLevel_3D_Logo.webp",
+        url: "/nla-3d-logo.webp",
         width: 1200,
         height: 630,
         alt: "NextLevel Academy",
@@ -53,7 +53,7 @@ export const metadata: Metadata = {
     title: "NextLevel Academy — Elevate Your Skills, Reach The Next Level",
     description:
       "Gamifikasi EXP + magang terintegrasi. Akses seumur hidup. Mulai gratis.",
-    images: ["/NextLevel_3D_Logo.webp"],
+    images: ["/nla-3d-logo.webp"],
   },
   robots: {
     index: true,

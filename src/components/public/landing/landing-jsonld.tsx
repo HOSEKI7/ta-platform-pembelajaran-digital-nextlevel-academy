@@ -17,7 +17,7 @@ export function LandingJsonLd({ siteUrl }: Props) {
     name: "NextLevel Academy",
     alternateName: "NextLevel",
     url: siteUrl,
-    logo: `${siteUrl}/NextLevel_3D_Logo.webp`,
+    logo: `${siteUrl}/nla-3d-logo.webp`,
     description:
       "Platform e-learning Indonesia dengan gamifikasi EXP/level/voucher dan sistem magang terintegrasi.",
     address: {

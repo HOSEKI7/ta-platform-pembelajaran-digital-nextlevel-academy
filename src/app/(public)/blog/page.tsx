@@ -45,9 +45,9 @@ export default function BlogIndexPage() {
               </span>
             </h1>
             <p className="mt-6 max-w-xl text-base leading-relaxed text-zinc-600 sm:text-lg">
-              Sedang menyusun tulisan-tulisan dari tim kurikulum dan mentor — panduan praktis,
-              roadmap karir, dan kisah pembelajar. Sementara menunggu, eksplor kursus kami atau
-              mulai akun gratis.
+              Sedang menyusun tulisan-tulisan dari tim kurikulum dan mentor —
+              panduan praktis, roadmap karir, dan kisah pembelajar. Sementara
+              menunggu, eksplor kursus kami atau mulai akun gratis.
             </p>
 
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
@@ -78,7 +78,7 @@ export default function BlogIndexPage() {
               }}
             />
             <Image
-              src="/NextLevel_3D_Logo.webp"
+              src="/nla-3d-logo.webp"
               alt=""
               width={320}
               height={320}

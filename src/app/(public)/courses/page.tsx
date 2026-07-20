@@ -67,7 +67,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
       description,
       images: [
         {
-          url: "/NextLevel_3D_Logo.webp",
+          url: "/nla-3d-logo.webp",
           width: 1200,
           height: 630,
           alt: "Katalog kursus NextLevel Academy",
@@ -78,7 +78,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
       card: "summary_large_image",
       title,
       description,
-      images: ["/NextLevel_3D_Logo.webp"],
+      images: ["/nla-3d-logo.webp"],
     },
     robots: { index: true, follow: true },
   };
