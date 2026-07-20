@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/package",
   "name": "platform-pembelajaran-digital-nextlevel-academy",
   "version": "0.1.0",
   "private": true,
