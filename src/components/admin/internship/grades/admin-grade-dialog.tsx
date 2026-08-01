@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Award, Loader2, Lock, ShieldAlert } from "lucide-react";
 
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -118,6 +119,27 @@ export function AdminGradeDialog({
               placeholder="mis. Penyesuaian setelah verifikasi ulang berkas."
               className="resize-none"
             />
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-muted-foreground">
+                {note.length >= 500 ? (
+                  <span className="font-medium text-rose-500">Mencapai batas maksimal 500 karakter</span>
+                ) : (
+                  <span>Terlihat oleh peserta magang</span>
+                )}
+              </span>
+              <span
+                className={cn(
+                  "font-mono font-medium tabular-nums",
+                  note.length >= 500
+                    ? "font-bold text-rose-500"
+                    : note.length >= 450
+                      ? "text-amber-500"
+                      : "text-muted-foreground",
+                )}
+              >
+                {note.length}/500
+              </span>
+            </div>
           </div>
 
           <div className="space-y-1.5">
@@ -141,9 +163,27 @@ export function AdminGradeDialog({
               placeholder="mis. Mentor berhalangan; nilai diinput berdasarkan rekap performa peserta."
               className="resize-none"
             />
-            <p className="text-[11px] text-muted-foreground">
-              Alasan dicatat di log audit dan dikirim ke mentor penanggung jawab.
-            </p>
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-muted-foreground">
+                {reason.length >= 500 ? (
+                  <span className="font-medium text-rose-500">Mencapai batas maksimal 500 karakter</span>
+                ) : (
+                  <span>Dicatat di log audit & dikirim ke mentor</span>
+                )}
+              </span>
+              <span
+                className={cn(
+                  "font-mono font-medium tabular-nums",
+                  reason.length >= 500
+                    ? "font-bold text-rose-500"
+                    : reason.length >= 450
+                      ? "text-amber-500"
+                      : "text-muted-foreground",
+                )}
+              >
+                {reason.length}/500
+              </span>
+            </div>
           </div>
 
           <div className="space-y-1.5 rounded-xl border border-zinc-200 bg-zinc-50/50 p-3.5 dark:border-zinc-800 dark:bg-zinc-900/50">

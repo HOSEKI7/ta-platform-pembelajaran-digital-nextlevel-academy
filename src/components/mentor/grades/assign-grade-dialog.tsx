@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Award, Loader2 } from "lucide-react";
 
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -105,6 +106,27 @@ export function AssignGradeDialog({
               placeholder="mis. Performa konsisten, aktif di kelas dan tugas selesai tepat waktu."
               className="resize-none"
             />
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-muted-foreground">
+                {note.length >= 500 ? (
+                  <span className="font-medium text-rose-500">Mencapai batas maksimal 500 karakter</span>
+                ) : (
+                  <span>Terlihat oleh peserta magang</span>
+                )}
+              </span>
+              <span
+                className={cn(
+                  "font-mono font-medium tabular-nums",
+                  note.length >= 500
+                    ? "font-bold text-rose-500"
+                    : note.length >= 450
+                      ? "text-amber-500"
+                      : "text-muted-foreground",
+                )}
+              >
+                {note.length}/500
+              </span>
+            </div>
           </div>
         </div>
 
