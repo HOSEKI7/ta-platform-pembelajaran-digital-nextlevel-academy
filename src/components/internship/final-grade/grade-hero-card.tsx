@@ -8,6 +8,8 @@ import {
   formatGradeDateTime,
   resolveGradeBand,
 } from "@/components/internship/final-grade/final-grade-helpers";
+import { HeroEvaluationNote } from "@/components/internship/final-grade/hero-evaluation-note";
+import type { NoteAuthor } from "@/lib/internship-final-grade-types";
 
 type GradedProps = {
   kind: "graded";
@@ -16,6 +18,8 @@ type GradedProps = {
   lastUpdatedISO: string | null;
   mentorName: string;
   editorName: string | null;
+  note?: string | null;
+  noteAuthor?: NoteAuthor | null;
 };
 
 type EmptyProps = {
@@ -41,6 +45,8 @@ export function GradeHeroCard(props: Props) {
       lastUpdatedISO={props.lastUpdatedISO}
       mentorName={props.mentorName}
       editorName={props.editorName}
+      note={props.note}
+      noteAuthor={props.noteAuthor}
     />
   );
 }
@@ -53,6 +59,8 @@ function GradedHero({
   lastUpdatedISO,
   mentorName,
   editorName,
+  note,
+  noteAuthor,
 }: Omit<GradedProps, "kind">) {
   const band = resolveGradeBand(grade);
   const issuedLabel = gradedAtISO ? formatGradeDate(gradedAtISO) : null;
@@ -144,6 +152,10 @@ function GradedHero({
               </span>
               {lastUpdatedLabel ? <> pada {lastUpdatedLabel}</> : null}.
             </p>
+          ) : null}
+
+          {note && noteAuthor ? (
+            <HeroEvaluationNote note={note} author={noteAuthor} />
           ) : null}
         </div>
       </div>

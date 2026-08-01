@@ -32,6 +32,8 @@ export function FinalGradeView({ data }: Props) {
           lastUpdatedISO={data.lastUpdatedISO}
           mentorName={data.mentorName}
           editorName={data.editorName}
+          note={data.note}
+          noteAuthor={data.noteAuthor}
         />
       )}
 

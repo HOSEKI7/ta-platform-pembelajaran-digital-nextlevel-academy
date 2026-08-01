@@ -1,12 +1,14 @@
 import "server-only";
 import { cache } from "react";
 
+import { Role } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
 import { expandHolidays, getWibYmd } from "@/components/internship/attendance/attendance-data";
 import type { InternshipPeriod, MagangContext } from "@/lib/internship-types";
 import type {
   AttendanceSummary,
   MagangFinalGrade,
+  NoteAuthor,
   PerformanceSummary,
   TaskSummary,
 } from "@/lib/internship-final-grade-types";
@@ -144,12 +146,13 @@ export const loadFinalGrade = cache(async function loadFinalGrade(
       where: { studentId: userId },
       select: {
         grade: true,
+        note: true,
         gradedAt: true,
         updatedAt: true,
         mentorId: true,
         lastEditedById: true,
         mentor: { select: { name: true } },
-        lastEditedBy: { select: { id: true, name: true } },
+        lastEditedBy: { select: { id: true, name: true, role: true } },
       },
     }),
   ]);
@@ -226,6 +229,29 @@ export const loadFinalGrade = cache(async function loadFinalGrade(
     editorName = finalGradeRow.lastEditedBy.name;
   }
 
+  const rawNote = finalGradeRow?.note?.trim() ?? null;
+  const note = rawNote || null;
+  let noteAuthor: NoteAuthor | null = null;
+
+  if (note && finalGradeRow) {
+    if (finalGradeRow.lastEditedBy) {
+      const isMentor = finalGradeRow.lastEditedById === finalGradeRow.mentorId;
+      const roleLabel =
+        finalGradeRow.lastEditedBy.role === Role.ADMINISTRATOR || !isMentor
+          ? "Admin"
+          : "Mentor";
+      noteAuthor = {
+        name: finalGradeRow.lastEditedBy.name,
+        roleLabel,
+      };
+    } else if (finalGradeRow.mentor) {
+      noteAuthor = {
+        name: finalGradeRow.mentor.name,
+        roleLabel: "Mentor",
+      };
+    }
+  }
+
   const context = toContext(profile);
   const period: InternshipPeriod = {
     startISO: dbDateToISO(profile.startDate),
@@ -234,6 +260,8 @@ export const loadFinalGrade = cache(async function loadFinalGrade(
 
   return {
     grade: finalGradeRow?.grade ?? null,
+    note,
+    noteAuthor,
     gradedAtISO: finalGradeRow?.gradedAt?.toISOString() ?? null,
     lastUpdatedISO: finalGradeRow?.updatedAt?.toISOString() ?? null,
     mentorName: finalGradeRow?.mentor.name ?? context.mentorName,

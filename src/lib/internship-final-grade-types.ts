@@ -38,9 +38,18 @@ export type PerformanceSummary = {
   tasks: TaskSummary;
 };
 
+export type NoteAuthor = {
+  name: string;
+  roleLabel: "Mentor" | "Admin";
+};
+
 export type MagangFinalGrade = {
   /** Null while the mentor has not entered a score yet. */
   grade: number | null;
+  /** Optional evaluation note from the last evaluator. */
+  note: string | null;
+  /** Author details for the evaluation note. */
+  noteAuthor: NoteAuthor | null;
   /** First time a grade was set (server-stored). */
   gradedAtISO: string | null;
   /** Last edit timestamp from `FinalGrade.updatedAt`. */
