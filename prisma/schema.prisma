@@ -168,6 +168,7 @@ model User {
   finalGradeAsStudent     FinalGrade?       @relation("FinalGradeStudent")
   finalGradesGiven        FinalGrade[]      @relation("FinalGradeMentor")
   finalGradeEdits         FinalGrade[]      @relation("FinalGradeEditor")
+  finalGradeLocks         FinalGrade[]      @relation("FinalGradeLock")
   notifications           Notification[]
   vouchersUsable          Voucher[]         @relation("VoucherAllowedUser")
   platformSettingsUpdated PlatformSetting[] @relation("PlatformSettingEditor")
@@ -933,11 +934,16 @@ model FinalGrade {
   note           String?
   gradedAt       DateTime?
   lastEditedById String?
+  isLocked       Boolean   @default(false)
+  lockedById     String?
+  lockedAt       DateTime?
+  overrideReason String?
   updatedAt      DateTime  @updatedAt
 
   student      User  @relation("FinalGradeStudent", fields: [studentId], references: [id], onDelete: Cascade)
   mentor       User  @relation("FinalGradeMentor", fields: [mentorId], references: [id])
   lastEditedBy User? @relation("FinalGradeEditor", fields: [lastEditedById], references: [id])
+  lockedBy     User? @relation("FinalGradeLock", fields: [lockedById], references: [id])
 
   @@index([mentorId])
   @@map("final_grade")

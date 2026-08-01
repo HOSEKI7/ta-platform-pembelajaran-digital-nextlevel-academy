@@ -188,6 +188,8 @@ export type MentorGradeRow = {
   grade: number | null; // 0–100, or null when not graded yet
   note: string | null; // optional mentor note
   gradedAt: string | null; // ISO timestamp of first grading (null = ungraded)
+  isLocked: boolean; // true when admin locked the grade
+  overrideReason: string | null; // latest admin override reason
 };
 
 export type MentorGradesData = {

@@ -19,6 +19,7 @@ export const adminFinalGradeSchema = z.object({
     .trim()
     .min(1, "Alasan wajib diisi.")
     .max(500, "Alasan maksimal 500 karakter."),
+  lockGrade: z.boolean({ message: "Status kunci nilai wajib ditentukan." }),
 });
 
 export type AdminFinalGradeInput = z.infer<typeof adminFinalGradeSchema>;

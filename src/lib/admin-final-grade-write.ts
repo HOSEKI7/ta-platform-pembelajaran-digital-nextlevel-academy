@@ -31,12 +31,13 @@ export type SetAdminFinalGradeArgs = {
   note: string | null;
   reason: string;
   actorId: string;
+  lockGrade: boolean;
 };
 
 export async function setAdminFinalGrade(
   args: SetAdminFinalGradeArgs,
 ): Promise<GradeWriteResult> {
-  const { studentId, grade, note, reason, actorId } = args;
+  const { studentId, grade, note, reason, actorId, lockGrade } = args;
 
   // The subject must be an intern; capture their class to resolve a mentor.
   const profile = await prisma.internshipProfile.findUnique({
@@ -84,6 +85,10 @@ export async function setAdminFinalGrade(
     `Admin mengubah nilai akhir ${profile.user.name} dari ${prevLabel} menjadi ${grade}. ` +
     `Alasan: ${reason}`;
 
+  const lockFields = lockGrade
+    ? { isLocked: true, lockedById: actorId, lockedAt: now }
+    : { isLocked: false, lockedById: null, lockedAt: null };
+
   try {
     await prisma.$transaction([
       prisma.finalGrade.upsert({
@@ -95,9 +100,17 @@ export async function setAdminFinalGrade(
           note,
           gradedAt: now,
           lastEditedById: actorId,
+          overrideReason: reason,
+          ...lockFields,
         },
         // mentorId intentionally NOT updated — stays the responsible mentor.
-        update: { grade, note, lastEditedById: actorId },
+        update: {
+          grade,
+          note,
+          lastEditedById: actorId,
+          overrideReason: reason,
+          ...lockFields,
+        },
       }),
       prisma.notification.create({
         data: {
@@ -114,7 +127,7 @@ export async function setAdminFinalGrade(
           action: "FINAL_GRADE_OVERRIDE",
           entityType: "FinalGrade",
           entityId: studentId,
-          metadata: { studentId, prevGrade, grade, note, reason },
+          metadata: { studentId, prevGrade, grade, note, reason, lockGrade },
         },
       }),
     ]);

@@ -40,6 +40,8 @@ export type AdminGradeRow = {
   letter: string | null;
   /** First time a grade was set (server-stored). Null when ungraded. */
   gradedAtISO: string | null;
+  /** True when admin locked the grade against mentor edits. */
+  isLocked: boolean;
 };
 
 export type AdminGradeListResult = {

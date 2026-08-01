@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Award, Loader2, ShieldAlert } from "lucide-react";
+import { Award, Loader2, Lock, ShieldAlert } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
@@ -22,7 +23,12 @@ type Props = {
   onOpenChange: (open: boolean) => void;
   row: AdminGradeRow;
   submitting: boolean;
-  onSubmit: (payload: { grade: number; note: string | null; reason: string }) => void;
+  onSubmit: (payload: {
+    grade: number;
+    note: string | null;
+    reason: string;
+    lockGrade: boolean;
+  }) => void;
 };
 
 /**
@@ -44,6 +50,8 @@ export function AdminGradeDialog({
   );
   const [note, setNote] = useState("");
   const [reason, setReason] = useState("");
+  // Default to true as per spec — admin overrides default to locking
+  const [lockGrade, setLockGrade] = useState(true);
 
   const parsed = Number(gradeText);
   const gradeValid =
@@ -137,6 +145,32 @@ export function AdminGradeDialog({
               Alasan dicatat di log audit dan dikirim ke mentor penanggung jawab.
             </p>
           </div>
+
+          <div className="space-y-1.5 rounded-xl border border-zinc-200 bg-zinc-50/50 p-3.5 dark:border-zinc-800 dark:bg-zinc-900/50">
+            <div className="flex items-center justify-between gap-3">
+              <label
+                htmlFor="admin-lock-grade"
+                className="flex cursor-pointer items-center gap-2 text-sm font-medium text-foreground"
+              >
+                <Lock className="size-4 text-amber-500" strokeWidth={2.2} />
+                Kunci Nilai Ini
+              </label>
+              <Switch
+                id="admin-lock-grade"
+                checked={lockGrade}
+                onCheckedChange={(c) => setLockGrade(Boolean(c))}
+                disabled={submitting}
+              />
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Jika aktif, mentor tidak dapat lagi mengedit nilai akhir peserta ini.
+            </p>
+            {row.isLocked && (
+              <p className="text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                Saat ini nilai peserta ini berstatus terkunci.
+              </p>
+            )}
+          </div>
         </div>
 
         <DialogFooter>
@@ -156,6 +190,7 @@ export function AdminGradeDialog({
                 grade: parsed,
                 note: note.trim() || null,
                 reason: reason.trim(),
+                lockGrade,
               })
             }
             className="bg-[color:var(--color-brand-600)] text-white hover:bg-[color:var(--color-brand-700)]"

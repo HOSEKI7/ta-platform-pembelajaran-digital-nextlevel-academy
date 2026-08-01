@@ -64,18 +64,12 @@ skills-lock.json
 opencode.json
 
 # Requirement Files
-/docs/
+/docs
 
 # Backup
 /.gits/
 
 # Skripsi
-.tmp_docx_uc
-.tmp_docx_uc_v2
-.tmp_docx_uc_v3
-/fixing-skripsi/
-extracted_text.txt
-SKRIPSI BAB 3 2026.docx
 VibeCode.zip
 
 # Scripts

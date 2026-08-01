@@ -324,7 +324,13 @@ export async function loadMentorGrades(
           name: true,
           image: true,
           finalGradeAsStudent: {
-            select: { grade: true, note: true, gradedAt: true },
+            select: {
+              grade: true,
+              note: true,
+              gradedAt: true,
+              isLocked: true,
+              overrideReason: true,
+            },
           },
         },
       },
@@ -342,6 +348,8 @@ export async function loadMentorGrades(
       grade: r.user.finalGradeAsStudent?.grade ?? null,
       note: r.user.finalGradeAsStudent?.note ?? null,
       gradedAt: r.user.finalGradeAsStudent?.gradedAt?.toISOString() ?? null,
+      isLocked: r.user.finalGradeAsStudent?.isLocked ?? false,
+      overrideReason: r.user.finalGradeAsStudent?.overrideReason ?? null,
     })),
   };
 }

@@ -3,12 +3,20 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Award, GraduationCap, Pencil, Plus } from "lucide-react";
+import { Award, GraduationCap, Pencil, Plus, ShieldAlert } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { resolveGradeBand, TONE_SURFACE } from "@/components/internship/final-grade/final-grade-helpers";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { StudentPageContainer } from "@/components/dashboard/shared/student-page-container";
 import { PageHeader } from "@/components/dashboard/shared/page-header";
 import { useUpsertGradeMutation } from "@/hooks/use-mentor-grade-actions";
@@ -77,7 +85,60 @@ function GradeBadge({ grade }: { grade: number | null }) {
   );
 }
 
-/** Assign / Edit action button — label flips once a grade exists. */
+/** Interactive badge shown when admin has overridden and locked the grade. */
+function OverriddenBadge({ row }: { row: MentorGradeRow }) {
+  const [showReason, setShowReason] = useState(false);
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setShowReason(true)}
+        className={cn(
+          "inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ring-1 transition",
+          "bg-amber-50 text-amber-700 ring-amber-200 hover:bg-amber-100 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30 dark:hover:bg-amber-500/25",
+        )}
+      >
+        <ShieldAlert className="size-3.5" strokeWidth={2.4} />
+        Overridden!
+      </button>
+
+      {showReason ? (
+        <Dialog open onOpenChange={(o) => !o && setShowReason(false)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <ShieldAlert className="size-5 text-amber-500" strokeWidth={2.2} />
+                Nilai Dikunci Admin
+              </DialogTitle>
+              <DialogDescription>
+                Nilai akhir untuk{" "}
+                <span className="font-semibold text-foreground">{row.name}</span> telah di-override dan dikunci oleh admin.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-2 py-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Alasan Perubahan Admin:
+              </span>
+              <div className="rounded-xl bg-amber-500/10 p-3.5 text-sm text-foreground ring-1 ring-amber-500/20">
+                {row.overrideReason?.trim() || "Tidak ada alasan spesifik yang dicatat."}
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setShowReason(false)}>
+                Tutup
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      ) : null}
+    </>
+  );
+}
+
+/** Assign / Edit action button — label flips once a grade exists, or displays locked badge. */
 function GradeAction({
   row,
   onClick,
@@ -85,6 +146,9 @@ function GradeAction({
   row: MentorGradeRow;
   onClick: () => void;
 }) {
+  if (row.isLocked) {
+    return <OverriddenBadge row={row} />;
+  }
   const isEdit = row.grade !== null;
   return (
     <Button

@@ -41,7 +41,7 @@ export async function PUT(
       { status: 400 },
     );
   }
-  const { grade, reason } = parsed.data;
+  const { grade, reason, lockGrade } = parsed.data;
   const note = parsed.data.note?.trim() ? parsed.data.note.trim() : null;
 
   const result = await setAdminFinalGrade({
@@ -49,6 +49,7 @@ export async function PUT(
     grade,
     note,
     reason,
+    lockGrade,
     actorId: auth.user.id,
   });
   if (!result.ok) {

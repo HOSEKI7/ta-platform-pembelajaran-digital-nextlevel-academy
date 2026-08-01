@@ -64,6 +64,18 @@ export async function PUT(
     );
   }
 
+  // Check if grade is locked by admin
+  const existingGrade = await prisma.finalGrade.findUnique({
+    where: { studentId },
+    select: { isLocked: true },
+  });
+  if (existingGrade?.isLocked) {
+    return NextResponse.json(
+      { error: "Nilai peserta ini telah dikunci oleh admin dan tidak dapat diubah." },
+      { status: 403 },
+    );
+  }
+
   try {
     // Upsert the grade and notify the mentee in one tx (PRD §6.12) — fires on
     // both first grading and edits so the peserta-magang always knows their

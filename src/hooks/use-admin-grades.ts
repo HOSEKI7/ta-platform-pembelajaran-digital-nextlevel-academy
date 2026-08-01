@@ -58,6 +58,7 @@ export type UpsertAdminGradePayload = {
   grade: number;
   note: string | null;
   reason: string;
+  lockGrade: boolean;
 };
 
 /** Assign or update an intern's final grade as an admin override. */

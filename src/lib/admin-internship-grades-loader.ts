@@ -77,7 +77,9 @@ export async function loadAdminGradeList(
             id: true,
             name: true,
             image: true,
-            finalGradeAsStudent: { select: { grade: true, gradedAt: true } },
+            finalGradeAsStudent: {
+              select: { grade: true, gradedAt: true, isLocked: true },
+            },
           },
         },
       },
@@ -98,6 +100,7 @@ export async function loadAdminGradeList(
       grade,
       letter: grade === null ? null : resolveGradeBand(grade).letter,
       gradedAtISO: p.user.finalGradeAsStudent?.gradedAt?.toISOString() ?? null,
+      isLocked: p.user.finalGradeAsStudent?.isLocked ?? false,
     };
   });
 
