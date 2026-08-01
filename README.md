@@ -234,10 +234,7 @@ Buka [http://localhost:3000](http://localhost:3000).
 | `npm run db:generate`     | Regenerate Prisma client                    |
 | `npm run db:push`         | Push schema ke DB (session-mode)            |
 | `npm run db:studio`       | Buka Prisma Studio GUI                      |
-| `npm run db:seed`         | Seed data awal platform                     |
-| `npm run db:seed:player`  | Seed data test course player                |
 | `npm run db:verify`       | Verifikasi koneksi & schema DB              |
-| `npm run reset:data`      | Reset semua data (kecuali platform_setting) |
 | `npm run bootstrap:admin` | Bootstrap akun admin pertama                |
 | `npm run verify:bunny`    | Diagnostik konektivitas Bunny.net           |
 | `npm run test:e2e`        | Jalankan Playwright E2E tests               |
@@ -280,21 +277,6 @@ scripts/                   # One-off utility scripts
 ```
 
 **Routing convention:** Next.js 16 App Router dengan route groups per role. Setiap grup memiliki layout + sidebar sendiri. Proteksi role dilakukan server-side di layout via `requireRole()`.
-
----
-
-## Deployment
-
-**Arsitektur target:**
-
-- Build di GitHub Actions → artifact standalone Next.js
-- Deploy ke VPS (Ubuntu) dengan PM2 + reverse proxy Nginx
-- SSL via Certbot (Let's Encrypt)
-- Database: Supabase PostgreSQL (production project)
-- Redis untuk rate-limit persistence (apt install)
-- Backup: `pg_dump` harian via cron
-
-Build standalone diaktifkan via env `BUILD_STANDALONE=1` (hanya di CI).
 
 ---
 
