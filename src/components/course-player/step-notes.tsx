@@ -4,7 +4,9 @@ import { useId } from "react";
 import { Check, Loader2, PenLine, TriangleAlert } from "lucide-react";
 
 import { Textarea } from "@/components/ui/textarea";
+import { CharCounter } from "@/components/ui/char-counter";
 import { cn } from "@/lib/utils";
+import { STEP_NOTE_MAX } from "@/lib/validations/step-note";
 import {
   type NotesSaveState,
   useStepNotes,
@@ -27,7 +29,7 @@ export function StepNotes({ stepId, initialContent, onNoteSaved }: Props) {
 
   return (
     <div>
-      <div className="mb-2 flex items-center justify-between">
+      <div className="mb-2 flex items-center justify-between gap-3">
         <label
           id={labelId}
           htmlFor={`notes-${stepId}`}
@@ -36,7 +38,10 @@ export function StepNotes({ stepId, initialContent, onNoteSaved }: Props) {
           <PenLine className="size-4 text-[color:var(--player-accent)]" strokeWidth={2.4} />
           Catatan pribadi untuk materi ini
         </label>
-        <SaveIndicator state={saveState} />
+        <div className="flex items-center gap-3">
+          <CharCounter current={value.length} max={STEP_NOTE_MAX} />
+          <SaveIndicator state={saveState} />
+        </div>
       </div>
 
       <Textarea
@@ -44,7 +49,8 @@ export function StepNotes({ stepId, initialContent, onNoteSaved }: Props) {
         aria-labelledby={labelId}
         aria-describedby={hintId}
         value={value}
-        onChange={(e) => setValue(e.target.value)}
+        onChange={(e) => setValue(e.target.value.slice(0, STEP_NOTE_MAX))}
+        maxLength={STEP_NOTE_MAX}
         placeholder="Tulis insight, pertanyaan, atau ringkasan singkat di sini…"
         className="min-h-[140px] resize-y rounded-2xl border-[color:var(--player-hairline)] bg-[color:var(--player-surface-strong)] px-4 py-3 leading-relaxed focus-visible:border-[color:var(--player-accent)]/60 focus-visible:ring-[color:var(--player-accent)]/30"
       />

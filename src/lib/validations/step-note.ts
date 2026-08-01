@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /** Max length for a single step's personal note (Catatan tab). */
-export const STEP_NOTE_MAX = 5000;
+export const STEP_NOTE_MAX = 2000;
 
 /**
  * Personal per-step note payload (Course Player "Catatan" tab). `content` is
