@@ -34,6 +34,8 @@ const nextConfig: NextConfig = {
     "/**": ["./src/lib/certificates/fonts/**"],
   },
   images: {
+    // Next.js 16 default = 14400s (4 jam). Di-set eksplisit agar terdokumentasi.
+    minimumCacheTTL: 14400,
     remotePatterns: [
       // Seed-data placeholders for course thumbnails, instructor headshots,
       // and badge logos. Safe to remove once real assets land in Supabase
