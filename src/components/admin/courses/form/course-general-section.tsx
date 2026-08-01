@@ -79,11 +79,18 @@ export function CourseGeneralSection({
       title="Informasi Umum"
       description="Identitas kursus yang tampil di katalog."
     >
-      <Field label="Judul Kursus" htmlFor="title" error={errors.title?.message}>
+      <Field
+        label="Judul Kursus"
+        htmlFor="title"
+        current={(title ?? "").length}
+        max={100}
+        error={errors.title?.message}
+      >
         <Input
           id="title"
           placeholder="mis. Fullstack Web Development dengan Next.js"
           className="h-11 rounded-xl"
+          maxLength={100}
           aria-invalid={Boolean(errors.title)}
           disabled={disabled}
           {...register("title")}
@@ -110,6 +117,7 @@ export function CourseGeneralSection({
               id="slug"
               className="flex-1 bg-transparent px-3 py-2.5 text-sm outline-none disabled:opacity-60"
               placeholder="fullstack-web-development"
+              maxLength={80}
               disabled={disabled}
               {...register("slug", { onChange: () => setSlugTouched(true) })}
             />
@@ -127,6 +135,8 @@ export function CourseGeneralSection({
         htmlFor="shortDescription"
         optional
         hint="Tampil di kartu katalog (maks. 280 karakter)."
+        current={(watch("shortDescription") ?? "").length}
+        max={280}
         error={errors.shortDescription?.message}
       >
         <Textarea
@@ -142,7 +152,7 @@ export function CourseGeneralSection({
 
       <Field
         label="Deskripsi Lengkap"
-        hint="Tentang kursus — boleh format teks (tebal, daftar, kutipan)."
+        hint="Tentang kursus (maks. 1500 karakter)."
         error={errors.description?.message}
       >
         <RichTextEditor
@@ -163,7 +173,7 @@ export function CourseGeneralSection({
       </Field>
 
       <div className="grid gap-5 sm:grid-cols-2">
-        <Field label="Harga (IDR)" htmlFor="price" error={errors.price?.message}>
+        <Field label="Harga (IDR)" htmlFor="price" hint="Maksimal 9 digit (Rp999.999.999)" error={errors.price?.message}>
           <div className="flex items-center gap-0 overflow-hidden rounded-xl border border-zinc-200 focus-within:border-[color:var(--color-brand-400)] dark:border-[color:var(--color-surface-border)]">
             <span className="select-none border-r border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm font-semibold text-zinc-500 dark:border-[color:var(--color-surface-border)] dark:bg-white/[0.03]">
               Rp
@@ -171,11 +181,12 @@ export function CourseGeneralSection({
             <input
               id="price"
               inputMode="numeric"
+              maxLength={9}
               className="flex-1 bg-transparent px-3 py-2.5 text-sm tabular-nums outline-none disabled:opacity-60"
               placeholder="0"
               disabled={disabled}
               {...register("price", {
-                setValueAs: (v) => (v === "" || v == null ? 0 : Number(String(v).replace(/\D/g, ""))),
+                setValueAs: (v) => (v === "" || v == null ? 0 : Number(String(v).replace(/\D/g, "").slice(0, 9))),
               })}
             />
           </div>
@@ -188,7 +199,7 @@ export function CourseGeneralSection({
           label="Harga Coret"
           htmlFor="fakePrice"
           optional
-          hint="Harga asli yang dicoret untuk efek diskon."
+          hint="Maksimal 9 digit (Rp999.999.999)"
           error={errors.fakePrice?.message}
         >
           <div className="flex items-center gap-0 overflow-hidden rounded-xl border border-zinc-200 focus-within:border-[color:var(--color-brand-400)] dark:border-[color:var(--color-surface-border)]">
@@ -198,12 +209,13 @@ export function CourseGeneralSection({
             <input
               id="fakePrice"
               inputMode="numeric"
+              maxLength={9}
               className="flex-1 bg-transparent px-3 py-2.5 text-sm tabular-nums outline-none disabled:opacity-60"
               placeholder="Kosongkan jika tidak ada"
               disabled={disabled}
               {...register("fakePrice", {
                 setValueAs: (v) =>
-                  v === "" || v == null ? null : Number(String(v).replace(/\D/g, "")),
+                  v === "" || v == null ? null : Number(String(v).replace(/\D/g, "").slice(0, 9)),
               })}
             />
           </div>

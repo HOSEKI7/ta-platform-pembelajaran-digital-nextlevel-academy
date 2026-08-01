@@ -150,20 +150,34 @@ export function CourseSettingsSection({
             />
           </div>
           <div className="flex flex-col gap-4">
-            <Field label="Nama Instruktur" htmlFor="instructor" error={errors.instructor?.message}>
+            <Field
+              label="Nama Instruktur"
+              htmlFor="instructor"
+              current={(watch("instructor") ?? "").length}
+              max={100}
+              error={errors.instructor?.message}
+            >
               <Input
                 id="instructor"
                 placeholder="mis. Budi Santoso"
                 className="h-11 rounded-xl"
+                maxLength={100}
                 disabled={disabled}
                 {...register("instructor")}
               />
             </Field>
-            <Field label="Bio Instruktur" htmlFor="instructorBio" error={errors.instructorBio?.message}>
+            <Field
+              label="Bio Instruktur"
+              htmlFor="instructorBio"
+              current={(watch("instructorBio") ?? "").length}
+              max={300}
+              error={errors.instructorBio?.message}
+            >
               <Textarea
                 id="instructorBio"
                 placeholder="Pengalaman & keahlian singkat instruktur."
                 rows={3}
+                maxLength={300}
                 className="rounded-xl"
                 disabled={disabled}
                 {...register("instructorBio")}

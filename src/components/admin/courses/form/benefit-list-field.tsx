@@ -5,6 +5,7 @@ import { Plus, Sparkles, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CharCounter } from "@/components/ui/char-counter";
 import type { CourseGeneralInput } from "@/lib/validations/admin-course";
 
 /**
@@ -12,8 +13,9 @@ import type { CourseGeneralInput } from "@/lib/validations/admin-course";
  * Order is positional (array index), persisted as `CourseBenefit.order`.
  */
 export function BenefitListField({ disabled }: { disabled?: boolean }) {
-  const { control, register } = useFormContext<CourseGeneralInput>();
+  const { control, register, watch } = useFormContext<CourseGeneralInput>();
   const { fields, append, remove } = useFieldArray({ control, name: "benefits" });
+  const benefitsValues = watch("benefits") || [];
 
   return (
     <div className="flex flex-col gap-2.5">
@@ -27,12 +29,18 @@ export function BenefitListField({ disabled }: { disabled?: boolean }) {
             <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[color:var(--color-brand-50)] text-[color:var(--color-brand-600)] dark:bg-[color:var(--color-brand-500)]/15 dark:text-[color:var(--color-brand-200)]">
               <Sparkles className="size-4" strokeWidth={2.2} />
             </span>
-            <Input
-              {...register(`benefits.${i}.text` as const)}
-              placeholder="mis. Membangun REST API dengan Next.js"
-              className="h-10 rounded-xl"
-              disabled={disabled}
-            />
+            <div className="relative flex-1">
+              <Input
+                {...register(`benefits.${i}.text` as const)}
+                placeholder="mis. Membangun REST API dengan Next.js"
+                maxLength={100}
+                className="h-10 rounded-xl pr-16"
+                disabled={disabled}
+              />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <CharCounter current={(benefitsValues[i]?.text || "").length} max={100} showWarningLabel={false} />
+              </div>
+            </div>
             <Button
               type="button"
               variant="ghost"

@@ -74,12 +74,13 @@ export function ForcePasswordChangeForm({ userName }: { userName: string }) {
           label="Password Baru"
           htmlFor="newPassword"
           error={errors.newPassword?.message}
-          hint="Minimal 8 karakter dengan huruf besar, kecil, dan angka."
+          hint="Minimal 8 karakter (maks. 64) dengan huruf besar, kecil, dan angka."
         >
           <PasswordInput
             id="newPassword"
             placeholder="Password baru"
             autoComplete="new-password"
+            maxLength={64}
             disabled={submitting}
             {...register("newPassword")}
           />
@@ -94,6 +95,7 @@ export function ForcePasswordChangeForm({ userName }: { userName: string }) {
             id="confirmPassword"
             placeholder="Ulangi password baru"
             autoComplete="new-password"
+            maxLength={64}
             disabled={submitting}
             {...register("confirmPassword")}
           />

@@ -76,6 +76,7 @@ export function StatementSection({
                   <Input
                     aria-label={`${noun} ${index + 1}`}
                     placeholder={placeholder}
+                    maxLength={name === "visi" ? 255 : 300}
                     className="h-11"
                     {...register(`${name}.${index}.value` as const)}
                   />
@@ -161,6 +162,7 @@ export function TeamSection({
                       <Input
                         aria-label={`Nama anggota ${index + 1}`}
                         placeholder="Nama lengkap"
+                        maxLength={100}
                         className="h-11"
                         {...register(`tim.${index}.nama` as const)}
                       />
@@ -174,6 +176,7 @@ export function TeamSection({
                       <Input
                         aria-label={`Posisi anggota ${index + 1}`}
                         placeholder="Posisi / jabatan"
+                        maxLength={100}
                         className="h-11"
                         {...register(`tim.${index}.posisi` as const)}
                       />

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SubmissionDropzone } from "@/components/internship/tasks/submission-dropzone";
+import { CharCounter } from "@/components/ui/char-counter";
 import {
   createTaskSchema,
   DEADLINE_PATTERN,
@@ -89,6 +90,7 @@ export function TaskForm({
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<CreateTaskInput>({
     resolver: zodResolver(createTaskSchema),
@@ -118,10 +120,17 @@ export function TaskForm({
   return (
     <form onSubmit={submit} className="flex flex-col gap-6" noValidate>
       {/* Judul */}
-      <Field label="Judul Tugas" htmlFor="title" error={errors.title?.message}>
+      <Field
+        label="Judul Tugas"
+        htmlFor="title"
+        current={(watch("title") ?? "").length}
+        max={150}
+        error={errors.title?.message}
+      >
         <Input
           id="title"
           placeholder="mis. Implementasi Halaman Dashboard Responsif"
+          maxLength={150}
           className="h-11 rounded-xl"
           aria-invalid={Boolean(errors.title)}
           {...register("title")}
@@ -132,7 +141,7 @@ export function TaskForm({
       <Field
         label="Deskripsi Tugas"
         error={errors.description?.message}
-        hint="Tulis instruksi selengkap mungkin. Bisa tempel 1 gambar pendukung."
+        hint="Tulis instruksi selengkap mungkin (maks. 5000 karakter, 1 gambar maks 2 MB)."
       >
         <TaskDescriptionEditor
           initialHTML={initial?.description}
@@ -272,19 +281,28 @@ function Field({
   htmlFor,
   hint,
   error,
+  current,
+  max,
   children,
 }: {
   label: string;
   htmlFor?: string;
   hint?: string;
   error?: string;
+  current?: number;
+  max?: number;
   children: React.ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-2">
-      <Label htmlFor={htmlFor} className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
-        {label}
-      </Label>
+      <div className="flex items-center justify-between gap-2">
+        <Label htmlFor={htmlFor} className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+          {label}
+        </Label>
+        {max !== undefined && current !== undefined ? (
+          <CharCounter current={current} max={max} />
+        ) : null}
+      </div>
       {hint ? <p className="-mt-1 text-xs text-zinc-500 dark:text-zinc-400">{hint}</p> : null}
       {children}
       {error ? (

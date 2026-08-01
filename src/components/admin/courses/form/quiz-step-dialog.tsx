@@ -115,18 +115,19 @@ export function QuizStepDialog({ open, onOpenChange, mode, initial, saving, onSa
         </DialogHeader>
 
         <div className="flex flex-col gap-5 py-1">
-          <Field label="Judul Quiz" htmlFor="quiz-title">
+          <Field label="Judul Quiz" htmlFor="quiz-title" current={title.length} max={100}>
             <Input
               id="quiz-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="mis. Kuis Dasar React"
+              maxLength={100}
               className="h-11 rounded-xl"
               disabled={saving}
             />
           </Field>
 
-          <Field label="Deskripsi Materi" optional hint="Catatan singkat sebelum mengerjakan (teks).">
+          <Field label="Deskripsi Materi" optional hint="Catatan singkat sebelum mengerjakan (maks. 3000 karakter).">
             <RichTextEditor
               compact
               initialHTML={initial?.description}

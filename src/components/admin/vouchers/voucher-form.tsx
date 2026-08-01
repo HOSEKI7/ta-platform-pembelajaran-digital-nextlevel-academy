@@ -18,6 +18,7 @@ import {
   voucherFormSchema,
 } from "@/lib/validations/admin-voucher";
 import { Badge } from "@/components/ui/badge";
+import { CharCounter } from "@/components/ui/char-counter";
 import { ComboboxField } from "./combobox-field";
 
 const WIB_TZ = "Asia/Jakarta";
@@ -69,6 +70,8 @@ function Field({
   hint,
   error,
   optional,
+  current,
+  max,
   children,
   className,
 }: {
@@ -77,22 +80,29 @@ function Field({
   hint?: string;
   error?: string;
   optional?: boolean;
+  current?: number;
+  max?: number;
   children: React.ReactNode;
   className?: string;
 }) {
   return (
     <div className={cn("flex flex-col gap-2", className)}>
-      <div className="flex items-center gap-2">
-        <Label
-          htmlFor={htmlFor}
-          className="text-sm font-semibold text-zinc-800 dark:text-zinc-100"
-        >
-          {label}
-        </Label>
-        {optional ? (
-          <span className="rounded-full bg-zinc-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-400 dark:bg-white/10 dark:text-zinc-500">
-            Opsional
-          </span>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Label
+            htmlFor={htmlFor}
+            className="text-sm font-semibold text-zinc-800 dark:text-zinc-100"
+          >
+            {label}
+          </Label>
+          {optional ? (
+            <span className="rounded-full bg-zinc-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-400 dark:bg-white/10 dark:text-zinc-500">
+              Opsional
+            </span>
+          ) : null}
+        </div>
+        {max !== undefined && current !== undefined ? (
+          <CharCounter current={current} max={max} />
         ) : null}
       </div>
       {hint ? (
@@ -144,13 +154,16 @@ export function VoucherForm({
         <Field
           label="Kode Voucher"
           htmlFor="code"
-          hint="Huruf, angka, '_' dan '-'. Bersifat case-sensitive (huruf besar/kecil berpengaruh)."
+          hint="Huruf, angka, '_' dan '-'. Bersifat case-sensitive."
+          current={(watch("code") ?? "").length}
+          max={50}
           error={errors.code?.message}
         >
           <Input
             id="code"
             {...register("code")}
             placeholder="mis. PROMOJUNI"
+            maxLength={50}
             autoComplete="off"
             disabled={submitting}
             className="h-10 font-mono uppercase"
@@ -162,12 +175,15 @@ export function VoucherForm({
           htmlFor="description"
           optional
           hint="Catatan internal singkat tentang voucher ini."
+          current={(watch("description") ?? "").length}
+          max={300}
           error={errors.description?.message}
         >
           <Textarea
             id="description"
             {...register("description")}
             placeholder="mis. Promo pembukaan batch Juni"
+            maxLength={300}
             disabled={submitting}
             rows={2}
           />
@@ -254,7 +270,7 @@ export function VoucherForm({
           <Field
             label="Nominal Diskon"
             htmlFor="discountAmount"
-            hint="Potongan tetap dalam Rupiah."
+            hint="Potongan tetap dalam Rupiah (maks. 6 digit / Rp999.999)."
             error={errors.discountAmount?.message}
           >
             <Controller
@@ -269,11 +285,12 @@ export function VoucherForm({
                     id="discountAmount"
                     type="number"
                     min={1}
+                    max={999999}
                     inputMode="numeric"
                     value={field.value ?? ""}
                     onChange={(e) =>
                       field.onChange(
-                        e.target.value === "" ? null : Number(e.target.value),
+                        e.target.value === "" ? null : Math.min(999999, Number(e.target.value)),
                       )
                     }
                     disabled={submitting}
@@ -436,7 +453,7 @@ export function VoucherForm({
           label="Batas Pemakaian"
           htmlFor="scopeMaxUsage"
           optional
-          hint="Total maksimal voucher dipakai semua pengguna. Kosongkan untuk tak terbatas."
+          hint="Total maksimal voucher dipakai (maks. 6 digit / 999.999). Kosongkan untuk tak terbatas."
           error={errors.maxUsage?.message}
         >
           <Controller
@@ -447,12 +464,13 @@ export function VoucherForm({
                 id="scopeMaxUsage"
                 type="number"
                 min={1}
+                max={999999}
                 inputMode="numeric"
                 placeholder="Tak terbatas"
                 value={field.value ?? ""}
                 onChange={(e) =>
                   field.onChange(
-                    e.target.value === "" ? null : Number(e.target.value),
+                    e.target.value === "" ? null : Math.min(999999, Number(e.target.value)),
                   )
                 }
                 disabled={submitting}

@@ -27,6 +27,8 @@ import {
   useUpdateCategoryMutation,
 } from "@/hooks/use-admin-category-form";
 
+import { CharCounter } from "@/components/ui/char-counter";
+
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -53,11 +55,15 @@ export function CategoryFormDialog({
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<CategoryFormInput>({
     resolver: zodResolver(categoryFormSchema),
     defaultValues: buildDefaults(initial),
   });
+
+  const nameVal = watch("name") || "";
+  const descVal = watch("description") || "";
 
   const createMutation = useCreateCategoryMutation();
   const updateMutation = useUpdateCategoryMutation(initial?.id ?? "");
@@ -106,10 +112,11 @@ export function CategoryFormDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onValid)} className="flex flex-col gap-5">
-          <Field label="Nama Kategori" error={errors.name?.message}>
+          <Field label="Nama Kategori" current={nameVal.length} max={100} error={errors.name?.message}>
             <Input
               {...register("name")}
               placeholder="cth. Web Programming"
+              maxLength={100}
               className="h-11 rounded-xl"
               autoFocus
             />
@@ -117,12 +124,15 @@ export function CategoryFormDialog({
 
           <Field
             label="Deskripsi (opsional)"
+            current={descVal.length}
+            max={300}
             error={errors.description?.message}
           >
             <Textarea
               {...register("description")}
               placeholder="Keterangan singkat tentang kategori ini."
               rows={3}
+              maxLength={300}
             />
           </Field>
 
@@ -151,16 +161,23 @@ export function CategoryFormDialog({
 
 type FieldProps = {
   label: string;
+  current?: number;
+  max?: number;
   error?: string;
   children: React.ReactNode;
 };
 
-function Field({ label, error, children }: FieldProps) {
+function Field({ label, current, max, error, children }: FieldProps) {
   return (
     <div className="flex flex-col gap-1.5">
-      <Label className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
-        {label}
-      </Label>
+      <div className="flex items-center justify-between gap-2">
+        <Label className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+          {label}
+        </Label>
+        {max !== undefined && current !== undefined ? (
+          <CharCounter current={current} max={max} />
+        ) : null}
+      </div>
       {children}
       {error ? (
         <p className="text-[11px] font-medium text-red-600">{error}</p>

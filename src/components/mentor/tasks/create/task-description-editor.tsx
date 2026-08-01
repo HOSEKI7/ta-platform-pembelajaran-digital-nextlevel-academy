@@ -22,7 +22,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const ACCEPT = "image/png,image/jpeg,image/webp,image/gif";
-const MAX_BYTES = 5 * 1024 * 1024;
+const MAX_BYTES = 2 * 1024 * 1024;
 
 /** Image node extended with a `data-bunny-path` attribute (the stored object
  *  path, for already-saved images) and a `pending` flag (a freshly attached
@@ -120,7 +120,7 @@ export function TaskDescriptionEditor({
         return;
       }
       if (file.size > MAX_BYTES) {
-        toast.error("Ukuran gambar melebihi batas 5 MB.");
+        toast.error("Ukuran gambar melebihi batas 2 MB.");
         return;
       }
 

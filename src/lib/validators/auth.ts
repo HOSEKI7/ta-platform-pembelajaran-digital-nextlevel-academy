@@ -4,7 +4,7 @@ import { z } from "zod";
 const passwordSchema = z
   .string()
   .min(8, "Password minimal 8 karakter.")
-  .max(128, "Password terlalu panjang.")
+  .max(64, "Password maksimal 64 karakter.")
   .regex(/[A-Z]/, "Password harus mengandung minimal satu huruf besar.")
   .regex(/[a-z]/, "Password harus mengandung minimal satu huruf kecil.")
   .regex(/\d/, "Password harus mengandung minimal satu angka.");

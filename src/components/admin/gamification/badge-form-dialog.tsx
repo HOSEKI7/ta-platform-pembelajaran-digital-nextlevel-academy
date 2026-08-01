@@ -43,6 +43,8 @@ import {
 
 import { BadgeIconPicker, type BadgeIconValue } from "./badge-icon-picker";
 
+import { CharCounter } from "@/components/ui/char-counter";
+
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -103,6 +105,9 @@ export function BadgeFormDialog({
     resolver: zodResolver(badgeFormSchema),
     defaultValues: buildDefaults(initial),
   });
+
+  const nameVal = watch("name") || "";
+  const descVal = watch("description") || "";
 
   const [icon, setIcon] = useState<BadgeIconValue>({
     stored: initial?.logoStored ?? null,
@@ -206,10 +211,11 @@ export function BadgeFormDialog({
           </Field>
 
           {/* Name */}
-          <Field label="Nama Badge" error={errors.name?.message}>
+          <Field label="Nama Badge" current={nameVal.length} max={100} error={errors.name?.message}>
             <Input
               {...register("name")}
               placeholder="cth. Penjelajah Pemula"
+              maxLength={100}
               className="h-11 rounded-xl"
             />
           </Field>
@@ -217,12 +223,15 @@ export function BadgeFormDialog({
           {/* Description / cara mendapat */}
           <Field
             label="Deskripsi cara mendapat (opsional)"
+            current={descVal.length}
+            max={300}
             error={errors.description?.message}
           >
             <Textarea
               {...register("description")}
               placeholder="Kosongkan untuk memakai teks otomatis berdasarkan trigger."
               rows={2}
+              maxLength={300}
             />
           </Field>
 
@@ -283,12 +292,15 @@ export function BadgeFormDialog({
           <Field
             label="EXP (informasi)"
             error={errors.expMinimum?.message}
-            hint="Hanya ditampilkan sebagai metadata; tidak memengaruhi pemberian EXP."
+            hint="Maksimal 100.000 EXP. Hanya ditampilkan sebagai metadata."
           >
             <Input
               type="number"
               min={0}
-              {...register("expMinimum", { valueAsNumber: true })}
+              max={100000}
+              {...register("expMinimum", {
+                setValueAs: (v) => Math.min(100000, Math.max(0, Number(v) || 0)),
+              })}
               className="h-11 rounded-xl"
             />
           </Field>
@@ -329,17 +341,24 @@ export function BadgeFormDialog({
 
 type FieldProps = {
   label: string;
+  current?: number;
+  max?: number;
   error?: string;
   hint?: string;
   children: React.ReactNode;
 };
 
-function Field({ label, error, hint, children }: FieldProps) {
+function Field({ label, current, max, error, hint, children }: FieldProps) {
   return (
     <div className="flex flex-col gap-1.5">
-      <Label className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
-        {label}
-      </Label>
+      <div className="flex items-center justify-between gap-2">
+        <Label className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+          {label}
+        </Label>
+        {max !== undefined && current !== undefined ? (
+          <CharCounter current={current} max={max} />
+        ) : null}
+      </div>
       {children}
       {hint && !error ? (
         <p className="text-[11px] text-zinc-400">{hint}</p>

@@ -6,6 +6,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { CharCounter } from "@/components/ui/char-counter";
 import type { CourseGeneralInput } from "@/lib/validations/admin-course";
 
 /**
@@ -13,8 +14,9 @@ import type { CourseGeneralInput } from "@/lib/validations/admin-course";
  * question + answer pair; order is positional (`CourseFaq.order`).
  */
 export function FaqListField({ disabled }: { disabled?: boolean }) {
-  const { control, register } = useFormContext<CourseGeneralInput>();
+  const { control, register, watch } = useFormContext<CourseGeneralInput>();
   const { fields, append, remove } = useFieldArray({ control, name: "faqs" });
+  const faqsValues = watch("faqs") || [];
 
   return (
     <div className="flex flex-col gap-3">
@@ -32,12 +34,18 @@ export function FaqListField({ disabled }: { disabled?: boolean }) {
               <span className="grid size-6 shrink-0 place-items-center rounded-md bg-zinc-100 text-[11px] font-bold text-zinc-500 dark:bg-white/10 dark:text-zinc-300">
                 {i + 1}
               </span>
-              <Input
-                {...register(`faqs.${i}.question` as const)}
-                placeholder="Pertanyaan…"
-                className="h-10 rounded-xl font-medium"
-                disabled={disabled}
-              />
+              <div className="relative flex-1">
+                <Input
+                  {...register(`faqs.${i}.question` as const)}
+                  placeholder="Pertanyaan…"
+                  maxLength={150}
+                  className="h-10 rounded-xl font-medium pr-16"
+                  disabled={disabled}
+                />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <CharCounter current={(faqsValues[i]?.question || "").length} max={150} showWarningLabel={false} />
+                </div>
+              </div>
               <Button
                 type="button"
                 variant="ghost"
@@ -50,13 +58,19 @@ export function FaqListField({ disabled }: { disabled?: boolean }) {
                 <Trash2 className="size-4" strokeWidth={2.2} />
               </Button>
             </div>
-            <Textarea
-              {...register(`faqs.${i}.answer` as const)}
-              placeholder="Jawaban…"
-              rows={2}
-              className="rounded-xl"
-              disabled={disabled}
-            />
+            <div className="flex flex-col gap-1">
+              <Textarea
+                {...register(`faqs.${i}.answer` as const)}
+                placeholder="Jawaban…"
+                rows={2}
+                maxLength={150}
+                className="rounded-xl"
+                disabled={disabled}
+              />
+              <div className="flex justify-end">
+                <CharCounter current={(faqsValues[i]?.answer || "").length} max={150} />
+              </div>
+            </div>
           </div>
         ))
       )}

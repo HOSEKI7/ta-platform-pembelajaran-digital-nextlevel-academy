@@ -5,7 +5,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 
 import type { BatchRow, FieldRow } from "@/lib/admin-internship-config-query";
-import { z } from "zod";
 import {
   fieldCreateSchema,
   fieldUpdateSchema,
@@ -67,6 +66,7 @@ export function FieldFormDialog({
     register,
     control,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<FieldFormValues>({
     resolver: zodResolver(resolver) as never,
@@ -110,6 +110,9 @@ export function FieldFormDialog({
 
   const batchName = (id: string) =>
     batches.find((b) => b.id === id)?.name ?? "Pilih batch";
+
+  const nameVal = watch("name") || "";
+  const kodeVal = watch("kode_bidang") || "";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -162,15 +165,16 @@ export function FieldFormDialog({
             )}
           </Field>
 
-          <Field label="Nama Bidang" error={errors.name?.message}>
+          <Field label="Nama Bidang" current={nameVal.length} max={100} error={errors.name?.message}>
             <Input
               {...register("name")}
               placeholder="cth. Data Analyst"
+              maxLength={100}
               className="h-11 rounded-xl"
             />
           </Field>
 
-          <Field label="Kode Bidang" error={errors.kode_bidang?.message}>
+          <Field label="Kode Bidang" current={kodeVal.length} max={3} error={errors.kode_bidang?.message}>
             <Input
               {...register("kode_bidang")}
               placeholder="111"

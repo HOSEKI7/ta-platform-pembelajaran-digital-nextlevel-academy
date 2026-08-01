@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
+import { CharCounter } from "@/components/ui/char-counter";
+
 export type QuizQuestionDraft = {
   /** Local React key only — not persisted. */
   key: string;
@@ -93,14 +95,20 @@ export function QuizQuestionEditor({ index, value, onChange, onRemove, canRemove
         </Button>
       </div>
 
-      <Textarea
-        value={value.question}
-        onChange={(e) => patch({ question: e.target.value })}
-        placeholder="Tulis pertanyaan… (boleh dikosongkan jika memakai gambar)"
-        rows={2}
-        className="rounded-xl"
-        disabled={disabled}
-      />
+      <div className="flex flex-col gap-1">
+        <Textarea
+          value={value.question}
+          onChange={(e) => patch({ question: e.target.value })}
+          placeholder="Tulis pertanyaan… (boleh dikosongkan jika memakai gambar)"
+          rows={2}
+          maxLength={2000}
+          className="rounded-xl"
+          disabled={disabled}
+        />
+        <div className="flex justify-end">
+          <CharCounter current={value.question.length} max={2000} />
+        </div>
+      </div>
 
       {/* Optional image */}
       <input
@@ -173,16 +181,22 @@ export function QuizQuestionEditor({ index, value, onChange, onRemove, canRemove
                   <Circle className="size-5" strokeWidth={2.2} />
                 )}
               </button>
-              <Input
-                value={opt}
-                onChange={(e) => setOption(i, e.target.value)}
-                placeholder={`Opsi ${i + 1}`}
-                className={cn(
-                  "h-10 rounded-xl",
-                  correct && "border-emerald-300 dark:border-emerald-500/40",
-                )}
-                disabled={disabled}
-              />
+              <div className="relative flex-1">
+                <Input
+                  value={opt}
+                  onChange={(e) => setOption(i, e.target.value)}
+                  placeholder={`Opsi ${i + 1}`}
+                  maxLength={500}
+                  className={cn(
+                    "h-10 rounded-xl pr-16",
+                    correct && "border-emerald-300 dark:border-emerald-500/40",
+                  )}
+                  disabled={disabled}
+                />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <CharCounter current={opt.length} max={500} showWarningLabel={false} />
+                </div>
+              </div>
               <Button
                 type="button"
                 variant="ghost"

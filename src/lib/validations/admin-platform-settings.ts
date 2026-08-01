@@ -14,21 +14,22 @@ import { z } from "zod";
  * optional — an empty string is a valid "not set yet" value.
  */
 
-export const PLATFORM_NAME_MAX = 80;
-export const PLATFORM_TAGLINE_MAX = 120;
-export const PLATFORM_DESCRIPTION_MAX = 500;
-export const PLATFORM_EMAIL_MAX = 120;
-export const PLATFORM_WHATSAPP_MAX = 24;
+export const PLATFORM_NAME_MAX = 100;
+export const PLATFORM_TAGLINE_MAX = 100;
+export const PLATFORM_DESCRIPTION_MAX = 1500;
+export const PLATFORM_EMAIL_MAX = 100;
+export const PLATFORM_WHATSAPP_MAX = 15;
 export const PLATFORM_ADDRESS_MAX = 200;
-export const PLATFORM_CITY_MAX = 80;
-export const PLATFORM_COUNTRY_MAX = 80;
+export const PLATFORM_CITY_MAX = 50;
+export const PLATFORM_COUNTRY_MAX = 60;
 export const PLATFORM_HOURS_MAX = 120;
 
 /** Repeatable lists (Visi / Misi / Tim) — soft caps to keep the blob bounded. */
 export const PLATFORM_LIST_MAX = 20;
-export const PLATFORM_STATEMENT_MAX = 240;
-export const PLATFORM_TEAM_NAME_MAX = 80;
-export const PLATFORM_TEAM_ROLE_MAX = 80;
+export const PLATFORM_VISI_MAX = 255;
+export const PLATFORM_MISI_MAX = 300;
+export const PLATFORM_TEAM_NAME_MAX = 100;
+export const PLATFORM_TEAM_ROLE_MAX = 100;
 
 /** Optional free-text field: trimmed, capped, empty allowed. */
 function optionalText(max: number, label: string) {
@@ -45,15 +46,22 @@ const WHATSAPP_RE = /^[0-9+\-\s()]+$/;
 /**
  * Visi / Misi items use an object wrapper (`{ value }`) rather than a bare
  * string so they bind cleanly + type-safely to react-hook-form's
- * `useFieldArray` (which expects object arrays). The loader tolerates legacy
- * bare-string entries on read.
+ * `useFieldArray` (which expects object arrays).
  */
-const statementItem = z.object({
+const visiItem = z.object({
   value: z
     .string()
     .trim()
     .min(1, "Tidak boleh kosong.")
-    .max(PLATFORM_STATEMENT_MAX, `Maksimal ${PLATFORM_STATEMENT_MAX} karakter.`),
+    .max(PLATFORM_VISI_MAX, `Visi maksimal ${PLATFORM_VISI_MAX} karakter.`),
+});
+
+const misiItem = z.object({
+  value: z
+    .string()
+    .trim()
+    .min(1, "Tidak boleh kosong.")
+    .max(PLATFORM_MISI_MAX, `Misi maksimal ${PLATFORM_MISI_MAX} karakter.`),
 });
 
 const teamMember = z.object({
@@ -69,7 +77,7 @@ const teamMember = z.object({
     .max(PLATFORM_TEAM_ROLE_MAX, `Posisi maksimal ${PLATFORM_TEAM_ROLE_MAX} karakter.`),
 });
 
-export type PlatformStatement = z.infer<typeof statementItem>;
+export type PlatformStatement = z.infer<typeof visiItem>;
 export type PlatformTeamMember = z.infer<typeof teamMember>;
 
 export const platformInfoSchema = z.object({
@@ -93,10 +101,10 @@ export const platformInfoSchema = z.object({
   negara: optionalText(PLATFORM_COUNTRY_MAX, "Negara"),
   jamOperasional: optionalText(PLATFORM_HOURS_MAX, "Jam operasional"),
   visi: z
-    .array(statementItem)
+    .array(visiItem)
     .max(PLATFORM_LIST_MAX, `Maksimal ${PLATFORM_LIST_MAX} visi.`),
   misi: z
-    .array(statementItem)
+    .array(misiItem)
     .max(PLATFORM_LIST_MAX, `Maksimal ${PLATFORM_LIST_MAX} misi.`),
   tim: z
     .array(teamMember)

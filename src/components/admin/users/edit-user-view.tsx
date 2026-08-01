@@ -139,19 +139,33 @@ export function EditUserView({ user, classOptions }: Props) {
             </div>
           </Field>
 
-          <Field label="Nama Lengkap" htmlFor="name" error={errors.name?.message}>
+          <Field
+            label="Nama Lengkap"
+            htmlFor="name"
+            current={(form.watch("name") ?? "").length}
+            max={100}
+            error={errors.name?.message}
+          >
             <Input
               id="name"
+              maxLength={100}
               className="h-11 rounded-xl"
               disabled={busy}
               {...register("name")}
             />
           </Field>
 
-          <Field label="Email" htmlFor="email" error={errors.email?.message}>
+          <Field
+            label="Email"
+            htmlFor="email"
+            current={(form.watch("email") ?? "").length}
+            max={254}
+            error={errors.email?.message}
+          >
             <Input
               id="email"
               type="email"
+              maxLength={254}
               className="h-11 rounded-xl"
               autoComplete="off"
               disabled={busy}
@@ -163,11 +177,14 @@ export function EditUserView({ user, classOptions }: Props) {
             label="Username"
             htmlFor="username"
             optional
+            current={(form.watch("username") ?? "").length}
+            max={15}
             error={errors.username?.message}
-            hint="Huruf kecil, angka, titik, atau garis bawah."
+            hint="Huruf kecil, angka, titik, atau garis bawah (maks. 15 karakter)."
           >
             <Input
               id="username"
+              maxLength={15}
               className="h-11 rounded-xl"
               placeholder="username"
               disabled={busy}
@@ -213,11 +230,14 @@ export function EditUserView({ user, classOptions }: Props) {
                   label="Institusi"
                   htmlFor="institution"
                   optional
+                  current={(form.watch("institution") ?? "").length}
+                  max={150}
                   error={errors.institution?.message}
                 >
                   <Input
                     id="institution"
                     placeholder="mis. Universitas Indonesia"
+                    maxLength={150}
                     className="h-11 rounded-xl"
                     disabled={busy}
                     {...register("institution")}
@@ -259,12 +279,15 @@ export function EditUserView({ user, classOptions }: Props) {
               label="Password Baru"
               htmlFor="newPassword"
               optional
+              current={(form.watch("newPassword") ?? "").length}
+              max={64}
               error={errors.newPassword?.message}
-              hint="Kosongkan jika tidak ingin mengubah password. Mengisi akan mencabut sesi aktif pengguna."
+              hint="Kosongkan jika tidak ingin mengubah password (maks. 64 karakter)."
             >
               <PasswordInput
                 id="newPassword"
                 placeholder="Password baru"
+                maxLength={64}
                 autoComplete="new-password"
                 disabled={busy}
                 {...register("newPassword")}

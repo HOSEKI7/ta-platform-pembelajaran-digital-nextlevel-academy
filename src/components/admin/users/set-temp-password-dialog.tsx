@@ -111,6 +111,7 @@ export function SetTempPasswordDialog({
                 if (error) setError(null);
               }}
               placeholder="Password sementara"
+              maxLength={64}
               autoComplete="new-password"
               aria-invalid={error ? true : undefined}
             />

@@ -351,6 +351,7 @@ export function ProfileForm({
                 type="email"
                 autoComplete="email"
                 inputMode="email"
+                maxLength={254}
                 value={draft.email}
                 placeholder="nama@email.com"
                 onChange={(e) =>

@@ -4,17 +4,17 @@ import { z } from "zod";
 // Password complexity mirrors `validators/auth.ts` (PRD §6.1.1).
 
 export const NAME_MIN = 2;
-export const NAME_MAX = 60;
+export const NAME_MAX = 100;
 export const USERNAME_MIN = 3;
-export const USERNAME_MAX = 24;
+export const USERNAME_MAX = 15;
 export const USERNAME_PATTERN = /^[a-z0-9._]+$/;
 export const INSTITUTION_MIN = 2;
-export const INSTITUTION_MAX = 120;
+export const INSTITUTION_MAX = 150;
 
 const passwordSchema = z
   .string()
   .min(8, "Password minimal 8 karakter.")
-  .max(128, "Password terlalu panjang.")
+  .max(64, "Password maksimal 64 karakter.")
   .regex(/[A-Z]/, "Password harus mengandung minimal satu huruf besar.")
   .regex(/[a-z]/, "Password harus mengandung minimal satu huruf kecil.")
   .regex(/\d/, "Password harus mengandung minimal satu angka.");

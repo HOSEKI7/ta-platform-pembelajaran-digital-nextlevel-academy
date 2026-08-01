@@ -27,9 +27,12 @@ export const titleSchema = z
 
 export const descriptionSchema = z
   .string()
-  .max(50_000, "Deskripsi terlalu panjang.")
+  .max(15_000, "Deskripsi HTML terlalu panjang.")
   .refine((html) => htmlToPlainLength(html) > 0, {
     message: "Deskripsi tugas wajib diisi.",
+  })
+  .refine((html) => htmlToPlainLength(html) <= 5000, {
+    message: "Deskripsi tugas maksimal 5000 karakter.",
   });
 
 export const deadlineSchema = z

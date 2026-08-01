@@ -54,6 +54,7 @@ export function CreateUserView({ classOptions }: Props) {
     register,
     control,
     handleSubmit,
+    watch,
     formState: { errors },
   } = form;
 
@@ -137,21 +138,35 @@ export function CreateUserView({ classOptions }: Props) {
             />
           </Field>
 
-          <Field label="Nama Lengkap" htmlFor="name" error={errors.name?.message}>
+          <Field
+            label="Nama Lengkap"
+            htmlFor="name"
+            current={(useWatch({ control, name: "name" }) ?? "").length}
+            max={100}
+            error={errors.name?.message}
+          >
             <Input
               id="name"
               placeholder="mis. Budi Santoso"
+              maxLength={100}
               className="h-11 rounded-xl"
               disabled={busy}
               {...register("name")}
             />
           </Field>
 
-          <Field label="Email" htmlFor="email" error={errors.email?.message}>
+          <Field
+            label="Email"
+            htmlFor="email"
+            current={(useWatch({ control, name: "email" }) ?? "").length}
+            max={254}
+            error={errors.email?.message}
+          >
             <Input
               id="email"
               type="email"
               placeholder="nama@email.com"
+              maxLength={254}
               className="h-11 rounded-xl"
               autoComplete="off"
               disabled={busy}
@@ -162,12 +177,15 @@ export function CreateUserView({ classOptions }: Props) {
           <Field
             label="Password Awal"
             htmlFor="password"
+            current={(useWatch({ control, name: "password" }) ?? "").length}
+            max={64}
             error={errors.password?.message}
-            hint="Minimal 8 karakter dengan huruf besar, kecil, dan angka."
+            hint="Minimal 8 karakter (maks 64) dengan huruf besar, kecil, dan angka."
           >
             <PasswordInput
               id="password"
               placeholder="Password awal"
+              maxLength={64}
               autoComplete="new-password"
               disabled={busy}
               {...register("password")}
@@ -202,12 +220,15 @@ export function CreateUserView({ classOptions }: Props) {
                 label="Institusi"
                 htmlFor="institution"
                 optional
+                current={(watch("institution") ?? "").length}
+                max={150}
                 error={errors.institution?.message}
                 hint="Universitas atau sekolah peserta magang."
               >
                 <Input
                   id="institution"
                   placeholder="mis. Universitas Indonesia"
+                  maxLength={150}
                   className="h-11 rounded-xl"
                   disabled={busy}
                   {...register("institution")}

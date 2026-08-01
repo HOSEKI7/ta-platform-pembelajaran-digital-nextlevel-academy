@@ -21,12 +21,24 @@ export const slugField = () =>
     .regex(SLUG_REGEX, "Slug hanya huruf kecil, angka, dan tanda hubung.");
 
 export const benefitSchema = z.object({
-  text: z.string().trim().min(1, "Benefit tidak boleh kosong.").max(200),
+  text: z
+    .string()
+    .trim()
+    .min(1, "Benefit tidak boleh kosong.")
+    .max(100, "Benefit maksimal 100 karakter."),
 });
 
 export const faqSchema = z.object({
-  question: z.string().trim().min(1, "Pertanyaan tidak boleh kosong.").max(300),
-  answer: z.string().trim().min(1, "Jawaban tidak boleh kosong.").max(2000),
+  question: z
+    .string()
+    .trim()
+    .min(1, "Pertanyaan tidak boleh kosong.")
+    .max(150, "Pertanyaan maksimal 150 karakter."),
+  answer: z
+    .string()
+    .trim()
+    .min(1, "Jawaban tidak boleh kosong.")
+    .max(150, "Jawaban maksimal 150 karakter."),
 });
 
 /**
@@ -40,14 +52,39 @@ export const faqSchema = z.object({
  */
 export const courseGeneralSchema = z
   .object({
-    title: z.string().trim().min(3, "Judul minimal 3 karakter.").max(150),
-    shortDescription: z.string().trim().max(280),
-    description: z.string().trim().min(1, "Deskripsi wajib diisi."),
+    title: z
+      .string()
+      .trim()
+      .min(3, "Judul minimal 3 karakter.")
+      .max(100, "Judul course maksimal 100 karakter."),
+    shortDescription: z.string().trim().max(280, "Deskripsi singkat maksimal 280 karakter."),
+    description: z
+      .string()
+      .trim()
+      .min(1, "Deskripsi wajib diisi.")
+      .max(1500, "Deskripsi lengkap maksimal 1500 karakter."),
     categoryId: z.string().trim().min(1, "Kategori wajib dipilih."),
-    price: z.number().int("Harga harus bilangan bulat.").min(0, "Harga tidak boleh negatif."),
-    fakePrice: z.number().int().min(0).nullable(),
-    instructor: z.string().trim().min(2, "Nama instruktur wajib diisi.").max(120),
-    instructorBio: z.string().trim().min(1, "Bio instruktur wajib diisi.").max(2000),
+    price: z
+      .number()
+      .int("Harga harus bilangan bulat.")
+      .min(0, "Harga tidak boleh negatif.")
+      .max(999999999, "Harga maksimal 9 digit (Rp999.999.999)."),
+    fakePrice: z
+      .number()
+      .int("Harga coret harus bilangan bulat.")
+      .min(0, "Harga coret tidak boleh negatif.")
+      .max(999999999, "Harga coret maksimal 9 digit (Rp999.999.999).")
+      .nullable(),
+    instructor: z
+      .string()
+      .trim()
+      .min(2, "Nama instruktur wajib diisi.")
+      .max(100, "Nama instruktur maksimal 100 karakter."),
+    instructorBio: z
+      .string()
+      .trim()
+      .min(1, "Bio instruktur wajib diisi.")
+      .max(300, "Bio instruktur maksimal 300 karakter."),
     isFeatured: z.boolean(),
     status: z.enum(COURSE_STATUSES),
     benefits: z.array(benefitSchema).max(20),
@@ -76,18 +113,37 @@ export const sprintSchema = z.object({
 export type SprintInput = z.infer<typeof sprintSchema>;
 
 export const videoStepSchema = z.object({
-  title: z.string().trim().min(2, "Judul video minimal 2 karakter.").max(150),
-  description: z.string().trim().default(""),
+  title: z
+    .string()
+    .trim()
+    .min(2, "Judul video minimal 2 karakter.")
+    .max(100, "Judul step maksimal 100 karakter."),
+  description: z
+    .string()
+    .trim()
+    .max(3000, "Deskripsi materi maksimal 3000 karakter.")
+    .default(""),
   bunnyVideoId: z.string().trim().min(1, "Video belum terunggah."),
 });
 export type VideoStepInput = z.infer<typeof videoStepSchema>;
 
 export const quizQuestionSchema = z
   .object({
-    question: z.string().trim().max(1000).optional().default(""),
+    question: z
+      .string()
+      .trim()
+      .max(2000, "Soal quiz maksimal 2000 karakter.")
+      .optional()
+      .default(""),
     questionImageUrl: z.string().trim().optional().nullable(),
     options: z
-      .array(z.string().trim().min(1, "Opsi tidak boleh kosong.").max(300))
+      .array(
+        z
+          .string()
+          .trim()
+          .min(1, "Opsi tidak boleh kosong.")
+          .max(500, "Opsi jawaban maksimal 500 karakter.")
+      )
       .min(2, "Minimal 2 opsi jawaban."),
     answer: z.number().int().min(0, "Pilih satu jawaban benar."),
   })
@@ -102,8 +158,16 @@ export const quizQuestionSchema = z
 export type QuizQuestionInput = z.infer<typeof quizQuestionSchema>;
 
 export const quizStepSchema = z.object({
-  title: z.string().trim().min(2, "Judul quiz minimal 2 karakter.").max(150),
-  description: z.string().trim().default(""),
+  title: z
+    .string()
+    .trim()
+    .min(2, "Judul quiz minimal 2 karakter.")
+    .max(100, "Judul step maksimal 100 karakter."),
+  description: z
+    .string()
+    .trim()
+    .max(3000, "Deskripsi materi maksimal 3000 karakter.")
+    .default(""),
   passingScore: z.coerce.number().int().min(0).max(100).default(80),
   questions: z.array(quizQuestionSchema).min(1, "Quiz minimal punya 1 soal."),
 });

@@ -27,12 +27,24 @@ export const BADGE_TRIGGERS = [
 
 export const badgeFormSchema = z
   .object({
-    name: z.string().trim().min(2, "Nama badge minimal 2 karakter.").max(80),
-    description: z.string().trim().max(300).optional(),
+    name: z
+      .string()
+      .trim()
+      .min(2, "Nama badge minimal 2 karakter.")
+      .max(100, "Nama badge maksimal 100 karakter."),
+    description: z
+      .string()
+      .trim()
+      .max(300, "Deskripsi cara mendapat maksimal 300 karakter.")
+      .optional(),
     trigger: z.enum(BADGE_TRIGGERS),
     threshold: z.number().int().min(0).max(9999),
     courseId: z.string().trim().min(1).nullable().optional(),
-    expMinimum: z.number().int().min(0).max(1_000_000),
+    expMinimum: z
+      .number()
+      .int("EXP harus bilangan bulat.")
+      .min(0, "EXP minimal 0.")
+      .max(100000, "EXP maksimal 100.000."),
     logoUrl: z.string().trim().min(1).max(500).nullable().optional(),
   })
   .refine((v) => v.trigger === "COURSE_SPECIFIC" || v.threshold >= 1, {

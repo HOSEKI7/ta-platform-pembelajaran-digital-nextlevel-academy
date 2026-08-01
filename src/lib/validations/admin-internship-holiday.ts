@@ -21,13 +21,13 @@ const description = z
   .string()
   .trim()
   .min(2, "Keterangan libur minimal 2 karakter.")
-  .max(120, "Keterangan libur maksimal 120 karakter.");
+  .max(100, "Keterangan libur maksimal 100 karakter.");
 
 const days = z
   .number({ message: "Jumlah hari libur wajib diisi." })
   .int("Jumlah hari harus berupa angka bulat.")
   .min(1, "Jumlah hari libur minimal 1.")
-  .max(60, "Jumlah hari libur maksimal 60.");
+  .max(365, "Jumlah hari libur maksimal 365 hari (1 tahun).");
 
 const reason = z
   .string()

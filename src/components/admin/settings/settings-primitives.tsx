@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
+import { CharCounter } from "@/components/ui/char-counter";
 
 /** Shared card + field primitives for the admin settings forms. */
 
@@ -42,22 +43,29 @@ type FieldProps = {
   icon?: React.ReactNode;
   error?: string;
   required?: boolean;
+  current?: number;
+  max?: number;
   children: React.ReactNode;
 };
 
-export function Field({ id, label, icon, error, required, children }: FieldProps) {
+export function Field({ id, label, icon, error, required, current, max, children }: FieldProps) {
   return (
     <div className="flex flex-col gap-1.5">
-      <Label
-        htmlFor={id}
-        className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-zinc-600 dark:text-zinc-300"
-      >
-        {icon}
-        {label}
-        {required ? (
-          <span className="text-[color:var(--color-error)]">*</span>
+      <div className="flex items-center justify-between gap-2">
+        <Label
+          htmlFor={id}
+          className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-zinc-600 dark:text-zinc-300"
+        >
+          {icon}
+          {label}
+          {required ? (
+            <span className="text-[color:var(--color-error)]">*</span>
+          ) : null}
+        </Label>
+        {max !== undefined && current !== undefined ? (
+          <CharCounter current={current} max={max} />
         ) : null}
-      </Label>
+      </div>
       {children}
       {error ? (
         <p className="text-[11px] font-semibold text-[color:var(--color-error)]">

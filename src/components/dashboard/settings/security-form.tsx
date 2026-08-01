@@ -290,6 +290,7 @@ function PasswordField({
           id={id}
           type={visible ? "text" : "password"}
           autoComplete={autoComplete}
+          maxLength={64}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="••••••••"

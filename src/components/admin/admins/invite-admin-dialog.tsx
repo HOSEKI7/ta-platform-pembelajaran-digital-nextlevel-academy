@@ -44,6 +44,7 @@ export function InviteAdminDialog({
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm<InviteAdminInput>({
     resolver: zodResolver(inviteAdminSchema),
@@ -172,6 +173,8 @@ export function InviteAdminDialog({
             <Field
               label="Email"
               htmlFor="invite-email"
+              current={(watch("email") ?? "").length}
+              max={254}
               error={errors.email?.message}
             >
               <Input
@@ -179,6 +182,7 @@ export function InviteAdminDialog({
                 type="email"
                 autoComplete="off"
                 placeholder="nama@email.com"
+                maxLength={254}
                 className="h-11 rounded-xl"
                 disabled={submitting}
                 autoFocus
@@ -189,12 +193,15 @@ export function InviteAdminDialog({
               label="Nama"
               htmlFor="invite-name"
               optional
+              current={(watch("name") ?? "").length}
+              max={100}
               hint="Penerima dapat mengubahnya saat menerima undangan."
               error={errors.name?.message}
             >
               <Input
                 id="invite-name"
                 placeholder="Nama administrator"
+                maxLength={100}
                 className="h-11 rounded-xl"
                 disabled={submitting}
                 {...register("name")}

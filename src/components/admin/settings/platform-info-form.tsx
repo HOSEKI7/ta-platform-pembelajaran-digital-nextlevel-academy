@@ -56,11 +56,21 @@ export function PlatformInfoForm({ initial }: Props) {
     handleSubmit,
     reset,
     control,
+    watch,
     formState: { errors, isDirty },
   } = useForm<PlatformInfo>({
     resolver: zodResolver(platformInfoSchema),
     defaultValues: initial,
   });
+
+  const namaPlatformVal = watch("namaPlatform") || "";
+  const taglineVal = watch("tagline") || "";
+  const deskripsiVal = watch("deskripsi") || "";
+  const emailKontakVal = watch("emailKontak") || "";
+  const nomorWhatsappVal = watch("nomorWhatsapp") || "";
+  const alamatVal = watch("alamat") || "";
+  const kotaVal = watch("kota") || "";
+  const negaraVal = watch("negara") || "";
 
   // Validate first; only open the confirm dialog once the form is clean.
   const onValid = () => setConfirmOpen(true);
@@ -100,12 +110,15 @@ export function PlatformInfoForm({ initial }: Props) {
               id="namaPlatform"
               label="Nama platform"
               required
+              current={namaPlatformVal.length}
+              max={100}
               icon={<Building2 className="size-4" strokeWidth={2.4} />}
               error={errors.namaPlatform?.message}
             >
               <Input
                 id="namaPlatform"
                 placeholder="NextLevel Academy"
+                maxLength={100}
                 className="h-11"
                 {...register("namaPlatform")}
               />
@@ -114,12 +127,15 @@ export function PlatformInfoForm({ initial }: Props) {
             <Field
               id="tagline"
               label="Tagline"
+              current={taglineVal.length}
+              max={100}
               icon={<Sparkles className="size-4" strokeWidth={2.4} />}
               error={errors.tagline?.message}
             >
               <Input
                 id="tagline"
                 placeholder="Naik level skill digitalmu."
+                maxLength={100}
                 className="h-11"
                 {...register("tagline")}
               />
@@ -128,12 +144,15 @@ export function PlatformInfoForm({ initial }: Props) {
             <Field
               id="deskripsi"
               label="Deskripsi"
+              current={deskripsiVal.length}
+              max={1500}
               icon={<Sparkles className="size-4" strokeWidth={2.4} />}
               error={errors.deskripsi?.message}
             >
               <Textarea
                 id="deskripsi"
                 rows={4}
+                maxLength={1500}
                 placeholder="Platform e-learning dengan gamifikasi dan program magang terintegrasi."
                 {...register("deskripsi")}
               />
@@ -151,6 +170,8 @@ export function PlatformInfoForm({ initial }: Props) {
             <Field
               id="emailKontak"
               label="Email kontak"
+              current={emailKontakVal.length}
+              max={100}
               icon={<Mail className="size-4" strokeWidth={2.4} />}
               error={errors.emailKontak?.message}
             >
@@ -158,6 +179,7 @@ export function PlatformInfoForm({ initial }: Props) {
                 id="emailKontak"
                 type="email"
                 inputMode="email"
+                maxLength={100}
                 placeholder="halo@nextlevel.id"
                 className="h-11"
                 {...register("emailKontak")}
@@ -167,12 +189,15 @@ export function PlatformInfoForm({ initial }: Props) {
             <Field
               id="nomorWhatsapp"
               label="Nomor WhatsApp"
+              current={nomorWhatsappVal.length}
+              max={15}
               icon={<Phone className="size-4" strokeWidth={2.4} />}
               error={errors.nomorWhatsapp?.message}
             >
               <Input
                 id="nomorWhatsapp"
                 inputMode="tel"
+                maxLength={15}
                 placeholder="+62 812-3456-7890"
                 className="h-11"
                 {...register("nomorWhatsapp")}
@@ -191,12 +216,15 @@ export function PlatformInfoForm({ initial }: Props) {
             <Field
               id="alamat"
               label="Alamat"
+              current={alamatVal.length}
+              max={200}
               icon={<MapPin className="size-4" strokeWidth={2.4} />}
               error={errors.alamat?.message}
             >
               <Textarea
                 id="alamat"
                 rows={2}
+                maxLength={200}
                 placeholder="Jl. Contoh No. 123, Kecamatan…"
                 {...register("alamat")}
               />
@@ -206,21 +234,26 @@ export function PlatformInfoForm({ initial }: Props) {
               <Field
                 id="kota"
                 label="Kota"
+                current={kotaVal.length}
+                max={50}
                 icon={<MapPin className="size-4" strokeWidth={2.4} />}
                 error={errors.kota?.message}
               >
-                <Input id="kota" placeholder="Jakarta" className="h-11" {...register("kota")} />
+                <Input id="kota" maxLength={50} placeholder="Jakarta" className="h-11" {...register("kota")} />
               </Field>
 
               <Field
                 id="negara"
                 label="Negara"
+                current={negaraVal.length}
+                max={60}
                 icon={<Globe2 className="size-4" strokeWidth={2.4} />}
                 error={errors.negara?.message}
               >
                 <Input
                   id="negara"
                   placeholder="Indonesia"
+                  maxLength={60}
                   className="h-11"
                   {...register("negara")}
                 />

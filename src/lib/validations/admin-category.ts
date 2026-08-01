@@ -14,7 +14,7 @@ export const categoryFormSchema = z.object({
     .string()
     .trim()
     .min(2, "Nama kategori minimal 2 karakter.")
-    .max(60, "Nama kategori maksimal 60 karakter."),
+    .max(100, "Nama kategori maksimal 100 karakter."),
   description: z
     .string()
     .trim()

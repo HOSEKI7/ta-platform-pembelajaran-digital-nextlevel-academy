@@ -21,7 +21,7 @@ const codeSchema = z
   .string()
   .trim()
   .min(3, "Kode voucher minimal 3 karakter.")
-  .max(64, "Kode voucher maksimal 64 karakter.")
+  .max(50, "Kode voucher maksimal 50 karakter.")
   .regex(
     VOUCHER_CODE_REGEX,
     "Kode hanya boleh huruf, angka, '_' dan '-' (tanpa spasi).",
@@ -38,14 +38,19 @@ const codeSchema = z
 const baseVoucherSchema = z
   .object({
     code: codeSchema,
-    description: z.string().trim().max(200, "Deskripsi maksimal 200 karakter."),
+    description: z.string().trim().max(300, "Deskripsi maksimal 300 karakter."),
     discountType: z.enum(VOUCHER_DISCOUNT_TYPES),
     discountPct: z.number().int("Persentase harus bilangan bulat."),
-    discountAmount: z.number().int("Nominal harus bilangan bulat.").nullable(),
+    discountAmount: z
+      .number()
+      .int("Nominal harus bilangan bulat.")
+      .max(999999, "Nominal diskon maksimal 6 digit (Rp999.999).")
+      .nullable(),
     maxUsage: z
       .number()
       .int("Batas pemakaian harus bilangan bulat.")
       .min(1, "Batas pemakaian minimal 1.")
+      .max(999999, "Batas pemakaian maksimal 6 digit (999.999).")
       .nullable(),
     /** ISO string, or empty string when "aktif seketika". */
     startDate: z.string().trim(),

@@ -59,6 +59,7 @@ export function BatchFormDialog({
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<BatchFormInput>({
     resolver: zodResolver(batchFormSchema),
@@ -99,6 +100,10 @@ export function BatchFormDialog({
     });
   };
 
+  const nameVal = watch("name") || "";
+  const descVal = watch("description") || "";
+  const kodeVal = watch("kode_batch") || "";
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
@@ -114,20 +119,21 @@ export function BatchFormDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onValid)} className="flex flex-col gap-5">
-          <Field label="Nama Batch" error={errors.name?.message}>
+          <Field label="Nama Batch" current={nameVal.length} max={100} error={errors.name?.message}>
             <Input
               {...register("name")}
               placeholder="cth. Batch 1"
+              maxLength={100}
               className="h-11 rounded-xl"
               autoFocus
             />
           </Field>
 
-          <Field label="Kode Batch" error={errors.kode_batch?.message}>
+          <Field label="Kode Batch" current={kodeVal.length} max={3} error={errors.kode_batch?.message}>
             <Input
               {...register("kode_batch")}
-              placeholder={kodeBatchPreview ?? "01"}
-              maxLength={2}
+              placeholder={kodeBatchPreview ?? "001"}
+              maxLength={3}
               className="h-11 rounded-xl font-mono"
             />
             {mode === "create" && kodeBatchPreview && (
@@ -139,7 +145,7 @@ export function BatchFormDialog({
 
           {mode === "create" && (
             <WarningBanner severity="soft">
-              Kode batch digunakan sebagai prefix nomor induk peserta magang. Tidak dapat diubah
+              Kode batch (3 digit) digunakan sebagai prefix nomor induk peserta magang. Tidak dapat diubah
               setelah peserta magang terdaftar.
             </WarningBanner>
           )}
@@ -150,10 +156,11 @@ export function BatchFormDialog({
             </WarningBanner>
           )}
 
-          <Field label="Keterangan" error={errors.description?.message}>
+          <Field label="Keterangan" current={descVal.length} max={300} error={errors.description?.message}>
             <Textarea
               {...register("description")}
               placeholder="cth. Batch 1 Magang Periode November 2025 - Januari 2026"
+              maxLength={300}
               rows={2}
             />
           </Field>

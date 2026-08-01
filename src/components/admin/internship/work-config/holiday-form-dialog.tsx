@@ -107,6 +107,8 @@ export function HolidayFormDialog({
     });
   };
 
+  const descVal = watch("description") || "";
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
@@ -121,21 +123,22 @@ export function HolidayFormDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onValid)} className="flex flex-col gap-5">
-          <Field label="Keterangan Libur" error={errors.description?.message}>
+          <Field label="Keterangan Libur" current={descVal.length} max={100} error={errors.description?.message}>
             <Textarea
               {...register("description")}
               placeholder="cth. Cuti bersama Idul Fitri"
+              maxLength={100}
               rows={2}
               autoFocus
             />
           </Field>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="Jumlah Hari" error={errors.days?.message}>
+            <Field label="Jumlah Hari" error={errors.days?.message} hint="Maksimal 365 hari (1 tahun)">
               <Input
                 type="number"
                 min={1}
-                max={60}
+                max={365}
                 {...register("days", { valueAsNumber: true })}
                 className="h-11 rounded-xl"
               />

@@ -65,12 +65,13 @@ export function VideoStepDialog({ open, onOpenChange, mode, initial, saving, spr
         </DialogHeader>
 
         <div className="flex flex-col gap-5 py-1">
-          <Field label="Judul Video" htmlFor="video-title">
+          <Field label="Judul Video" htmlFor="video-title" current={title.length} max={100}>
             <Input
               id="video-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="mis. Pengantar React Hooks"
+              maxLength={100}
               className="h-11 rounded-xl"
               disabled={saving}
             />
@@ -89,7 +90,7 @@ export function VideoStepDialog({ open, onOpenChange, mode, initial, saving, spr
           <Field
             label="Deskripsi Materi"
             optional
-            hint="Catatan/ringkasan materi yang tampil di tab Deskripsi (teks)."
+            hint="Catatan/ringkasan materi yang tampil di tab Deskripsi (maks. 3000 karakter)."
           >
             <RichTextEditor
               compact

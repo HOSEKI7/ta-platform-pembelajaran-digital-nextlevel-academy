@@ -20,7 +20,7 @@ const dateOnly = z
 
 export const kodeBatchSchema = z
   .string()
-  .regex(/^\d{2}$/, "Kode batch harus 2 digit angka (contoh: 01)");
+  .regex(/^\d{3}$/, "Kode batch harus 3 digit angka (contoh: 001)");
 
 export const kodeBidangSchema = z
   .string()
@@ -34,13 +34,13 @@ export const batchFormSchema = z
       .string()
       .trim()
       .min(2, "Nama batch minimal 2 karakter.")
-      .max(60, "Nama batch maksimal 60 karakter."),
+      .max(100, "Nama batch maksimal 100 karakter."),
     kode_batch: kodeBatchSchema,
     description: z
       .string()
       .trim()
       .min(2, "Keterangan minimal 2 karakter.")
-      .max(200, "Keterangan maksimal 200 karakter."),
+      .max(300, "Keterangan maksimal 300 karakter."),
     startDate: dateOnly,
     endDate: dateOnly,
   })
@@ -60,7 +60,7 @@ export const fieldCreateSchema = z.object({
     .string()
     .trim()
     .min(2, "Nama bidang minimal 2 karakter.")
-    .max(60, "Nama bidang maksimal 60 karakter."),
+    .max(100, "Nama bidang maksimal 100 karakter."),
 });
 
 export type FieldCreateInput = z.infer<typeof fieldCreateSchema>;
@@ -72,7 +72,7 @@ export const fieldUpdateSchema = z.object({
     .string()
     .trim()
     .min(2, "Nama bidang minimal 2 karakter.")
-    .max(60, "Nama bidang maksimal 60 karakter."),
+    .max(100, "Nama bidang maksimal 100 karakter."),
 });
 
 export type FieldUpdateInput = z.infer<typeof fieldUpdateSchema>;

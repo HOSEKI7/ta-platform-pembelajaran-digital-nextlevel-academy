@@ -12,14 +12,14 @@ import { Role } from "@/generated/prisma";
  */
 
 export const NAME_MIN = 2;
-export const NAME_MAX = 60;
-export const INSTITUTION_MAX = 120;
+export const NAME_MAX = 100;
+export const INSTITUTION_MAX = 150;
 
 // PRD §6.1.1: password ≥ 8 chars and contains upper-case, lower-case, and digit.
 export const passwordComplexity = z
   .string()
   .min(8, "Password minimal 8 karakter.")
-  .max(128, "Password terlalu panjang.")
+  .max(64, "Password maksimal 64 karakter.")
   .regex(/[A-Z]/, "Password harus mengandung minimal satu huruf besar.")
   .regex(/[a-z]/, "Password harus mengandung minimal satu huruf kecil.")
   .regex(/\d/, "Password harus mengandung minimal satu angka.");
