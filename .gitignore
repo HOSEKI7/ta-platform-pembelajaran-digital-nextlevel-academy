@@ -75,3 +75,6 @@ VibeCode.zip
 # Scripts
 /scripts/delete-student.mjs
 /scripts/reset-alldata.ts
+
+# Testing
+lh-report.json

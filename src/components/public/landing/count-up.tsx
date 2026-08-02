@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 const numId = new Intl.NumberFormat("id-ID");
 
@@ -18,12 +18,13 @@ type CountUpProps = {
  * immediately.
  */
 export function CountUp({ value, suffix, durationMs = 1400, className }: CountUpProps) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const [display, setDisplay] = useState(0);
+  const containerRef = useRef<HTMLSpanElement>(null);
+  const numberRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
-    const node = ref.current;
-    if (!node) return;
+    const container = containerRef.current;
+    const numberNode = numberRef.current;
+    if (!container || !numberNode) return;
 
     let rafId = 0;
     let started = false;
@@ -31,11 +32,10 @@ export function CountUp({ value, suffix, durationMs = 1400, className }: CountUp
     const reduceMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
+    
     if (reduceMotion || typeof IntersectionObserver === "undefined") {
-      // Jump straight to the final value on the next frame (no animation), which
-      // also keeps setState out of the synchronous effect body.
-      rafId = requestAnimationFrame(() => setDisplay(value));
-      return () => cancelAnimationFrame(rafId);
+      numberNode.textContent = numId.format(value);
+      return;
     }
 
     const animate = () => {
@@ -44,7 +44,9 @@ export function CountUp({ value, suffix, durationMs = 1400, className }: CountUp
         const t = Math.min(1, (now - start) / durationMs);
         // easeOutCubic
         const eased = 1 - Math.pow(1 - t, 3);
-        setDisplay(Math.round(value * eased));
+        
+        numberNode.textContent = numId.format(Math.round(value * eased));
+        
         if (t < 1) rafId = requestAnimationFrame(tick);
       };
       rafId = requestAnimationFrame(tick);
@@ -63,7 +65,7 @@ export function CountUp({ value, suffix, durationMs = 1400, className }: CountUp
       { threshold: 0.4 },
     );
 
-    observer.observe(node);
+    observer.observe(container);
 
     return () => {
       observer.disconnect();
@@ -72,8 +74,8 @@ export function CountUp({ value, suffix, durationMs = 1400, className }: CountUp
   }, [value, durationMs]);
 
   return (
-    <span ref={ref} className={className}>
-      {numId.format(display)}
+    <span ref={containerRef} className={className}>
+      <span ref={numberRef}>0</span>
       {suffix ? <span className="text-[color:var(--color-brand-accent)]">{suffix}</span> : null}
     </span>
   );
