@@ -25,6 +25,12 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:install": "playwright install chromium"
   },
+  "browserslist": [
+    "> 0.3%",
+    "last 2 versions",
+    "Firefox ESR",
+    "not dead"
+  ],
   "dependencies": {
     "@base-ui/react": "^1.4.1",
     "@hookform/resolvers": "^5.2.2",
