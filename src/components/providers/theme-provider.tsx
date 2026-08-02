@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -118,8 +119,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
+  const isInitialMount = useRef(true);
+
   // Reflect the resolved theme onto <html> whenever it changes.
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return; // Skip forced reflow on initial mount; layout script handled it.
+    }
     applyResolvedTheme(resolvedTheme);
   }, [resolvedTheme]);
 

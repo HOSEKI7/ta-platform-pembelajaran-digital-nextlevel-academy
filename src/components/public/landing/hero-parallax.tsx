@@ -27,10 +27,19 @@ export function HeroParallax() {
 
     const hero = layers[0].closest("section");
     let ticking = false;
+    let heroHeight = window.innerHeight; // Fast default
+
+    // Defer the DOM read to avoid layout thrashing during hydration
+    setTimeout(() => {
+      heroHeight = hero?.offsetHeight ?? window.innerHeight;
+    }, 0);
+
+    const onResize = () => {
+      heroHeight = hero?.offsetHeight ?? window.innerHeight;
+    };
 
     const update = () => {
       ticking = false;
-      const heroHeight = hero?.offsetHeight ?? window.innerHeight;
       const y = window.scrollY;
       if (y > heroHeight) return;
       for (const layer of layers) {
@@ -47,7 +56,11 @@ export function HeroParallax() {
 
     update();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    window.addEventListener("resize", onResize, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onResize);
+    };
   }, []);
 
   return null;
