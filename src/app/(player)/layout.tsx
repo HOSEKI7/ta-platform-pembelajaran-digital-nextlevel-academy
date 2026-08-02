@@ -1,5 +1,6 @@
 import { Role } from "@/generated/prisma";
 import { requireRole } from "@/lib/auth-server";
+import "./player.css";
 
 /**
  * Fullscreen Course Player shell — no DashboardShell, no sidebar, no

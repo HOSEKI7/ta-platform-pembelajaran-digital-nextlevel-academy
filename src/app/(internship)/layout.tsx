@@ -5,6 +5,7 @@ import { requireRole } from "@/lib/auth-server";
 import { loadMagangContext } from "@/lib/internship-data-loader";
 
 import { InternshipShell } from "@/components/internship/internship-shell";
+import "./internship.css";
 
 const COLLAPSED_COOKIE = "internship-sidebar-collapsed";
 

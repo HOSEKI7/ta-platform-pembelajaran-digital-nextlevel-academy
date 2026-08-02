@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { AuthBrandPanel } from "./_components/brand-panel";
 import { ForceLightTheme } from "./_components/force-light-theme";
+import "./auth.css";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   // ponytail: auth-page redirect handled by proxy.ts (cookie-only, no DB).

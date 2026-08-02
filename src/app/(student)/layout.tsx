@@ -12,6 +12,7 @@ import {
 import { studentKeys } from "@/lib/student-query-keys";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import "./student.css";
 
 const COLLAPSED_COOKIE = "student-sidebar-collapsed";
 

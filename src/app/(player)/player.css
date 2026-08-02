@@ -1,0 +1,67 @@
+/* ---------------------------------------------------------------------------
+   Course Player — "Focus Theater" motifs
+   --------------------------------------------------------------------------- */
+
+@keyframes player-rail-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+@keyframes player-burst {
+  0% {
+    transform: translate(0, 0) scale(0.4);
+    opacity: 0;
+  }
+  18% { opacity: 1; }
+  100% {
+    transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes player-morph-in {
+  from {
+    transform: translateY(6px);
+    opacity: 0;
+    letter-spacing: 0.04em;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+    letter-spacing: 0;
+  }
+}
+
+@keyframes player-stagger {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes player-halo-drift {
+  0%, 100% { transform: translate3d(0, 0, 0); opacity: 0.6; }
+  50% { transform: translate3d(0, -8px, 0); opacity: 1; }
+}
+
+/* Sidebar dot-grid background. Works in both themes via --player-dot token. */
+.player-dot-grid {
+  background-image: radial-gradient(var(--player-dot) 1px, transparent 1px);
+  background-size: 18px 18px;
+  background-position: 0 0;
+}
+
+/* Halo gradient that sits behind the video frame. Intentionally clipped by
+   the parent's `overflow-hidden` — it lights only the upper third. */
+.player-halo {
+  background: radial-gradient(
+    ellipse 80% 60% at 50% 0%,
+    var(--player-glow) 0%,
+    transparent 60%
+  );
+  animation: player-halo-drift 9s ease-in-out infinite;
+}

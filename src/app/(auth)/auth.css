@@ -1,0 +1,225 @@
+/* Auth pages don't have a dark-mode design. This scope re-declares every
+   CSS variable to its light value so any descendant CSS-var-based primitive
+   (bg-background, border-input, bg-popover, etc.) renders light even if
+   .dark momentarily appears on <html>. */
+.auth-light-scope {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.65 0.165 256);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.65 0.165 256 / 0.5);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+  --surface-app: #f7f8fb;
+  --surface-nav: #ffffff;
+  --surface-card: #ffffff;
+  --surface-card-strong: #ffffff;
+  --surface-border: #e4e7ec;
+  --surface-border-strong: #cdd2db;
+
+  /* Hard-pin the auth scope itself to light foreground/background, so even
+     if some ancestor (body) was painted with dark vars, descendants inherit
+     light text by default. */
+  color: oklch(0.145 0 0);
+}
+
+/* Hard-pin every auth-page input to the brand light-blue surface and black
+   text. `!important` is used deliberately here: Tailwind `dark:` variants
+   (e.g. `dark:bg-input/30` in `src/components/ui/input.tsx`) live in
+   @layer utilities and can win cascade races during HMR or before the
+   ForceLightTheme MutationObserver attaches. `!important` is the only
+   guarantee that auth inputs render with the requested look regardless of
+   the html `dark` class state.
+
+   - Background: --color-brand-50 (#eef5ff, light blue)
+   - Text:        #000000 (black)
+   - Border:      already supplied by AuthInput className. */
+.auth-light-scope input[data-slot="input"],
+.auth-light-scope textarea[data-slot="textarea"],
+.auth-light-scope [data-slot="input-group-control"] {
+  background-color: var(--color-brand-50) !important;
+  color: #000000 !important;
+}
+
+.auth-light-scope input[data-slot="input"]::placeholder,
+.auth-light-scope textarea[data-slot="textarea"]::placeholder {
+  color: oklch(0.556 0 0) !important;
+}
+
+.auth-light-scope input[data-slot="input"]:disabled,
+.auth-light-scope textarea[data-slot="textarea"]:disabled {
+  background-color: oklch(0.97 0 0) !important;
+}
+
+/* Browser autofill (Chrome/Edge/Safari) ignores `background-color` and paints
+   its own yellow/dark surface on autofilled fields. The standard workaround
+   is a giant inset `box-shadow` (which IS allowed) to overpaint the autofill
+   surface, plus `-webkit-text-fill-color` for the text color. The long
+   transition delays the browser's default fade-back so our values stick.
+   Covers all four interaction states (autofill / hover / focus / active). */
+.auth-light-scope input[data-slot="input"]:-webkit-autofill,
+.auth-light-scope input[data-slot="input"]:-webkit-autofill:hover,
+.auth-light-scope input[data-slot="input"]:-webkit-autofill:focus,
+.auth-light-scope input[data-slot="input"]:-webkit-autofill:active,
+.auth-light-scope textarea[data-slot="textarea"]:-webkit-autofill,
+.auth-light-scope textarea[data-slot="textarea"]:-webkit-autofill:hover,
+.auth-light-scope textarea[data-slot="textarea"]:-webkit-autofill:focus,
+.auth-light-scope textarea[data-slot="textarea"]:-webkit-autofill:active,
+.auth-light-scope [data-slot="input-group-control"]:-webkit-autofill,
+.auth-light-scope [data-slot="input-group-control"]:-webkit-autofill:hover,
+.auth-light-scope [data-slot="input-group-control"]:-webkit-autofill:focus,
+.auth-light-scope [data-slot="input-group-control"]:-webkit-autofill:active {
+  -webkit-text-fill-color: #000000 !important;
+  -webkit-box-shadow: 0 0 0 1000px var(--color-brand-50) inset !important;
+  box-shadow: 0 0 0 1000px var(--color-brand-50) inset !important;
+  caret-color: #000000 !important;
+  transition: background-color 9999s ease-in-out 0s, color 9999s ease-in-out 0s;
+}
+
+/* Firefox / standards-compliant `:autofill` pseudo-class. Firefox honours
+   background-color directly, so we just re-pin our colors. */
+.auth-light-scope input[data-slot="input"]:autofill,
+.auth-light-scope textarea[data-slot="textarea"]:autofill,
+.auth-light-scope [data-slot="input-group-control"]:autofill {
+  background-color: var(--color-brand-50) !important;
+  color: #000000 !important;
+}
+
+/* ---------------------------------------------------------------------------
+   Auth-page motifs
+   --------------------------------------------------------------------------- */
+
+@keyframes auth-float-soft {
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--tilt, 0deg));
+  }
+  50% {
+    transform: translateY(-10px) rotate(var(--tilt, 0deg));
+  }
+}
+
+@keyframes auth-pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.45);
+  }
+  100% {
+    box-shadow: 0 0 0 22px rgba(255, 255, 255, 0);
+  }
+}
+
+@keyframes auth-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes auth-bar-fill {
+  0% {
+    width: 18%;
+  }
+  100% {
+    width: 78%;
+  }
+}
+
+@keyframes auth-logo-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1.5deg);
+  }
+  50% {
+    transform: translateY(-14px) rotate(1.5deg);
+  }
+}
+
+@keyframes auth-glow-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes auth-orbit {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -10px, 0);
+  }
+}
+
+@keyframes auth-twinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes auth-drift {
+  0% {
+    transform: rotate(0deg) translateY(0);
+  }
+  50% {
+    transform: rotate(180deg) translateY(-6px);
+  }
+  100% {
+    transform: rotate(360deg) translateY(0);
+  }
+}
+
+@keyframes landing-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+.auth-grid-pattern {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.auth-noise {
+  background-image:
+    radial-gradient(rgba(255, 255, 255, 0.18) 1px, transparent 1px);
+  background-size: 5px 5px;
+  background-position: 0 0;
+}
