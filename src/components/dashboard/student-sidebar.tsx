@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { SidebarNavItem } from "./sidebar-nav-item";
 import { STUDENT_NAV_ITEMS } from "./student-sidebar-config";
 import LogoHorizontal from "@/assets/images/nla-horizontal-logo.webp";
+import LogoSquare from "@/assets/images/nla-logo.webp";
 
 type Props = {
   collapsed: boolean;
@@ -44,7 +45,7 @@ export function StudentSidebar({ collapsed, variant = "rail", onNavigate }: Prop
         >
           {isCollapsed ? (
             <Image
-              src="/nla-logo.webp"
+              src={LogoSquare} placeholder="blur"
               alt="NextLevel Academy"
               width={48}
               height={48}

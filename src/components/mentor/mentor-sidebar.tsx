@@ -8,6 +8,7 @@ import { SidebarNavItem } from "@/components/dashboard/sidebar-nav-item";
 
 import { MENTOR_NAV_ITEMS } from "./mentor-sidebar-config";
 import LogoHorizontal from "@/assets/images/nla-horizontal-logo.webp";
+import LogoSquare from "@/assets/images/nla-logo.webp";
 
 type Props = {
   collapsed: boolean;
@@ -48,7 +49,7 @@ export function MentorSidebar({
         >
           {isCollapsed ? (
             <Image
-              src="/nla-logo.webp"
+              src={LogoSquare} placeholder="blur"
               alt="NextLevel Academy"
               width={48}
               height={48}

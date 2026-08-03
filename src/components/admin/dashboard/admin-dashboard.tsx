@@ -14,13 +14,22 @@ import { idr } from "@/lib/format";
 import { StudentPageContainer } from "@/components/dashboard/shared/student-page-container";
 import type { AdminDashboardData } from "@/lib/admin-dashboard-types";
 
+import dynamic from "next/dynamic";
+
 import { AdminHero } from "./admin-hero";
 import { AttentionCard } from "./attention-card";
 import { MetricCard, type MetricCardProps } from "./metric-card";
-import { MonthlyBarChart } from "./monthly-bar-chart";
 import { RecentTransactionsCard } from "./recent-transactions-card";
-import { RevenueAreaChart } from "./revenue-area-chart";
 import { TopCoursesCard } from "./top-courses-card";
+
+const MonthlyBarChart = dynamic(
+  () => import("./monthly-bar-chart").then((mod) => mod.MonthlyBarChart),
+  { ssr: false },
+);
+const RevenueAreaChart = dynamic(
+  () => import("./revenue-area-chart").then((mod) => mod.RevenueAreaChart),
+  { ssr: false },
+);
 
 type Props = {
   firstName: string;

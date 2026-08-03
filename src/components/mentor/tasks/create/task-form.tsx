@@ -17,8 +17,14 @@ import {
   type CreateTaskInput,
 } from "@/lib/validators/mentor-tasks";
 
+import dynamic from "next/dynamic";
+
 import { DeadlinePicker } from "./deadline-picker";
-import { TaskDescriptionEditor } from "./task-description-editor";
+
+const TaskDescriptionEditor = dynamic(
+  () => import("./task-description-editor").then((mod) => mod.TaskDescriptionEditor),
+  { ssr: false },
+);
 
 export type AttachmentAction = "keep" | "remove" | "replace";
 

@@ -10,12 +10,18 @@ import { Switch } from "@/components/ui/switch";
 import { slugify } from "@/lib/slugify";
 import type { CourseGeneralInput } from "@/lib/validations/admin-course";
 
+import dynamic from "next/dynamic";
+
 import { Field } from "./field";
 import { SectionCard } from "./section-card";
-import { RichTextEditor } from "./rich-text-editor";
 import { ImageUploader } from "./image-uploader";
 import { BenefitListField } from "./benefit-list-field";
 import { FaqListField } from "./faq-list-field";
+
+const RichTextEditor = dynamic(
+  () => import("./rich-text-editor").then((mod) => mod.RichTextEditor),
+  { ssr: false },
+);
 
 type Props = {
   mode: "create" | "edit";

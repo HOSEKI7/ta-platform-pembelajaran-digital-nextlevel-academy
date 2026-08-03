@@ -16,9 +16,15 @@ import {
 import { useVideoUpload } from "@/hooks/use-video-upload";
 import type { StepVideoPayload } from "@/hooks/use-admin-curriculum";
 
+import dynamic from "next/dynamic";
+
 import { Field } from "./field";
-import { RichTextEditor } from "./rich-text-editor";
 import { VideoUploader } from "./video-uploader";
+
+const RichTextEditor = dynamic(
+  () => import("./rich-text-editor").then((mod) => mod.RichTextEditor),
+  { ssr: false },
+);
 
 export type VideoStepInitial = {
   title: string;

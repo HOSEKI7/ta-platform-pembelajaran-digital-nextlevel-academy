@@ -5,6 +5,7 @@ import Script from "next/script";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import LogoSquare from "@/assets/images/nla-logo.webp";
 
 import "./globals.css";
 
@@ -47,9 +48,9 @@ export const metadata: Metadata = {
   publisher: "NextLevel Academy",
   formatDetection: { email: false, address: false, telephone: false },
   icons: {
-    icon: [{ url: "/nla-logo.webp", type: "image/webp" }],
-    shortcut: "/nla-logo.webp",
-    apple: "/nla-logo.webp",
+    icon: [{ url: LogoSquare.src, type: "image/webp" }],
+    shortcut: LogoSquare.src,
+    apple: LogoSquare.src,
   },
 };
 

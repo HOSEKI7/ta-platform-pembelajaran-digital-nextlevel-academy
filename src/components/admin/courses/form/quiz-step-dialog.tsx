@@ -16,9 +16,15 @@ import {
 } from "@/components/ui/dialog";
 import type { StepQuizPayload } from "@/hooks/use-admin-curriculum";
 
+import dynamic from "next/dynamic";
+
 import { Field } from "./field";
-import { RichTextEditor } from "./rich-text-editor";
 import { QuizQuestionEditor, type QuizQuestionDraft } from "./quiz-question-editor";
+
+const RichTextEditor = dynamic(
+  () => import("./rich-text-editor").then((mod) => mod.RichTextEditor),
+  { ssr: false },
+);
 
 export type QuizStepInitial = {
   title: string;
