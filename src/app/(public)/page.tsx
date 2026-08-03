@@ -11,6 +11,8 @@ import { StatsStripSection } from "@/components/public/landing/stats-strip-secti
 import { TestimonialsSection } from "@/components/public/landing/testimonials-section";
 import { LandingJsonLd } from "@/components/public/landing/landing-jsonld";
 
+import Logo3D from "@/assets/images/nla-3d-logo.webp";
+
 export const revalidate = 300;
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://nextlevel.academy";
@@ -41,7 +43,7 @@ export const metadata: Metadata = {
       "Platform e-learning Indonesia dengan gamifikasi EXP/level/voucher & sistem magang terintegrasi.",
     images: [
       {
-        url: "/nla-3d-logo.webp",
+        url: Logo3D.src,
         width: 1200,
         height: 630,
         alt: "NextLevel Academy",
@@ -53,7 +55,7 @@ export const metadata: Metadata = {
     title: "NextLevel Academy — Elevate Your Skills, Reach The Next Level",
     description:
       "Gamifikasi EXP + magang terintegrasi. Akses seumur hidup. Mulai gratis.",
-    images: ["/nla-3d-logo.webp"],
+    images: [Logo3D.src],
   },
   robots: {
     index: true,

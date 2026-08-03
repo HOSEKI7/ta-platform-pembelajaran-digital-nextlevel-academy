@@ -11,6 +11,7 @@ import { useAdminNavIndicatorsQuery } from "@/hooks/use-admin-nav-indicators";
 
 import { ADMIN_NAV_ITEMS, findActiveGroupLabel } from "./admin-sidebar-config";
 import { AdminNavGroupItem } from "./admin-nav-group";
+import LogoHorizontal from "@/assets/images/nla-horizontal-logo.webp";
 
 type Props = {
   collapsed: boolean;
@@ -81,7 +82,7 @@ export function AdminSidebar({ collapsed, variant = "rail", onNavigate }: Props)
             />
           ) : (
             <Image
-              src="/nla-horizontal-logo.webp"
+              src={LogoHorizontal} placeholder="blur"
               alt="NextLevel Academy"
               width={1397}
               height={351}

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
 
 import { SiteContainer } from "@/components/public/site-container";
+import Logo3D from "@/assets/images/nla-3d-logo.webp";
 
 export const metadata = { title: "Blog · Segera hadir" };
 
@@ -78,7 +79,7 @@ export default function BlogIndexPage() {
               }}
             />
             <Image
-              src="/nla-3d-logo.webp"
+              src={Logo3D} placeholder="blur"
               alt=""
               width={320}
               height={320}

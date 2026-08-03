@@ -9,6 +9,7 @@ import { SiteContainer } from "../site-container";
 import { CountUp } from "./count-up";
 import { HeroParallax } from "./hero-parallax";
 import { HeroStatsSkeleton } from "./landing-skeletons";
+import Logo3D from "@/assets/images/nla-3d-logo.webp";
 
 export function HeroSection() {
   return (
@@ -142,7 +143,7 @@ export function HeroSection() {
 
             <div className="relative">
               <Image
-                src="/nla-3d-logo.webp"
+                src={Logo3D} placeholder="blur"
                 alt="NextLevel Academy 3D"
                 width={460}
                 height={460}

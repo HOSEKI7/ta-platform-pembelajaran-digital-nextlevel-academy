@@ -17,7 +17,9 @@ import sharp from "sharp";
 
 const LOGO_PATH = path.join(
   process.cwd(),
-  "public",
+  "src",
+  "assets",
+  "images",
   "nla-horizontal-logo.webp",
 );
 

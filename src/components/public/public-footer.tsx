@@ -6,6 +6,7 @@ import { loadPlatformInfo } from "@/lib/platform-info";
 
 import { SiteContainer } from "./site-container";
 import { NewsletterForm } from "./newsletter-form";
+import LogoHorizontal from "@/assets/images/nla-horizontal-logo.webp";
 import {
   InstagramGlyph,
   LinkedinGlyph,
@@ -113,7 +114,7 @@ export async function PublicFooter() {
               className="inline-flex items-center"
             >
               <Image
-                src="/nla-horizontal-logo.webp"
+                src={LogoHorizontal} placeholder="blur"
                 alt={platformName}
                 width={1397}
                 height={351}

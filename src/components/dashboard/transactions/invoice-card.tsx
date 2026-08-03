@@ -3,6 +3,8 @@ import { formatDateID, formatTimeID } from "@/lib/format-date";
 import { idr } from "@/lib/format";
 import { formatMidtransPaymentType } from "@/lib/midtrans-payment-type";
 
+import Logo from "@/assets/images/nla-logo.webp";
+
 /**
  * Self-contained purchase invoice. Rendered on the detail page AND captured
  * to a PNG on download — so it must hold every relevant fact and contain NO
@@ -46,7 +48,7 @@ export function InvoiceCard({ tx, customer }: Props) {
           <div className="flex items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element -- plain <img> required so html-to-image reliably inlines the logo into the downloaded PNG (next/image lazy-loading/srcset breaks the capture). */}
             <img
-              src="/nla-logo.webp"
+              src={Logo.src}
               alt="NextLevel Academy"
               width={40}
               height={40}

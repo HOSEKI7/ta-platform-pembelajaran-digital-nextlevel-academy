@@ -6,6 +6,8 @@
  * single <script type="application/ld+json"> as recommended by Google.
  */
 
+import Logo3D from "@/assets/images/nla-3d-logo.webp";
+
 type Props = {
   siteUrl: string;
 };
@@ -17,7 +19,7 @@ export function LandingJsonLd({ siteUrl }: Props) {
     name: "NextLevel Academy",
     alternateName: "NextLevel",
     url: siteUrl,
-    logo: `${siteUrl}/nla-3d-logo.webp`,
+    logo: `${siteUrl}${Logo3D.src}`,
     description:
       "Platform e-learning Indonesia dengan gamifikasi EXP/level/voucher dan sistem magang terintegrasi.",
     address: {

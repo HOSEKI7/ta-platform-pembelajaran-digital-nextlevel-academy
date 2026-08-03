@@ -4,6 +4,7 @@ import { ArrowRight, Compass, Gauge, Sparkles, Users } from "lucide-react";
 
 import { loadPlatformInfo } from "@/lib/platform-info";
 import { SiteContainer } from "@/components/public/site-container";
+import Logo3D from "@/assets/images/nla-3d-logo.webp";
 
 export const metadata = { title: "Tentang Kami" };
 export const revalidate = 300;
@@ -103,7 +104,7 @@ export default async function AboutPage() {
                 }}
               />
               <Image
-                src="/nla-3d-logo.webp"
+                src={Logo3D} placeholder="blur"
                 alt=""
                 width={320}
                 height={320}

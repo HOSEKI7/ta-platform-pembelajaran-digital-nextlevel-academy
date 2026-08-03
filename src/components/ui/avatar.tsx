@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
 import { Avatar as AvatarPrimitive } from "@base-ui/react/avatar"
 
 import { cn } from "@/lib/utils"
@@ -25,6 +26,8 @@ function Avatar({
   )
 }
 
+
+
 function AvatarImage({ className, ...props }: AvatarPrimitive.Image.Props) {
   return (
     <AvatarPrimitive.Image
@@ -32,6 +35,15 @@ function AvatarImage({ className, ...props }: AvatarPrimitive.Image.Props) {
       className={cn(
         "aspect-square size-full rounded-full object-cover",
         className
+      )}
+      render={(renderProps) => (
+        <Image
+          {...renderProps}
+          src={(props.src as string) || ""}
+          alt={props.alt || ""}
+          width={128}
+          height={128}
+        />
       )}
       {...props}
     />

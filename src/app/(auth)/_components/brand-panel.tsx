@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { Sparkles, Tag, Trophy } from "lucide-react";
+import Logo3D from "@/assets/images/nla-3d-logo.webp";
 
 /**
  * Right-side brand panel for the auth split-screen. Pure visual showcase —
@@ -78,7 +79,7 @@ export function AuthBrandPanel() {
 
           {/* 3D logo hero */}
           <Image
-            src="/nla-3d-logo.webp"
+            src={Logo3D} placeholder="blur"
             alt=""
             width={420}
             height={420}

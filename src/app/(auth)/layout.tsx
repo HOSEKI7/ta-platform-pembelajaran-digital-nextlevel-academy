@@ -4,6 +4,7 @@ import Link from "next/link";
 import { AuthBrandPanel } from "./_components/brand-panel";
 import { ForceLightTheme } from "./_components/force-light-theme";
 import "./auth.css";
+import LogoHorizontal from "@/assets/images/nla-horizontal-logo.webp";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   // ponytail: auth-page redirect handled by proxy.ts (cookie-only, no DB).
@@ -38,7 +39,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             className="-ml-3 inline-flex w-fit shrink-0 items-center sm:-ml-5 lg:-ml-10 min-[1920px]:-ml-14"
           >
             <Image
-              src="/nla-horizontal-logo.webp"
+              src={LogoHorizontal} placeholder="blur"
               alt="NextLevel Academy"
               width={1397}
               height={351}

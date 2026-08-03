@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { SidebarNavItem } from "@/components/dashboard/sidebar-nav-item";
 
 import { MENTOR_NAV_ITEMS } from "./mentor-sidebar-config";
+import LogoHorizontal from "@/assets/images/nla-horizontal-logo.webp";
 
 type Props = {
   collapsed: boolean;
@@ -56,7 +57,7 @@ export function MentorSidebar({
             />
           ) : (
             <Image
-              src="/nla-horizontal-logo.webp"
+              src={LogoHorizontal} placeholder="blur"
               alt="NextLevel Academy"
               width={1397}
               height={351}

@@ -7,6 +7,7 @@ import { peekAdminInvite, type AdminInvitePeekStatus } from "@/lib/admin-account
 
 import { ForceLightTheme } from "@/app/(auth)/_components/force-light-theme";
 import { AcceptInviteForm } from "@/components/admin-invite/accept-invite-form";
+import LogoHorizontal from "@/assets/images/nla-horizontal-logo.webp";
 
 export const dynamic = "force-dynamic";
 
@@ -54,7 +55,7 @@ export default async function AcceptAdminInvitePage({ searchParams }: Props) {
             className="inline-flex"
           >
             <Image
-              src="/nla-horizontal-logo.webp"
+              src={LogoHorizontal} placeholder="blur"
               alt="NextLevel Academy"
               width={1397}
               height={351}

@@ -22,6 +22,7 @@ import {
 import { LogoutConfirmDialog } from "@/components/dashboard/logout-confirm-dialog";
 
 import { PUBLIC_NAV_LINKS, dashboardHrefFor, roleLabel } from "./public-nav-config";
+import LogoHorizontal from "@/assets/images/nla-horizontal-logo.webp";
 
 type Props = {
   user: {
@@ -88,7 +89,7 @@ export function MobileNav({ user }: Props) {
               className="inline-flex items-center"
             >
               <Image
-                src="/nla-horizontal-logo.webp"
+                src={LogoHorizontal} placeholder="blur"
                 alt="NextLevel Academy"
                 width={1397}
                 height={351}

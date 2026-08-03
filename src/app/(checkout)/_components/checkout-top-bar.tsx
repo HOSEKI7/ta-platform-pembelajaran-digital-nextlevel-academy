@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Clock3, ShieldCheck } from "lucide-react";
+import LogoHorizontal from "@/assets/images/nla-horizontal-logo.webp";
 
 /**
  * Minimal chrome that sits above the checkout content. Intentionally NOT a
@@ -21,7 +22,7 @@ export function CheckoutTopBar() {
           className="-ml-2 inline-flex items-center"
         >
           <Image
-            src="/nla-horizontal-logo.webp"
+            src={LogoHorizontal} placeholder="blur"
             alt="NextLevel Academy"
             width={1397}
             height={351}

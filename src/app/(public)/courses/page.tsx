@@ -18,6 +18,8 @@ import { CatalogJsonLd } from "@/components/public/landing/catalog-jsonld";
 import { FeaturedCoursesSkeleton } from "@/components/public/landing/landing-skeletons";
 import { SiteContainer } from "@/components/public/site-container";
 
+import Logo3D from "@/assets/images/nla-3d-logo.webp";
+
 export const revalidate = 60;
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://nextlevel.academy";
@@ -67,7 +69,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
       description,
       images: [
         {
-          url: "/nla-3d-logo.webp",
+          url: Logo3D.src,
           width: 1200,
           height: 630,
           alt: "Katalog kursus NextLevel Academy",
@@ -78,7 +80,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
       card: "summary_large_image",
       title,
       description,
-      images: ["/nla-3d-logo.webp"],
+      images: [Logo3D.src],
     },
     robots: { index: true, follow: true },
   };

@@ -12,6 +12,7 @@ import { MobileNav } from "./mobile-nav";
 import { NavLink } from "./nav-link";
 import { NavScrollEffect } from "./nav-scroll-effect";
 import { PUBLIC_NAV_LINKS, dashboardHrefFor } from "./public-nav-config";
+import LogoHorizontal from "@/assets/images/nla-horizontal-logo.webp";
 
 export function PublicNavbar() {
   const { data: session } = useSession();
@@ -57,7 +58,7 @@ export function PublicNavbar() {
             className="group inline-flex shrink-0 items-center"
           >
             <Image
-              src="/nla-horizontal-logo.webp"
+              src={LogoHorizontal} placeholder="blur"
               alt="NextLevel Academy"
               width={1397}
               height={351}
