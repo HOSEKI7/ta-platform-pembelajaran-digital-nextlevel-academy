@@ -147,7 +147,7 @@ export function TaskForm({
       <Field
         label="Deskripsi Tugas"
         error={errors.description?.message}
-        hint="Tulis instruksi selengkap mungkin (maks. 5000 karakter, 1 gambar maks 2 MB)."
+        hint="Tulis instruksi selengkap mungkin (maks. 10000 karakter, 1 gambar maks 2 MB)."
       >
         <TaskDescriptionEditor
           initialHTML={initial?.description}

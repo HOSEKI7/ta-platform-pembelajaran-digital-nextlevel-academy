@@ -19,6 +19,9 @@ export function htmlToPlainLength(html: string): number {
     .trim().length;
 }
 
+export const TASK_DESCRIPTION_PLAIN_MAX = 10_000;
+export const TASK_DESCRIPTION_HTML_MAX = 30_000;
+
 export const titleSchema = z
   .string()
   .trim()
@@ -27,12 +30,12 @@ export const titleSchema = z
 
 export const descriptionSchema = z
   .string()
-  .max(15_000, "Deskripsi HTML terlalu panjang.")
+  .max(TASK_DESCRIPTION_HTML_MAX, "Deskripsi HTML terlalu panjang.")
   .refine((html) => htmlToPlainLength(html) > 0, {
     message: "Deskripsi tugas wajib diisi.",
   })
-  .refine((html) => htmlToPlainLength(html) <= 5000, {
-    message: "Deskripsi tugas maksimal 5000 karakter.",
+  .refine((html) => htmlToPlainLength(html) <= TASK_DESCRIPTION_PLAIN_MAX, {
+    message: `Deskripsi tugas maksimal ${TASK_DESCRIPTION_PLAIN_MAX} karakter.`,
   });
 
 export const deadlineSchema = z

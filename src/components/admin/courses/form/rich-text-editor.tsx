@@ -4,16 +4,32 @@ import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Placeholder } from "@tiptap/extension-placeholder";
 import {
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  AlignJustify,
   Bold,
+  Code,
   Heading2,
   Heading3,
+  Highlighter,
   Italic,
   List,
   ListOrdered,
   Loader2,
+  Minus,
   Quote,
   Strikethrough,
+  Subscript as SubscriptIcon,
+  Superscript as SuperscriptIcon,
+  Terminal,
+  Underline as UnderlineIcon,
 } from "lucide-react";
+import Underline from "@tiptap/extension-underline";
+import Superscript from "@tiptap/extension-superscript";
+import Subscript from "@tiptap/extension-subscript";
+import Highlight from "@tiptap/extension-highlight";
+import TextAlign from "@tiptap/extension-text-align";
 
 import { cn } from "@/lib/utils";
 
@@ -44,7 +60,15 @@ export function RichTextEditor({
   const editor = useEditor({
     immediatelyRender: false,
     content: initialHTML,
-    extensions: [StarterKit, Placeholder.configure({ placeholder })],
+    extensions: [
+      StarterKit,
+      Underline,
+      Superscript,
+      Subscript,
+      Highlight,
+      TextAlign.configure({ types: ["heading", "paragraph"] }),
+      Placeholder.configure({ placeholder })
+    ],
     editorProps: {
       attributes: {
         class: cn(
@@ -84,14 +108,42 @@ export function RichTextEditor({
         <Btn label="Miring" active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()}>
           <Italic className="size-4" strokeWidth={2.4} />
         </Btn>
+        <Btn label="Garis Bawah" active={editor.isActive("underline")} onClick={() => editor.chain().focus().toggleUnderline().run()}>
+          <UnderlineIcon className="size-4" strokeWidth={2.4} />
+        </Btn>
         <Btn label="Coret" active={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()}>
           <Strikethrough className="size-4" strokeWidth={2.4} />
         </Btn>
+        <Btn label="Kode Sebaris" active={editor.isActive("code")} onClick={() => editor.chain().focus().toggleCode().run()}>
+          <Code className="size-4" strokeWidth={2.4} />
+        </Btn>
+        <Btn label="Sorot" active={editor.isActive("highlight")} onClick={() => editor.chain().focus().toggleHighlight().run()}>
+          <Highlighter className="size-4" strokeWidth={2.4} />
+        </Btn>
+        <Btn label="Superskrip" active={editor.isActive("superscript")} onClick={() => editor.chain().focus().toggleSuperscript().run()}>
+          <SuperscriptIcon className="size-4" strokeWidth={2.4} />
+        </Btn>
+        <Btn label="Subskrip" active={editor.isActive("subscript")} onClick={() => editor.chain().focus().toggleSubscript().run()}>
+          <SubscriptIcon className="size-4" strokeWidth={2.4} />
+        </Btn>
         <Divider />
-        <Btn label="Judul" active={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>
+        <Btn label="Rata Kiri" active={editor.isActive({ textAlign: "left" })} onClick={() => editor.chain().focus().setTextAlign("left").run()}>
+          <AlignLeft className="size-4" strokeWidth={2.4} />
+        </Btn>
+        <Btn label="Rata Tengah" active={editor.isActive({ textAlign: "center" })} onClick={() => editor.chain().focus().setTextAlign("center").run()}>
+          <AlignCenter className="size-4" strokeWidth={2.4} />
+        </Btn>
+        <Btn label="Rata Kanan" active={editor.isActive({ textAlign: "right" })} onClick={() => editor.chain().focus().setTextAlign("right").run()}>
+          <AlignRight className="size-4" strokeWidth={2.4} />
+        </Btn>
+        <Btn label="Rata Kiri Kanan" active={editor.isActive({ textAlign: "justify" })} onClick={() => editor.chain().focus().setTextAlign("justify").run()}>
+          <AlignJustify className="size-4" strokeWidth={2.4} />
+        </Btn>
+        <Divider />
+        <Btn label="Judul 2" active={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>
           <Heading2 className="size-4" strokeWidth={2.4} />
         </Btn>
-        <Btn label="Subjudul" active={editor.isActive("heading", { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}>
+        <Btn label="Judul 3" active={editor.isActive("heading", { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}>
           <Heading3 className="size-4" strokeWidth={2.4} />
         </Btn>
         <Divider />
@@ -103,6 +155,12 @@ export function RichTextEditor({
         </Btn>
         <Btn label="Kutipan" active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()}>
           <Quote className="size-4" strokeWidth={2.4} />
+        </Btn>
+        <Btn label="Blok Kode" active={editor.isActive("codeBlock")} onClick={() => editor.chain().focus().toggleCodeBlock().run()}>
+          <Terminal className="size-4" strokeWidth={2.4} />
+        </Btn>
+        <Btn label="Garis Pemisah" active={false} onClick={() => editor.chain().focus().setHorizontalRule().run()}>
+          <Minus className="size-4" strokeWidth={2.4} />
         </Btn>
       </div>
 
