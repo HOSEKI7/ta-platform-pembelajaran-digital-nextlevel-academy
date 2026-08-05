@@ -147,18 +147,23 @@ export function TaskForm({
       <Field
         label="Deskripsi Tugas"
         error={errors.description?.message}
-        hint="Tulis instruksi selengkap mungkin (maks. 10000 karakter, 1 gambar maks 2 MB)."
+        hint="Tulis instruksi selengkap mungkin (maks. 15000 karakter, 1 gambar maks 2 MB)."
       >
         <TaskDescriptionEditor
           initialHTML={initial?.description}
           disabled={submitting}
           onPendingImageChange={setDescriptionImage}
-          onChange={(html) => setValue("description", html, { shouldValidate: true })}
+          onChange={(html) =>
+            setValue("description", html, { shouldValidate: true })
+          }
         />
       </Field>
 
       {/* Lampiran */}
-      <Field label="Lampiran Pendukung" hint="Opsional · PDF, DOCX, atau ZIP · maksimal 5 MB">
+      <Field
+        label="Lampiran Pendukung"
+        hint="Opsional · PDF, DOCX, atau ZIP · maksimal 5 MB"
+      >
         {hasExisting && attachmentAction === "keep" && initial?.attachment ? (
           <div className="flex items-center gap-3 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-[color:var(--color-surface-border)] dark:bg-[color:var(--color-surface-card)]">
             <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-zinc-100 text-zinc-600 dark:bg-white/10 dark:text-zinc-300">
@@ -261,7 +266,13 @@ export function TaskForm({
       </p>
 
       <div className="flex items-center justify-end gap-3 border-t border-zinc-100 pt-5 dark:border-[color:var(--color-surface-border)]">
-        <Button type="button" variant="ghost" size="lg" disabled={submitting} onClick={onCancel}>
+        <Button
+          type="button"
+          variant="ghost"
+          size="lg"
+          disabled={submitting}
+          onClick={onCancel}
+        >
           Batal
         </Button>
         <Button

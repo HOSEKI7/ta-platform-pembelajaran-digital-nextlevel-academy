@@ -19,7 +19,7 @@ export function htmlToPlainLength(html: string): number {
     .trim().length;
 }
 
-export const TASK_DESCRIPTION_PLAIN_MAX = 10_000;
+export const TASK_DESCRIPTION_PLAIN_MAX = 15_000;
 export const TASK_DESCRIPTION_HTML_MAX = 30_000;
 
 export const titleSchema = z
