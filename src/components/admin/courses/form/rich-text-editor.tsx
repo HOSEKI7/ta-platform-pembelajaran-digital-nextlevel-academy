@@ -32,6 +32,12 @@ import Highlight from "@tiptap/extension-highlight";
 import TextAlign from "@tiptap/extension-text-align";
 
 import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type Props = {
   /** Emits the editor HTML on every change. */
@@ -102,22 +108,22 @@ export function RichTextEditor({
       )}
     >
       <div className="flex flex-wrap items-center gap-0.5 border-b border-zinc-100 bg-zinc-50/70 px-2 py-1.5 dark:border-[color:var(--color-surface-border)] dark:bg-white/[0.03]">
-        <Btn label="Tebal" active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}>
+        <Btn label="Tebal" shortcut="Ctrl + B" active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}>
           <Bold className="size-4" strokeWidth={2.4} />
         </Btn>
-        <Btn label="Miring" active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()}>
+        <Btn label="Miring" shortcut="Ctrl + I" active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()}>
           <Italic className="size-4" strokeWidth={2.4} />
         </Btn>
-        <Btn label="Garis Bawah" active={editor.isActive("underline")} onClick={() => editor.chain().focus().toggleUnderline().run()}>
+        <Btn label="Garis Bawah" shortcut="Ctrl + U" active={editor.isActive("underline")} onClick={() => editor.chain().focus().toggleUnderline().run()}>
           <UnderlineIcon className="size-4" strokeWidth={2.4} />
         </Btn>
-        <Btn label="Coret" active={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()}>
+        <Btn label="Coret" shortcut="Ctrl + Shift + X" active={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()}>
           <Strikethrough className="size-4" strokeWidth={2.4} />
         </Btn>
-        <Btn label="Kode Sebaris" active={editor.isActive("code")} onClick={() => editor.chain().focus().toggleCode().run()}>
+        <Btn label="Kode Sebaris" shortcut="Ctrl + E" active={editor.isActive("code")} onClick={() => editor.chain().focus().toggleCode().run()}>
           <Code className="size-4" strokeWidth={2.4} />
         </Btn>
-        <Btn label="Sorot" active={editor.isActive("highlight")} onClick={() => editor.chain().focus().toggleHighlight().run()}>
+        <Btn label="Sorot" shortcut="Ctrl + Shift + H" active={editor.isActive("highlight")} onClick={() => editor.chain().focus().toggleHighlight().run()}>
           <Highlighter className="size-4" strokeWidth={2.4} />
         </Btn>
         <Btn label="Superskrip" active={editor.isActive("superscript")} onClick={() => editor.chain().focus().toggleSuperscript().run()}>
@@ -127,39 +133,39 @@ export function RichTextEditor({
           <SubscriptIcon className="size-4" strokeWidth={2.4} />
         </Btn>
         <Divider />
-        <Btn label="Rata Kiri" active={editor.isActive({ textAlign: "left" })} onClick={() => editor.chain().focus().setTextAlign("left").run()}>
+        <Btn label="Rata Kiri" shortcut="Ctrl + Shift + L" active={editor.isActive({ textAlign: "left" })} onClick={() => editor.chain().focus().setTextAlign("left").run()}>
           <AlignLeft className="size-4" strokeWidth={2.4} />
         </Btn>
-        <Btn label="Rata Tengah" active={editor.isActive({ textAlign: "center" })} onClick={() => editor.chain().focus().setTextAlign("center").run()}>
+        <Btn label="Rata Tengah" shortcut="Ctrl + Shift + E" active={editor.isActive({ textAlign: "center" })} onClick={() => editor.chain().focus().setTextAlign("center").run()}>
           <AlignCenter className="size-4" strokeWidth={2.4} />
         </Btn>
-        <Btn label="Rata Kanan" active={editor.isActive({ textAlign: "right" })} onClick={() => editor.chain().focus().setTextAlign("right").run()}>
+        <Btn label="Rata Kanan" shortcut="Ctrl + Shift + R" active={editor.isActive({ textAlign: "right" })} onClick={() => editor.chain().focus().setTextAlign("right").run()}>
           <AlignRight className="size-4" strokeWidth={2.4} />
         </Btn>
-        <Btn label="Rata Kiri Kanan" active={editor.isActive({ textAlign: "justify" })} onClick={() => editor.chain().focus().setTextAlign("justify").run()}>
+        <Btn label="Rata Kiri Kanan" shortcut="Ctrl + Shift + J" active={editor.isActive({ textAlign: "justify" })} onClick={() => editor.chain().focus().setTextAlign("justify").run()}>
           <AlignJustify className="size-4" strokeWidth={2.4} />
         </Btn>
         <Divider />
-        <Btn label="Judul 2" active={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>
+        <Btn label="Judul 2" shortcut="Ctrl + Alt + 2" active={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>
           <Heading2 className="size-4" strokeWidth={2.4} />
         </Btn>
-        <Btn label="Judul 3" active={editor.isActive("heading", { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}>
+        <Btn label="Judul 3" shortcut="Ctrl + Alt + 3" active={editor.isActive("heading", { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}>
           <Heading3 className="size-4" strokeWidth={2.4} />
         </Btn>
         <Divider />
-        <Btn label="Daftar poin" active={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()}>
+        <Btn label="Daftar poin" shortcut="Ctrl + Shift + 8" active={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()}>
           <List className="size-4" strokeWidth={2.4} />
         </Btn>
-        <Btn label="Daftar nomor" active={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()}>
+        <Btn label="Daftar nomor" shortcut="Ctrl + Shift + 7" active={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()}>
           <ListOrdered className="size-4" strokeWidth={2.4} />
         </Btn>
-        <Btn label="Kutipan" active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()}>
+        <Btn label="Kutipan" shortcut="Ctrl + Shift + B" active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()}>
           <Quote className="size-4" strokeWidth={2.4} />
         </Btn>
-        <Btn label="Blok Kode" active={editor.isActive("codeBlock")} onClick={() => editor.chain().focus().toggleCodeBlock().run()}>
+        <Btn label="Blok Kode" shortcut="Ctrl + Alt + C" active={editor.isActive("codeBlock")} onClick={() => editor.chain().focus().toggleCodeBlock().run()}>
           <Terminal className="size-4" strokeWidth={2.4} />
         </Btn>
-        <Btn label="Garis Pemisah" active={false} onClick={() => editor.chain().focus().setHorizontalRule().run()}>
+        <Btn label="Garis Pemisah" shortcut="Ketik ---" active={false} onClick={() => editor.chain().focus().setHorizontalRule().run()}>
           <Minus className="size-4" strokeWidth={2.4} />
         </Btn>
       </div>
@@ -175,20 +181,21 @@ function Divider() {
 
 function Btn({
   label,
+  shortcut,
   active,
   onClick,
   children,
 }: {
   label: string;
+  shortcut?: string;
   active: boolean;
   onClick: () => void;
   children: React.ReactNode;
 }) {
-  return (
+  const button = (
     <button
       type="button"
       aria-label={label}
-      title={label}
       aria-pressed={active}
       onClick={onClick}
       className={cn(
@@ -200,6 +207,20 @@ function Btn({
     >
       {children}
     </button>
+  );
+
+  return (
+    <TooltipProvider delay={100}>
+      <Tooltip>
+        <TooltipTrigger render={button} />
+        <TooltipContent side="top" sideOffset={6} className="flex flex-col items-center gap-0.5 px-2 py-1 text-center">
+          <span className="font-semibold text-xs">{label}</span>
+          {shortcut ? (
+            <span className="font-mono text-[10px] opacity-80 tracking-tight">{shortcut}</span>
+          ) : null}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
 

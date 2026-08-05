@@ -36,6 +36,12 @@ import TextAlign from "@tiptap/extension-text-align";
 import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const ACCEPT = "image/png,image/jpeg,image/webp,image/gif";
 const MAX_BYTES = 2 * 1024 * 1024;
@@ -225,22 +231,22 @@ export function TaskDescriptionEditor({
     >
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-0.5 border-b border-zinc-100 bg-zinc-50/70 px-2 py-1.5 dark:border-[color:var(--color-surface-border)] dark:bg-white/[0.03]">
-        <ToolbarButton label="Tebal" active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}>
+        <ToolbarButton label="Tebal" shortcut="Ctrl + B" active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}>
           <Bold className="size-4" strokeWidth={2.4} />
         </ToolbarButton>
-        <ToolbarButton label="Miring" active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()}>
+        <ToolbarButton label="Miring" shortcut="Ctrl + I" active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()}>
           <Italic className="size-4" strokeWidth={2.4} />
         </ToolbarButton>
-        <ToolbarButton label="Garis Bawah" active={editor.isActive("underline")} onClick={() => editor.chain().focus().toggleUnderline().run()}>
+        <ToolbarButton label="Garis Bawah" shortcut="Ctrl + U" active={editor.isActive("underline")} onClick={() => editor.chain().focus().toggleUnderline().run()}>
           <UnderlineIcon className="size-4" strokeWidth={2.4} />
         </ToolbarButton>
-        <ToolbarButton label="Coret" active={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()}>
+        <ToolbarButton label="Coret" shortcut="Ctrl + Shift + X" active={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()}>
           <Strikethrough className="size-4" strokeWidth={2.4} />
         </ToolbarButton>
-        <ToolbarButton label="Kode Sebaris" active={editor.isActive("code")} onClick={() => editor.chain().focus().toggleCode().run()}>
+        <ToolbarButton label="Kode Sebaris" shortcut="Ctrl + E" active={editor.isActive("code")} onClick={() => editor.chain().focus().toggleCode().run()}>
           <Code className="size-4" strokeWidth={2.4} />
         </ToolbarButton>
-        <ToolbarButton label="Sorot" active={editor.isActive("highlight")} onClick={() => editor.chain().focus().toggleHighlight().run()}>
+        <ToolbarButton label="Sorot" shortcut="Ctrl + Shift + H" active={editor.isActive("highlight")} onClick={() => editor.chain().focus().toggleHighlight().run()}>
           <Highlighter className="size-4" strokeWidth={2.4} />
         </ToolbarButton>
         <ToolbarButton label="Superskrip" active={editor.isActive("superscript")} onClick={() => editor.chain().focus().toggleSuperscript().run()}>
@@ -250,39 +256,39 @@ export function TaskDescriptionEditor({
           <SubscriptIcon className="size-4" strokeWidth={2.4} />
         </ToolbarButton>
         <Divider />
-        <ToolbarButton label="Rata Kiri" active={editor.isActive({ textAlign: "left" })} onClick={() => editor.chain().focus().setTextAlign("left").run()}>
+        <ToolbarButton label="Rata Kiri" shortcut="Ctrl + Shift + L" active={editor.isActive({ textAlign: "left" })} onClick={() => editor.chain().focus().setTextAlign("left").run()}>
           <AlignLeft className="size-4" strokeWidth={2.4} />
         </ToolbarButton>
-        <ToolbarButton label="Rata Tengah" active={editor.isActive({ textAlign: "center" })} onClick={() => editor.chain().focus().setTextAlign("center").run()}>
+        <ToolbarButton label="Rata Tengah" shortcut="Ctrl + Shift + E" active={editor.isActive({ textAlign: "center" })} onClick={() => editor.chain().focus().setTextAlign("center").run()}>
           <AlignCenter className="size-4" strokeWidth={2.4} />
         </ToolbarButton>
-        <ToolbarButton label="Rata Kanan" active={editor.isActive({ textAlign: "right" })} onClick={() => editor.chain().focus().setTextAlign("right").run()}>
+        <ToolbarButton label="Rata Kanan" shortcut="Ctrl + Shift + R" active={editor.isActive({ textAlign: "right" })} onClick={() => editor.chain().focus().setTextAlign("right").run()}>
           <AlignRight className="size-4" strokeWidth={2.4} />
         </ToolbarButton>
-        <ToolbarButton label="Rata Kiri Kanan" active={editor.isActive({ textAlign: "justify" })} onClick={() => editor.chain().focus().setTextAlign("justify").run()}>
+        <ToolbarButton label="Rata Kiri Kanan" shortcut="Ctrl + Shift + J" active={editor.isActive({ textAlign: "justify" })} onClick={() => editor.chain().focus().setTextAlign("justify").run()}>
           <AlignJustify className="size-4" strokeWidth={2.4} />
         </ToolbarButton>
         <Divider />
-        <ToolbarButton label="Judul 2" active={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>
+        <ToolbarButton label="Judul 2" shortcut="Ctrl + Alt + 2" active={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>
           <Heading2 className="size-4" strokeWidth={2.4} />
         </ToolbarButton>
-        <ToolbarButton label="Judul 3" active={editor.isActive("heading", { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}>
+        <ToolbarButton label="Judul 3" shortcut="Ctrl + Alt + 3" active={editor.isActive("heading", { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}>
           <Heading3 className="size-4" strokeWidth={2.4} />
         </ToolbarButton>
         <Divider />
-        <ToolbarButton label="Daftar poin" active={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()}>
+        <ToolbarButton label="Daftar poin" shortcut="Ctrl + Shift + 8" active={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()}>
           <List className="size-4" strokeWidth={2.4} />
         </ToolbarButton>
-        <ToolbarButton label="Daftar nomor" active={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()}>
+        <ToolbarButton label="Daftar nomor" shortcut="Ctrl + Shift + 7" active={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()}>
           <ListOrdered className="size-4" strokeWidth={2.4} />
         </ToolbarButton>
-        <ToolbarButton label="Kutipan" active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()}>
+        <ToolbarButton label="Kutipan" shortcut="Ctrl + Shift + B" active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()}>
           <Quote className="size-4" strokeWidth={2.4} />
         </ToolbarButton>
-        <ToolbarButton label="Blok Kode" active={editor.isActive("codeBlock")} onClick={() => editor.chain().focus().toggleCodeBlock().run()}>
+        <ToolbarButton label="Blok Kode" shortcut="Ctrl + Alt + C" active={editor.isActive("codeBlock")} onClick={() => editor.chain().focus().toggleCodeBlock().run()}>
           <Terminal className="size-4" strokeWidth={2.4} />
         </ToolbarButton>
-        <ToolbarButton label="Garis Pemisah" active={false} onClick={() => editor.chain().focus().setHorizontalRule().run()}>
+        <ToolbarButton label="Garis Pemisah" shortcut="Ketik ---" active={false} onClick={() => editor.chain().focus().setHorizontalRule().run()}>
           <Minus className="size-4" strokeWidth={2.4} />
         </ToolbarButton>
         <Divider />
@@ -319,22 +325,23 @@ function Divider() {
 
 function ToolbarButton({
   label,
+  shortcut,
   active,
   disabled,
   onClick,
   children,
 }: {
   label: string;
+  shortcut?: string;
   active: boolean;
   disabled?: boolean;
   onClick: () => void;
   children: React.ReactNode;
 }) {
-  return (
+  const button = (
     <button
       type="button"
       aria-label={label}
-      title={label}
       aria-pressed={active}
       disabled={disabled}
       onClick={onClick}
@@ -347,5 +354,19 @@ function ToolbarButton({
     >
       {children}
     </button>
+  );
+
+  return (
+    <TooltipProvider delay={100}>
+      <Tooltip>
+        <TooltipTrigger render={button} />
+        <TooltipContent side="top" sideOffset={6} className="flex flex-col items-center gap-0.5 px-2 py-1 text-center">
+          <span className="font-semibold text-xs">{label}</span>
+          {shortcut ? (
+            <span className="font-mono text-[10px] opacity-80 tracking-tight">{shortcut}</span>
+          ) : null}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
