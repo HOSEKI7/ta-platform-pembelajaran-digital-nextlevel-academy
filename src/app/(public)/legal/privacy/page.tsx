@@ -4,9 +4,19 @@ import Link from "next/link";
 import { PRIVACY_SECTIONS } from "@/lib/legal/privacy-content";
 
 export const metadata: Metadata = {
-  title: "Kebijakan Privasi - NextLevel Academy",
+  title: "Kebijakan Privasi",
   description:
     "Kebijakan Privasi NextLevel Academy — bagaimana kami mengumpulkan, menggunakan, dan melindungi data pribadi Anda.",
+  alternates: { canonical: "/legal/privacy" },
+  openGraph: {
+    type: "website",
+    locale: "id_ID",
+    url: "/legal/privacy",
+    siteName: "NextLevel Academy",
+    title: "Kebijakan Privasi · NextLevel Academy",
+    description:
+      "Kebijakan Privasi NextLevel Academy — bagaimana kami mengumpulkan, menggunakan, dan melindungi data pribadi Anda.",
+  },
 };
 
 function PrivacySection({ title, body }: { title: string; body: string }) {

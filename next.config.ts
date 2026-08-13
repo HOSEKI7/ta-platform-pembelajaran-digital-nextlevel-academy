@@ -12,6 +12,10 @@ const nextConfig: NextConfig = {
   // to the VPS (docs/deployment/05-cicd-github-actions.md). Gated behind an env
   // flag so local `next dev` / `next start` behave exactly as before.
   output: process.env.BUILD_STANDALONE === "1" ? "standalone" : undefined,
+  compiler:
+    process.env.NODE_ENV === "production"
+      ? { removeConsole: { exclude: ["error", "warn"] } }
+      : undefined,
   experimental: {
     optimizePackageImports: [
       "lucide-react",
@@ -20,6 +24,7 @@ const nextConfig: NextConfig = {
       "@tiptap/starter-kit",
       "recharts",
       "date-fns",
+      "@tanstack/react-query",
     ],
   },
   // Sharp ships a native binary — keep it external so the bundler doesn't try
@@ -34,6 +39,7 @@ const nextConfig: NextConfig = {
     "/**": ["./src/lib/certificates/fonts/**"],
   },
   images: {
+    formats: ["image/avif", "image/webp"],
     // Next.js 16 default = 14400s (4 jam). Di-set eksplisit agar terdokumentasi.
     minimumCacheTTL: 14400,
     remotePatterns: [

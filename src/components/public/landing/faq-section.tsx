@@ -10,7 +10,7 @@ import {
 import { SiteContainer } from "../site-container";
 import { Reveal } from "./reveal";
 
-const FAQS = [
+export const FAQS = [
   {
     q: "Apakah saya benar-benar mendapat akses seumur hidup?",
     a: "Ya. Setelah pembelian berhasil, kursus akan otomatis terdaftar di akun kamu dan dapat diakses kapan saja, tanpa biaya berlangganan. Update materi pun gratis selama kursus aktif.",

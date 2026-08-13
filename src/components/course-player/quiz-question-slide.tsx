@@ -86,7 +86,7 @@ export function QuizQuestionSlide({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={question.questionImageUrl}
-            alt=""
+            alt="Gambar soal kuis"
             className="block max-h-72 w-full object-contain"
           />
         </div>

@@ -5,7 +5,10 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import { SiteContainer } from "@/components/public/site-container";
 import Logo3D from "@/assets/images/nla-3d-logo.webp";
 
-export const metadata = { title: "Blog · Segera hadir" };
+export const metadata = {
+  title: "Blog · Segera hadir",
+  robots: { index: false, follow: false },
+};
 
 export default function BlogIndexPage() {
   return (
@@ -80,7 +83,7 @@ export default function BlogIndexPage() {
             />
             <Image
               src={Logo3D} placeholder="blur"
-              alt=""
+              alt="Logo 3D NextLevel Academy"
               width={320}
               height={320}
               priority

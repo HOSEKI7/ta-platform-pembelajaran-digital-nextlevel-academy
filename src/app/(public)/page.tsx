@@ -10,12 +10,14 @@ import { HowItWorksSection } from "@/components/public/landing/how-it-works-sect
 import { StatsStripSection } from "@/components/public/landing/stats-strip-section";
 import { TestimonialsSection } from "@/components/public/landing/testimonials-section";
 import { LandingJsonLd } from "@/components/public/landing/landing-jsonld";
+import { FaqJsonLd } from "@/components/public/seo/faq-jsonld";
+import { FAQS } from "@/components/public/landing/faq-section";
 
 import Logo3D from "@/assets/images/nla-3d-logo.webp";
 
 export const revalidate = 300;
 
-const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://nextlevel.academy";
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://nextlevelacademy.id";
 
 export const metadata: Metadata = {
   title: "Elevate Your Skills, Reach The Next Level",
@@ -73,6 +75,7 @@ export default function HomePage() {
   return (
     <>
       <LandingJsonLd siteUrl={siteUrl} />
+      <FaqJsonLd faqs={FAQS.map(f => ({ question: f.q, answer: f.a }))} />
       <HeroSection />
       <HighlightsSection />
       <HowItWorksSection />

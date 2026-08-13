@@ -80,7 +80,7 @@ export function AuthBrandPanel() {
           {/* 3D logo hero */}
           <Image
             src={Logo3D} placeholder="blur"
-            alt=""
+            alt="Logo 3D NextLevel Academy"
             width={420}
             height={420}
             priority

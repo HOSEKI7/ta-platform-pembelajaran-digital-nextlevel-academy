@@ -1,10 +1,36 @@
+import type { Metadata } from "next";
 import { Clock, Mail, MapPin, MessageCircle } from "lucide-react";
 
 import { loadPlatformInfo } from "@/lib/platform-info";
 import { ContactForm } from "@/components/public/contact-form";
 import { SiteContainer } from "@/components/public/site-container";
 
-export const metadata = { title: "Kontak" };
+export const metadata: Metadata = {
+  title: "Kontak",
+  description:
+    "Hubungi tim NextLevel Academy via email, WhatsApp, atau formulir kontak. Kami di Medan, Indonesia — biasanya balas dalam 1 hari kerja.",
+  keywords: [
+    "kontak NextLevel Academy",
+    "hubungi kami",
+    "customer support e-learning",
+    "NextLevel Academy Medan",
+  ],
+  alternates: { canonical: "/contact" },
+  openGraph: {
+    type: "website",
+    locale: "id_ID",
+    url: "/contact",
+    siteName: "NextLevel Academy",
+    title: "Kontak · NextLevel Academy",
+    description:
+      "Hubungi tim NextLevel Academy via email, WhatsApp, atau formulir kontak.",
+  },
+  twitter: {
+    card: "summary",
+    title: "Kontak · NextLevel Academy",
+    description: "Hubungi NextLevel Academy — email, WhatsApp, formulir kontak.",
+  },
+};
 export const revalidate = 300;
 
 type Info = {

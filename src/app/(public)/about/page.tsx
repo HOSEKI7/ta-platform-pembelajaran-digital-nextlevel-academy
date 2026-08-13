@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Compass, Gauge, Sparkles, Users } from "lucide-react";
@@ -6,7 +7,43 @@ import { loadPlatformInfo } from "@/lib/platform-info";
 import { SiteContainer } from "@/components/public/site-container";
 import Logo3D from "@/assets/images/nla-3d-logo.webp";
 
-export const metadata = { title: "Tentang Kami" };
+export const metadata: Metadata = {
+  title: "Tentang Kami",
+  description:
+    "Kenali NextLevel Academy — platform e-learning Indonesia dengan gamifikasi EXP, level, voucher, dan program magang terintegrasi. Bayar sekali, akses seumur hidup.",
+  keywords: [
+    "tentang NextLevel Academy",
+    "e-learning Indonesia",
+    "platform belajar online",
+    "gamifikasi pendidikan",
+    "magang online",
+  ],
+  alternates: { canonical: "/about" },
+  openGraph: {
+    type: "website",
+    locale: "id_ID",
+    url: "/about",
+    siteName: "NextLevel Academy",
+    title: "Tentang Kami · NextLevel Academy",
+    description:
+      "Platform e-learning Indonesia dengan gamifikasi EXP, level, voucher, dan program magang terintegrasi.",
+    images: [
+      {
+        url: Logo3D.src,
+        width: 1200,
+        height: 630,
+        alt: "NextLevel Academy",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Tentang Kami · NextLevel Academy",
+    description:
+      "Platform e-learning Indonesia dengan gamifikasi EXP/level/voucher & magang terintegrasi.",
+    images: [Logo3D.src],
+  },
+};
 export const revalidate = 300;
 
 const PILLARS = [
@@ -105,7 +142,7 @@ export default async function AboutPage() {
               />
               <Image
                 src={Logo3D} placeholder="blur"
-                alt=""
+                alt="Logo 3D NextLevel Academy"
                 width={320}
                 height={320}
                 priority

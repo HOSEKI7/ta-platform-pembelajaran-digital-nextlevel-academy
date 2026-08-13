@@ -17,12 +17,13 @@ import { CatalogClient } from "@/components/public/landing/catalog-client";
 import { CatalogJsonLd } from "@/components/public/landing/catalog-jsonld";
 import { FeaturedCoursesSkeleton } from "@/components/public/landing/landing-skeletons";
 import { SiteContainer } from "@/components/public/site-container";
+import { BreadcrumbJsonLd } from "@/components/public/seo/breadcrumb-jsonld";
 
 import Logo3D from "@/assets/images/nla-3d-logo.webp";
 
 export const revalidate = 60;
 
-const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://nextlevel.academy";
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://nextlevelacademy.id";
 
 type SP = { page?: string; category?: string; sort?: string };
 
@@ -96,6 +97,13 @@ export default async function CoursesPage({ searchParams }: Props) {
 
   return (
     <>
+      <BreadcrumbJsonLd
+        siteUrl={siteUrl}
+        items={[
+          { name: "Beranda", href: "/" },
+          { name: "Semua Kursus", href: "/courses" },
+        ]}
+      />
       {/* Hero (SSR, static) */}
       <section className="relative isolate overflow-hidden pt-16 pb-12 sm:pt-20">
         <div

@@ -15,10 +15,12 @@ import { CourseFaqBlock } from "@/components/public/landing/course-detail/course
 import { CourseHero } from "@/components/public/landing/course-detail/course-hero";
 import { CourseJsonLd } from "@/components/public/landing/course-detail/course-jsonld";
 import { CourseMentorBlock } from "@/components/public/landing/course-detail/course-mentor-block";
+import { BreadcrumbJsonLd } from "@/components/public/seo/breadcrumb-jsonld";
+import { FaqJsonLd } from "@/components/public/seo/faq-jsonld";
 
 export const revalidate = 60;
 
-const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://nextlevel.academy";
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://nextlevelacademy.id";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -140,6 +142,15 @@ export default async function CourseDetailPage({ params }: Props) {
   return (
     <>
       <CourseJsonLd siteUrl={siteUrl} course={{ ...course, thumbnailUrl }} />
+      <FaqJsonLd faqs={course.faqs.map(f => ({ question: f.question, answer: f.answer }))} />
+      <BreadcrumbJsonLd
+        siteUrl={siteUrl}
+        items={[
+          { name: "Beranda", href: "/" },
+          { name: "Kursus", href: "/courses" },
+          { name: course.title, href: `/courses/${course.slug}` },
+        ]}
+      />
       <CourseHero
         title={course.title}
         shortDescription={course.shortDescription}

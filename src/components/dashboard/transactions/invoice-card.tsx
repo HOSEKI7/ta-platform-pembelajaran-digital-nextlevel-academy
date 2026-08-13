@@ -58,7 +58,7 @@ export function InvoiceCard({ tx, customer }: Props) {
               <p className="font-heading text-[15px] font-extrabold leading-tight text-[#18181b]">
                 NextLevel Academy
               </p>
-              <p className="text-[11px] text-[#71717a]">nextlevel.academy</p>
+              <p className="text-[11px] text-[#71717a]">nextlevelacademy.id</p>
             </div>
           </div>
           <div className="text-right">

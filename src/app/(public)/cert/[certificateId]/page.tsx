@@ -8,7 +8,7 @@ import { CertificateDetailView } from "@/components/public/certificates/certific
 
 export const revalidate = 60;
 
-const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://nextlevel.academy";
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://nextlevelacademy.id";
 
 type Props = { params: Promise<{ certificateId: string }> };
 
@@ -35,7 +35,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title,
     description,
-    alternates: { canonical: `/cert/${certificateId}` },
     openGraph: {
       type: "website",
       locale: "id_ID",
@@ -58,7 +57,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description,
       images: [cert.course.thumbnailUrl],
     },
-    robots: { index: true, follow: true },
+    robots: { index: false, follow: false },
   };
 }
 

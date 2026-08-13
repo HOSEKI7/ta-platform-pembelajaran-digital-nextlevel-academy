@@ -26,7 +26,12 @@ export function LandingJsonLd({ siteUrl }: Props) {
       "@type": "PostalAddress",
       addressCountry: "ID",
     },
-    sameAs: [],
+    sameAs: [
+      "https://www.instagram.com/nextlevelacademy.id/",
+      "https://x.com/NextLevel-Academy",
+      "https://www.youtube.com/@nextlevel-academy-ch",
+      "https://www.linkedin.com/company/next1evel-academy/",
+    ],
   };
 
   const website = {

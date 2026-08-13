@@ -4,9 +4,19 @@ import Link from "next/link";
 import { TERMS_SECTIONS } from "@/lib/legal/terms-content";
 
 export const metadata: Metadata = {
-  title: "Syarat & Ketentuan - NextLevel Academy",
+  title: "Syarat & Ketentuan",
   description:
     "Syarat & Ketentuan penggunaan platform NextLevel Academy — hak, kewajiban, dan kebijakan layanan.",
+  alternates: { canonical: "/legal/terms" },
+  openGraph: {
+    type: "website",
+    locale: "id_ID",
+    url: "/legal/terms",
+    siteName: "NextLevel Academy",
+    title: "Syarat & Ketentuan · NextLevel Academy",
+    description:
+      "Syarat & Ketentuan penggunaan platform NextLevel Academy — hak, kewajiban, dan kebijakan layanan.",
+  },
 };
 
 function TermsSection({ title, body }: { title: string; body: string }) {

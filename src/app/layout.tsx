@@ -22,7 +22,7 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://nextlevel.academy";
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://nextlevelacademy.id";
 
 /**
  * Anti-FOUC theme script. Runs before paint to set the `dark` class on <html>
@@ -51,6 +51,29 @@ export const metadata: Metadata = {
     icon: [{ url: LogoSquare.src, type: "image/webp" }],
     shortcut: LogoSquare.src,
     apple: LogoSquare.src,
+  },
+  openGraph: {
+    type: "website",
+    locale: "id_ID",
+    siteName: "NextLevel Academy",
+    title: "NextLevel Academy — Belajar, Naik Level, Bersertifikat",
+    description:
+      "Platform pembelajaran digital dengan gamifikasi dan sistem magang terintegrasi. Belajar dengan pace kamu, kumpulkan EXP, raih sertifikat.",
+    images: [
+      {
+        url: LogoSquare.src,
+        width: 512,
+        height: 512,
+        alt: "NextLevel Academy",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary",
+    title: "NextLevel Academy — Belajar, Naik Level, Bersertifikat",
+    description:
+      "Platform pembelajaran digital dengan gamifikasi dan sistem magang terintegrasi.",
+    images: [LogoSquare.src],
   },
 };
 

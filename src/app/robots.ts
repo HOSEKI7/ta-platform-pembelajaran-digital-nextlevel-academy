@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://nextlevel.academy";
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://nextlevelacademy.id";
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -17,6 +17,10 @@ export default function robots(): MetadataRoute.Robots {
           "/my-courses",
           "/transactions",
           "/learn/",
+          "/checkout/",
+          "/ganti-password",
+          "/undang-admin",
+          "/cert/",
         ],
       },
     ],
