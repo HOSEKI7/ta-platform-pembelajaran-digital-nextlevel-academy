@@ -75,6 +75,9 @@ VibeCode.zip
 # Scripts
 /scripts/delete-student.mjs
 /scripts/reset-alldata.ts
+/scripts/wipe-student-data.ts
+/scripts/backfill-nomor-induk.ts
+/scripts/test-p0-fulfillment.ts
 
 # Testing
 lh-report.json
