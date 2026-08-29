@@ -57,20 +57,16 @@ auth-*.png
 /.claude/
 /.agents/
 /.skills/
-CLAUDE.md
-AGENTS.md
 /tasks/
 skills-lock.json
 opencode.json
 
 # Requirement Files
-/docs
+/docs/deployment
+/docs/superpowers
 
 # Backup
 /.gits/
-
-# Skripsi
-VibeCode.zip
 
 # Scripts
 /scripts/delete-student.mjs
