@@ -1,4 +1,4 @@
-# CLAUDE.md
+# AGENTS.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
@@ -97,6 +97,10 @@ Satori JSX (`certificate-image.tsx`) → Sharp PNG (2000×1414) → Bunny cert z
 - Dates stored UTC-midnight; check-in window global constant `INTERNSHIP_CHECKIN_WINDOW` (09:00–12:00 WIB)
 
 ## Critical Gotchas
+
+**Deisgn System:**
+
+Read `AGENTS.md` for design system, read every designing.
 
 **Prisma/DB:**
 
