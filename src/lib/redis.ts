@@ -27,12 +27,6 @@ export function getRedis(): Redis | null {
     return globalForRedis.rateLimitRedis;
   }
 
-  // During static page generation at build time, do not open external Redis sockets.
-  if (process.env.NEXT_PHASE === "phase-production-build") {
-    globalForRedis.rateLimitRedis = null;
-    return null;
-  }
-
   const url = process.env.RATE_LIMIT_REDIS_URL?.trim();
   if (!url) {
     globalForRedis.rateLimitRedis = null;
@@ -45,9 +39,9 @@ export function getRedis(): Redis | null {
     enableOfflineQueue: false,
     maxRetriesPerRequest: 1,
     connectTimeout: 2000,
-    lazyConnect: true,
-    // Cap retries so an unreachable Redis does not hang background worker threads indefinitely.
-    retryStrategy: (times) => (times > 3 ? null : Math.min(times * 200, 1000)),
+    // Keep trying to reconnect in the background (capped) without ever throwing
+    // at the process level.
+    retryStrategy: (times) => Math.min(times * 200, 2000),
   });
 
   client.on("error", (err) => {
