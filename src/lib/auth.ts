@@ -289,6 +289,15 @@ export const auth = betterAuth({
     },
   },
 
+  // ---- Advanced / Reverse Proxy IP resolution ------------------------------
+  // Extract the real client IP from Cloudflare / proxy headers so rate limits
+  // and session tracking apply per client IP rather than the tunnel proxy IP.
+  advanced: {
+    ipAddress: {
+      ipAddressHeaders: ["cf-connecting-ip", "x-forwarded-for", "x-real-ip"],
+    },
+  },
+
   // ---- Plugins -------------------------------------------------------------
   // `nextCookies()` must be the LAST plugin so cookies are written on every
   // Server Action / Route Handler response. (Better Auth docs.)

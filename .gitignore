@@ -60,6 +60,7 @@ auth-*.png
 /tasks/
 skills-lock.json
 opencode.json
+CLAUDE.md
 
 # Requirement Files
 /docs/deployment
