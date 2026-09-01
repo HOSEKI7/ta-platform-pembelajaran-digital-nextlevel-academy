@@ -185,7 +185,15 @@ export const auth = betterAuth({
   },
 
   // ---- Trusted origins -----------------------------------------------------
-  trustedOrigins: [env.appUrl()],
+  trustedOrigins: Array.from(
+    new Set([
+      env.appUrl(),
+      "https://nextlevelacademy.id",
+      "https://www.nextlevelacademy.id",
+      "http://localhost:3000",
+      "http://127.0.0.1:3000",
+    ]),
+  ),
 
   // ---- Lifecycle hooks -----------------------------------------------------
   // Password complexity isn't a built-in Better Auth option, so we enforce it
